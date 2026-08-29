@@ -6,7 +6,7 @@ Approved direction. The user selected a balanced public-data story and research 
 
 ## Goal
 
-Build a polished Slovak-language static website showing every professor appointment in the Ministry of Education workbook from 2000 onward. The page must explain how the academic map of Slovakia changed across universities, faculties, cities, years, ceremonies, and presidential terms; support direct person lookup; and contextualize annual appointments against official counts of university students and academic staff.
+Build a polished Slovak-language static website showing every professor appointment in the Ministry of Education workbook from 2000 onward. The page must explain how the academic map of Slovakia changed across universities, faculties, cities, years, ceremonies, and presidential terms; support direct person lookup; and contextualize annual appointments against official counts of university students, graduates, and academic staff.
 
 The finished artifact deploys to GitHub Pages. It has no backend, database, CMS, map-tile service, or runtime dependency on an upstream data provider.
 
@@ -49,11 +49,11 @@ Observed source baseline:
 - Workbook `radtab10.xls`: <https://www.cvtisr.sk/buxus/docs//JC/rady/radtab10.xls>
 - Pinned SHA-256 at design time: `def7a52f5fe139dfcd01d88a141d3d65fafc33581a19082bf07fa62b1d06f59e`
 
-The contextual series supplies national totals for students, internal university teachers, and professors among internal teachers. The product uses academic years 2000/2001 through 2025/2026 and aligns each row to its starting calendar year. CVTI states that the figures are measured at 31 October; annual appointments are calendar-year flows, while student and staff values are point-in-time stocks. The interface states this distinction wherever the series are compared.
+The contextual series supplies national totals for students, first-, second-, and third-degree graduates, internal university teachers, and professors among internal teachers. The product uses academic years 2000/2001 through 2025/2026 and aligns each row to its starting calendar year. CVTI states that the figures are measured at 31 October; annual appointments and graduates are calendar-year flows, while student and staff values are point-in-time stocks. The interface states these distinctions wherever the series are compared.
 
-Student totals equal Slovak-citizen daily first/second-degree students plus foreign daily first/second-degree students, external first/second-degree students, and third-degree doctoral students. Each source column is included exactly once. CVTI notes a staff-definition break in 2007: from that year, internal teachers mean teachers working the established full working time. The chart marks this break.
+Student and graduate totals each equal Slovak-citizen daily first/second-degree, foreign daily first/second-degree, external first/second-degree, and third-degree doctoral columns. Each source column is included exactly once. CVTI notes a staff-definition break in 2007: from that year, internal teachers mean teachers working the established full working time. The chart marks this break.
 
-No student or staff denominator is shown for 2026 because the official series currently ends at 2025/2026.
+No student, graduate, or staff denominator is shown for 2026 because the official series currently ends at 2025/2026.
 
 ### Presidential terms
 
@@ -93,7 +93,7 @@ The site is one scrolling page with stable anchor navigation:
 
 1. **Hero** — title, one-paragraph scope, coverage dates, analytical appointment count, number of ceremonies, and source disclosure.
 2. **Three verified findings** — compact editorial observations derived by the build, not hard-coded unsupported claims.
-3. **Higher-education context** — selected-year exact values and a normalized trend comparing appointments, students, and internal teachers.
+3. **Higher-education context** — selected-year exact values and normalized trends comparing appointments, graduates, students, and internal teachers.
 4. **Linked academic atlas** — city map, ranked institutions, faculty drill-down, annual timeline, and presidential bands.
 5. **Complete explorer** — search, filters, sortable records, details, and filtered CSV download.
 6. **Methodology and sources** — definitions, duplicate handling, incomplete years, context caveats, downloads, checksums, and citations.
@@ -102,25 +102,39 @@ There is no carousel, autoplay, route hierarchy, or separate dashboard mode.
 
 ## Contextual comparisons
 
-Appointments are flows; students and staff are stocks. The design uses only comparisons that preserve that distinction.
+Appointments and graduates are annual flows; students and staff are stocks. The design names those units explicitly and never presents a stock/flow ratio as a conversion, causal effect, or headcount change.
 
 ### Exact selected-year panel
 
 For a selected calendar year from 2000 through 2025, show:
 
 - presidential appointments that year;
+- first-, second-, and third-degree graduates that year;
 - total students in the corresponding academic year;
 - internal university teachers;
 - professors among internal teachers;
+- appointments per 1,000 graduates and the inverse graduates-per-appointment lens;
 - appointments per 10,000 students;
 - appointments per 1,000 internal teachers;
+- appointments per 100 professors in the existing internal-professor stock;
 - professors as a percentage of internal teachers.
 
-Units and measurement dates are present in labels or adjacent notes, not hidden only in tooltips.
+Units and measurement dates are present in labels or adjacent notes, not hidden only in tooltips. Ratios always use the national appointment count stored in the selected `ContextYear`; local atlas filters never change these numerators.
 
 ### Indexed trend
 
-A line chart indexes appointments, students, and internal teachers to 100 in 2000. Indexing makes differently sized series comparable without a misleading dual axis. Exact raw values appear on focus/hover and in the selected-year panel. The 2007 teacher-definition break and the missing 2026 context are visibly annotated.
+A line chart indexes appointments, graduates, students, and internal teachers to 100 in 2000. Indexing makes differently sized series comparable without a misleading dual axis. Exact raw values appear on focus/hover and in the selected-year panel. The 2007 teacher-definition break and the missing 2026 context are visibly annotated.
+
+### Linked analytical lenses
+
+The atlas adds compact, filter-aware analyses derived from the reconciled appointment records:
+
+- **Ceremony cadence:** number of ceremonies, median and largest batch size, and median elapsed days between ceremonies;
+- **Academic breadth:** distinct cities, canonical institutions, and source faculties represented by the active cohort;
+- **Institutional concentration:** the combined appointment share of the three leading institutions, labeled as concentration rather than quality;
+- **Era profile:** the leading institution and representation breadth within each presidential term, without ranking presidents by raw totals.
+
+These lenses update from the same shared filter state as the map and records. They describe the shape of appointment activity, not performance or academic quality.
 
 ### Editorially useful observations
 
@@ -130,6 +144,8 @@ The current pinned sources support, subject to generated-value tests, these obse
 - internal teachers changed much less than student totals over the same period;
 - professors were 9.8% of internal teachers in 2000 and 17.5% in 2025;
 - annual appointment intensity varied substantially, from 2.04 appointments per 10,000 students in 2007 to 8.13 in 2023;
+- graduate throughput peaked at 73,970 in 2010; appointment intensity relative to that flow peaked in 2000 at 5.11 appointments per 1,000 graduates, or one appointment per 195.79 graduates;
+- the comparison to the existing internal-professor stock peaked in 2001 at 11.5 appointments per 100 professors and is explicitly not a professor-headcount change;
 - 108 appointments occurred on 24 January 2011, the largest ceremony in the analytical dataset.
 
 The build computes these statements and their values. If an upstream update changes an extremum, tests force editorial copy review rather than silently publishing a stale claim.
@@ -138,8 +154,9 @@ The build computes these statements and their values. If an upstream update chan
 
 Do not build:
 
+- citation counts or other per-person bibliometrics without stable scholarly identifiers and manual entity-resolution review; names in the ministry workbook are insufficient to match authors safely, and unnormalized citation totals are biased by field and career length;
 - a president leaderboard based on raw term totals;
-- institution-level student/staff ratios without a consistent reconciled institution series;
+- institution-level student/staff/graduate ratios without a consistent reconciled institution series;
 - appointments as a percentage increase in professor headcount;
 - a causal claim that appointments produced later staff changes;
 - gender analysis inferred from names;
@@ -218,8 +235,8 @@ Generated JSON contains:
 - analytical records with source variants;
 - canonical institutions and cities;
 - president term metadata;
-- the 2000–2025 context series;
-- build-derived editorial facts.
+- the 2000–2025 context series, including graduate throughput and named stock/flow indicators;
+- build-derived editorial facts and the versioned payload contract.
 
 Timestamps that would make output nondeterministic are excluded. A source retrieval date may live in a committed provenance file updated only by `data:update`.
 
@@ -252,9 +269,10 @@ Permanent tests defend observable contracts:
 - primary workbook parsing and exact header/date conversion;
 - 2,419 source rows, 41 reviewed secondary rows, and 2,378 analytical appointments for the pinned source;
 - all records assigned to one president and one canonical institution;
-- context parsing for 2000–2025 and selected known totals;
+- context parsing for 2000–2025, selected known totals, graduate subset handling, and stock/flow indicators;
 - filter intersection, accent-insensitive search, URL round-trip, and CSV escaping/BOM;
 - chart accessible labels and keyboard selection;
+- filter-aware ceremony cadence, academic breadth, and top-three institutional concentration;
 - incomplete 2026 context behavior;
 - deterministic data generation.
 

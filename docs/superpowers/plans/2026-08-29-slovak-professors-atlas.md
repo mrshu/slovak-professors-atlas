@@ -17,11 +17,13 @@
 - Visible product copy, dates, labels, number formatting, methodology, and errors must be Slovak.
 - Use React for DOM ownership and D3 only for scales, geometry, shapes, and ticks.
 - Preserve all raw source variants while using exactly 41 reviewed duplicate resolutions to produce 2,378 analytical appointments from 2,419 source rows.
-- Treat appointments as calendar-year flows and CVTI student/staff counts as 31 October stocks; annotate the 2007 staff-definition break and omit context ratios for 2026.
+- Treat appointments and graduates as calendar-year flows and CVTI student/staff counts as 31 October stocks; annotate the 2007 staff-definition break and omit context ratios for 2026.
 - Never infer gender, discipline clusters, institutional quality, causality, or a president leaderboard.
 - Use self-hosted open-source fonts, WCAG AA contrast, keyboard-equivalent interactions, semantic records, and `prefers-reduced-motion`.
 - Store filter state in `URLSearchParams`; reload and Back/Forward must preserve the selected view.
 - Use Conventional Commits with explanatory bodies and verify the author, committer, and full message after every commit.
+- Context cards and trends always consume national appointment counts stored in `ContextYear`; local atlas filters never alter those numerators.
+- Do not publish citation counts or other per-person bibliometrics without stable scholarly identifiers and manual entity-resolution review.
 
 ## File structure
 
@@ -243,7 +245,7 @@ Use the repository-safe staged-diff and commit-message workflow. Commit subject:
 **Interfaces:**
 - Consumes: `ProfessorDataset` from Task 2 and `higher-education.xls` from Task 1.
 - Produces: `load_context(path: Path) -> tuple[ContextYear, ...]`.
-- Produces: `build_payload(...) -> dict[str, object]` and deterministic `public/data/atlas.json`.
+- Produces: `build_payload(...) -> dict[str, object]` and deterministic `public/data/atlas.json` with top-level `meta.schemaVersion === 1`.
 - `ContextYear` fields: `year`, `academic_year`, `students`, `internal_teachers`, `internal_professors`, `appointments`, `appointments_per_10k_students`, `appointments_per_1k_teachers`, `professor_share`.
 
 - [ ] **Step 1: Write CVTI parsing tests**
@@ -294,6 +296,58 @@ Expected: PASS and deterministic JSON regenerated without diff on the second run
 - [ ] **Step 8: Commit generated atlas data**
 
 Commit subject: `feat: generate verified atlas data`. The body must describe CVTI stock metrics, deterministic output, geometry provenance, and generated editorial facts. Verify the full commit message.
+
+### Task 10: Add graduate and stock-flow analytical lenses
+
+**Files:**
+- Modify: `pipeline/context.py`
+- Modify: `pipeline/build.py`
+- Modify: `public/data/atlas.json`
+- Modify: `tests/data/test_context.py`
+- Modify: `tests/data/test_build.py`
+- Modify: `docs/superpowers/specs/2026-08-29-slovak-professors-atlas-design.md`
+- Modify: `docs/superpowers/plans/2026-08-29-slovak-professors-atlas.md`
+
+**Interfaces:**
+- Consumes: the exact CVTI graduate columns from Task 3 and national appointment counts from Task 2.
+- Extends `ContextYear` with `graduates`, `appointments_per_1k_graduates`, `graduates_per_appointment`, and `appointments_per_100_professors`.
+- Produces generated graduate-throughput and professor-stock editorial facts without per-person bibliometric claims.
+
+- [ ] **Step 1: Write failing graduate and ratio tests**
+
+Assert graduate arithmetic equals Slovak-citizen daily plus foreign daily plus external plus doctoral graduates, with each source column included exactly once:
+
+```python
+assert context[0].graduates == 20558
+assert context[-1].graduates == 37627
+assert context[0].appointments_per_1k_graduates == round(105 * 1000 / 20558, 2)
+assert context[-1].appointments_per_100_professors == round(55 * 100 / 1627, 2)
+```
+
+Assert the inverse `graduates_per_appointment` is `None` rather than infinite when a synthetic year has zero appointments. Assert every ratio uses the national `ContextYear.appointments` count and no local-filter input exists in the parser or payload.
+
+- [ ] **Step 2: Run the focused tests and verify failure**
+
+Run: `uv run pytest tests/data/test_context.py tests/data/test_build.py -q`
+Expected: FAIL because graduate fields and ratios do not exist.
+
+- [ ] **Step 3: Parse graduate flow columns and compute named indicators**
+
+Read columns 10, 12, 14, and 16 from the exact `spolu` row. Retain the same strict non-negative integer validation used for student components. Round public rates to two decimals. Keep labels and documentation explicit that appointments and graduates are flows, while the internal-professor comparison uses a stock denominator and is not a headcount-change claim.
+
+- [ ] **Step 4: Generate verified analytical facts**
+
+Add deterministic build-derived facts for graduate throughput and appointments relative to the existing professor stock. Tests pin the selected years and extrema so source updates cannot silently change editorial claims. Do not add runtime API calls, guessed scholarly identifiers, or citation counts.
+
+- [ ] **Step 5: Verify deterministic output**
+
+Run: `uv run pytest tests/data/test_context.py tests/data/test_build.py -q`
+Run `uv run python -m pipeline.build --output public/data/atlas.json` twice and verify identical SHA-256 bytes and no second-build diff.
+Expected: PASS.
+
+- [ ] **Step 6: Commit the analytical extension**
+
+Commit subject: `feat: add graduate comparison lenses`. The body must distinguish flows from stocks, name the exact graduate arithmetic, and explain why citation metrics are excluded without reliable entity resolution. Verify the full commit.
 
 ### Task 4: Create the archival static application shell
 
@@ -409,12 +463,12 @@ Commit subject: `feat: add shareable atlas filtering`. Mention intersecting sele
 - Modify: `src/styles/components.css`
 
 **Interfaces:**
-- Consumes: `ContextYear[]`, current filtered annual appointment counts, `selectedYear`, and `setSelectedYear(year, 'push')`.
-- Produces: exact selected-year metric cards and a three-series indexed SVG trend.
+- Consumes: `ContextYear[]`, `selectedYear`, and `setSelectedYear(year, 'push')`; appointment values come only from the national context series.
+- Produces: exact selected-year metric cards and a four-series indexed SVG trend.
 
 - [ ] **Step 1: Write context behavior tests**
 
-Assert 2000 values, selected-year changes, 2007 definition annotation, index baseline 100, exact accessible labels, 2025 latest context, and a 2026 message that no denominator exists.
+Assert 2000 values, graduate arithmetic and ratios, selected-year changes, 2007 definition annotation, index baseline 100, exact accessible labels, 2025 latest context, and a 2026 message that no denominator exists. Assert local city/institution filters cannot alter any context numerator.
 
 - [ ] **Step 2: Run the context test and verify failure**
 
@@ -423,11 +477,11 @@ Expected: FAIL because context components do not exist.
 
 - [ ] **Step 3: Implement selected-year cards**
 
-Show appointments, students, internal teachers, internal professors, appointments per 10,000 students, appointments per 1,000 teachers, and professor share. Labels explicitly say calendar year versus academic-year stock at 31 October.
+Show appointments, graduates, students, internal teachers, internal professors, appointments per 1,000 graduates, graduates per appointment, appointments per 10,000 students, appointments per 1,000 teachers, appointments per 100 professors in the existing stock, and professor share. Labels explicitly distinguish calendar-year flows from academic-year stocks at 31 October.
 
 - [ ] **Step 4: Implement the indexed SVG trend**
 
-Use D3 scales and line generation only. React renders paths, labeled series marks, axes, and one keyboard-focusable transparent hit target per year. Use dash pattern plus color to distinguish each line. The accessible label for a year includes all three raw values and indices.
+Use D3 scales and line generation only. React renders paths for appointments, graduates, students, and internal teachers; labeled series marks, axes, and one keyboard-focusable transparent hit target per year. Use dash pattern plus color to distinguish each line. The accessible label for a year includes all four raw values and indices.
 
 - [ ] **Step 5: Add responsive and reduced-motion behavior**
 
@@ -439,7 +493,7 @@ Run: `npm test -- --run src/components/ContextSection.test.tsx`
 Run: `npm run build`
 Expected: PASS.
 
-Commit subject: `feat: contextualize appointments`. Mention official CVTI stocks, normalized trend, exact ratios, and definition/coverage annotations. Verify the commit.
+Commit subject: `feat: contextualize appointments`. Mention official CVTI stocks and graduate flows, normalized trend, exact national ratios, and definition/coverage annotations. Verify the commit.
 
 ### Task 7: Build the linked map, timeline, and ranking
 
@@ -448,17 +502,19 @@ Commit subject: `feat: contextualize appointments`. Mention official CVTI stocks
 - Create: `src/components/SlovakiaMap.tsx`
 - Create: `src/components/AppointmentTimeline.tsx`
 - Create: `src/components/InstitutionRanking.tsx`
+- Create: `src/components/AnalysisLenses.tsx`
 - Create: `src/components/AtlasSection.test.tsx`
+- Modify: `src/analysis/selectors.ts`
 - Modify: `src/App.tsx`
 - Modify: `src/styles/components.css`
 
 **Interfaces:**
 - Consumes: shared `FilterState`, filter actions, filtered selectors, institutions, presidents, and Slovakia geometry.
-- Produces: synchronized city/institution/year/president selection using the Task 5 state API.
+- Produces: synchronized city/institution/year/president selection plus filter-aware ceremony cadence, academic breadth, and top-three institutional concentration using the Task 5 state API.
 
 - [ ] **Step 1: Write linked-atlas component tests**
 
-Render a compact fixture and assert city selection filters ranking/totals, institution selection reveals faculty rows, year selection filters records, president selection changes timeline/map, reset clears all, and keyboard Enter/Space matches pointer clicks.
+Render a compact fixture and assert city selection filters ranking/totals, institution selection reveals faculty rows, year selection filters records, president selection changes timeline/map, reset clears all, and keyboard Enter/Space matches pointer clicks. Assert analytical lenses compute ceremony count, median/largest batch, median elapsed days, distinct cities/institutions/faculties, top-three institution share, and the leading institution from the same filtered records.
 
 - [ ] **Step 2: Run atlas tests and verify failure**
 
@@ -477,17 +533,16 @@ Render native buttons and horizontal proportional bars. Sorting is count descend
 
 Render annual bars from 2000–2026, labeled half-open term bands, and ceremony dots positioned within each year. Mark 2026 as incomplete. Each year and ceremony is keyboard-focusable and has an exact Slovak label.
 
-- [ ] **Step 6: Compose the shared atlas controls**
+- [ ] **Step 6: Compose shared controls and analytical lenses**
 
-Add president and date-range controls above the visual. Reflect active filters as removable chips. Ensure every view consumes the same filtered selector result and never maintains private filter state.
-
+Add president and date-range controls above the visual. Reflect active filters as removable chips. Add compact Slovak-labeled cards for ceremony cadence, academic breadth, top-three institutional concentration, and the leading institution in the active cohort. Ensure every view and lens consumes the same filtered selector result and never maintains private filter state. Label concentration as distribution, never quality.
 - [ ] **Step 7: Run linked tests/build and commit centerpiece**
 
 Run: `npm test -- --run src/components/AtlasSection.test.tsx`
 Run: `npm run build`
 Expected: PASS.
 
-Commit subject: `feat: add the linked academic atlas`. Mention SVG geography, presidential timeline, faculty drill-down, and common accessible selection state. Verify the commit.
+Commit subject: `feat: add the linked academic atlas`. Mention SVG geography, presidential timeline, faculty drill-down, filter-aware ceremony/concentration lenses, and common accessible selection state. Verify the commit.
 
 ### Task 8: Complete explorer, methodology, and responsive accessibility
 
@@ -506,7 +561,7 @@ Commit subject: `feat: add the linked academic atlas`. Mention SVG geography, pr
 
 - [ ] **Step 1: Write explorer and methodology tests**
 
-Assert person lookup with and without accents, all filter dimensions, 25-row pagination, reset, empty state, record detail with duplicate variants, downloadable CSV filename, 2,419/2,378 methodology counts, source/checksum links, 2026 partial-year note, and stock/flow caveat.
+Assert person lookup with and without accents, all filter dimensions, 25-row pagination, reset, empty state, record detail with duplicate variants, downloadable CSV filename, 2,419/2,378 methodology counts, source/checksum links, 2026 partial-year note, stock/flow caveat, and the explicit bibliometric exclusion.
 
 - [ ] **Step 2: Run explorer tests and verify failure**
 
@@ -523,7 +578,7 @@ Desktop uses a real table with sortable button headers. Narrow screens use CSS d
 
 - [ ] **Step 5: Implement CSV download and methodology**
 
-Create a Blob only on activation, download as `profesori-filter-YYYY-MM-DD.csv`, then revoke the object URL. Methodology includes direct downloads for both committed XLS files, source page links, hashes, duplicate resolution, aliases, term sources, geographic sources, and GitHub repository link when available from package metadata.
+Create a Blob only on activation, download as `profesori-filter-YYYY-MM-DD.csv`, then revoke the object URL. Methodology includes direct downloads for both committed XLS files, source page links, hashes, duplicate resolution, aliases, term sources, geographic sources, and GitHub repository link when available from package metadata. Explain that the source has no ORCID or equivalent stable scholarly identifier, why name-only citation matching is unsafe, and why raw citation totals would require field/career normalization and manual review.
 
 - [ ] **Step 6: Finish responsive/focus/print rules**
 

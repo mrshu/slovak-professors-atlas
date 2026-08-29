@@ -35,6 +35,8 @@ _STUDENTS_HEADERS = (
     ("", "", "", "", "(externé)", "", "(v dennom štúdiu)", "", " (postgraduálnom)", "", "", "", "(externé)", "", "(v dennom štúdiu)", "", " (postgraduálnom)", ""),
     ("", "", "spolu", "ženy", "spolu", "ženy", "spolu", "ženy", "spolu", "ženy", "spolu", "ženy", "spolu", "ženy", "spolu", "ženy", "spolu", "ženy"),
 )
+_STUDENT_TOTAL_COLUMNS = (2, 4, 6, 8)
+_GRADUATE_TOTAL_COLUMNS = (10, 12, 14, 16)
 
 
 class ContextDataError(ValueError):
@@ -46,11 +48,15 @@ class ContextYear:
     year: int
     academic_year: str
     students: int
+    graduates: int
     internal_teachers: int
     internal_professors: int
     appointments: int
+    appointments_per_1k_graduates: float
+    graduates_per_appointment: float | None
     appointments_per_10k_students: float
     appointments_per_1k_teachers: float
+    appointments_per_100_professors: float
     professor_share: float
 
 
@@ -162,11 +168,13 @@ def _read_total_rows(
 def load_context(
     path: Path, *, appointments: Iterable[Appointment] | None = None
 ) -> tuple[ContextYear, ...]:
-    """Load national CVTI stocks and pair them with national appointment flows."""
+    """Load national CVTI stocks and annual graduate/appointment flows."""
     workbook = xlrd.open_workbook(str(path))
     teachers_sheet, students_sheet = _validate_workbook(workbook)
     teacher_totals = _read_total_rows(teachers_sheet, (4, 6))
-    student_components = _read_total_rows(students_sheet, (2, 4, 6, 8))
+    student_and_graduate_components = _read_total_rows(
+        students_sheet, _STUDENT_TOTAL_COLUMNS + _GRADUATE_TOTAL_COLUMNS
+    )
 
     if appointments is None:
         appointments = load_appointments(DEFAULT_PROFESSORS_PATH).appointments
@@ -175,22 +183,35 @@ def load_context(
     context: list[ContextYear] = []
     for year in CONTEXT_YEARS:
         internal_teachers, internal_professors = teacher_totals[year]
-        components = student_components[year]
-        students = sum(components)
+        components = student_and_graduate_components[year]
+        students = sum(components[: len(_STUDENT_TOTAL_COLUMNS)])
+        graduates = sum(components[len(_STUDENT_TOTAL_COLUMNS) :])
         appointment_count = appointments_by_year[year]
         context.append(
             ContextYear(
                 year=year,
                 academic_year=f"{year}/{year + 1}",
                 students=students,
+                graduates=graduates,
                 internal_teachers=internal_teachers,
                 internal_professors=internal_professors,
                 appointments=appointment_count,
+                appointments_per_1k_graduates=round(
+                    appointment_count * 1_000 / graduates, 2
+                ),
+                graduates_per_appointment=(
+                    round(graduates / appointment_count, 2)
+                    if appointment_count
+                    else None
+                ),
                 appointments_per_10k_students=round(
                     appointment_count * 10_000 / students, 2
                 ),
                 appointments_per_1k_teachers=round(
                     appointment_count * 1_000 / internal_teachers, 2
+                ),
+                appointments_per_100_professors=round(
+                    appointment_count * 100 / internal_professors, 2
                 ),
                 professor_share=round(
                     internal_professors * 100 / internal_teachers, 1

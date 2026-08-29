@@ -71,6 +71,37 @@ def test_generated_facts_match_reviewed_pinned_source_findings(tmp_path: Path) -
             "students": 137_680,
             "year": 2023,
         },
+        "appointmentGraduateRateMaximum": {
+            "appointments": 105,
+            "appointmentsPer1kGraduates": 5.11,
+            "graduates": 20_558,
+            "graduatesPerAppointment": 195.79,
+            "statementSk": (
+                "V roku 2000 pripadlo 5,11 profesorských vymenovaní na "
+                "1\u00a0000 absolventov, najviac v sledovanom období; oba "
+                "údaje sú ročné toky."
+            ),
+            "year": 2000,
+        },
+        "appointmentProfessorStockRateMaximum": {
+            "appointments": 117,
+            "appointmentsPer100Professors": 11.5,
+            "internalProfessors": 1_017,
+            "statementSk": (
+                "V roku 2001 pripadlo 11,5 profesorských vymenovaní na "
+                "100 profesorov medzi internými učiteľmi; ide o porovnanie "
+                "ročného toku so stavom, nie o zmenu počtu profesorov."
+            ),
+            "year": 2001,
+        },
+        "graduateThroughputPeak": {
+            "graduates": 73_970,
+            "statementSk": (
+                "V roku 2010 evidovalo CVTI 73\u00a0970 absolventov I., II. "
+                "a III. stupňa, najviac v sledovanom období."
+            ),
+            "year": 2010,
+        },
         "largestCeremony": {
             "appointedOn": "2011-01-24",
             "appointments": 108,
@@ -97,6 +128,10 @@ def test_context_keeps_national_numerators_independent_of_record_filters(
 
     assert len(records_2023) == context_by_year[2023]["appointments"] == 112
     assert len(uniba_2023) != context_by_year[2023]["appointments"]
+    assert context_by_year[2023]["graduates"] == 35_006
+    assert context_by_year[2023]["appointmentsPer1kGraduates"] == 3.2
+    assert context_by_year[2023]["graduatesPerAppointment"] == 312.55
+    assert context_by_year[2023]["appointmentsPer100Professors"] == 6.8
     assert context_by_year[2023]["appointmentsPer10kStudents"] == 8.13
     assert 2026 not in context_by_year
     assert any(record["appointedOn"].startswith("2026-") for record in payload["records"])

@@ -167,11 +167,15 @@ def _context_payload(item: ContextYear) -> dict[str, object]:
         "year": item.year,
         "academicYear": item.academic_year,
         "students": item.students,
+        "graduates": item.graduates,
         "internalTeachers": item.internal_teachers,
         "internalProfessors": item.internal_professors,
         "appointments": item.appointments,
+        "appointmentsPer1kGraduates": item.appointments_per_1k_graduates,
+        "graduatesPerAppointment": item.graduates_per_appointment,
         "appointmentsPer10kStudents": item.appointments_per_10k_students,
         "appointmentsPer1kTeachers": item.appointments_per_1k_teachers,
+        "appointmentsPer100Professors": item.appointments_per_100_professors,
         "professorShare": item.professor_share,
     }
 
@@ -189,15 +193,41 @@ def _city_payload(institutions: Sequence[Institution]) -> list[dict[str, object]
     ]
 
 
+def _format_slovak_integer(value: int) -> str:
+    return f"{value:,}".replace(",", "\u00a0")
+
+
+def _format_slovak_decimal(value: float) -> str:
+    return f"{value:.2f}".rstrip("0").rstrip(".").replace(".", ",")
+
+
 def _editorial_facts(
     appointments: Sequence[Appointment], context: Sequence[ContextYear]
 ) -> dict[str, object]:
     if not appointments or not context:
         raise AtlasBuildError("Editorial facts require appointments and context")
     student_peak = max(context, key=lambda item: (item.students, -item.year))
+    graduate_peak = max(context, key=lambda item: (item.graduates, -item.year))
     rate_maximum = max(
         context,
         key=lambda item: (Fraction(item.appointments, item.students), -item.year),
+    )
+    graduate_rate_maximum = max(
+        context,
+        key=lambda item: (Fraction(item.appointments, item.graduates), -item.year),
+    )
+    professor_stock_rate_maximum = max(
+        context,
+        key=lambda item: (
+            Fraction(item.appointments, item.internal_professors),
+            -item.year,
+        ),
+    )
+    graduate_rate_text = _format_slovak_decimal(
+        graduate_rate_maximum.appointments_per_1k_graduates
+    )
+    professor_stock_rate_text = _format_slovak_decimal(
+        professor_stock_rate_maximum.appointments_per_100_professors
     )
     ceremony_counts = Counter(item.appointed_on for item in appointments)
     largest_date, largest_count = max(
@@ -209,11 +239,56 @@ def _editorial_facts(
             "academicYear": student_peak.academic_year,
             "students": student_peak.students,
         },
+        "graduateThroughputPeak": {
+            "year": graduate_peak.year,
+            "graduates": graduate_peak.graduates,
+            "statementSk": (
+                f"V roku {graduate_peak.year} evidovalo CVTI "
+                f"{_format_slovak_integer(graduate_peak.graduates)} absolventov "
+                "I., II. a III. stupňa, najviac v sledovanom období."
+            ),
+        },
         "appointmentRateMaximum": {
             "year": rate_maximum.year,
             "appointments": rate_maximum.appointments,
             "students": rate_maximum.students,
-            "appointmentsPer10kStudents": rate_maximum.appointments_per_10k_students,
+            "appointmentsPer10kStudents": (
+                rate_maximum.appointments_per_10k_students
+            ),
+        },
+        "appointmentGraduateRateMaximum": {
+            "year": graduate_rate_maximum.year,
+            "appointments": graduate_rate_maximum.appointments,
+            "graduates": graduate_rate_maximum.graduates,
+            "appointmentsPer1kGraduates": (
+                graduate_rate_maximum.appointments_per_1k_graduates
+            ),
+            "graduatesPerAppointment": (
+                graduate_rate_maximum.graduates_per_appointment
+            ),
+            "statementSk": (
+                f"V roku {graduate_rate_maximum.year} pripadlo "
+                f"{graduate_rate_text} "
+                "profesorských vymenovaní na 1\u00a0000 absolventov, najviac "
+                "v sledovanom období; oba údaje sú ročné toky."
+            ),
+        },
+        "appointmentProfessorStockRateMaximum": {
+            "year": professor_stock_rate_maximum.year,
+            "appointments": professor_stock_rate_maximum.appointments,
+            "internalProfessors": (
+                professor_stock_rate_maximum.internal_professors
+            ),
+            "appointmentsPer100Professors": (
+                professor_stock_rate_maximum.appointments_per_100_professors
+            ),
+            "statementSk": (
+                f"V roku {professor_stock_rate_maximum.year} pripadlo "
+                f"{professor_stock_rate_text} "
+                "profesorských vymenovaní na 100 profesorov medzi internými "
+                "učiteľmi; ide o porovnanie ročného toku so stavom, nie "
+                "o zmenu počtu profesorov."
+            ),
         },
         "largestCeremony": {
             "appointedOn": largest_date.isoformat(),
