@@ -365,6 +365,45 @@ describe('AtlasSection visual and analytical contracts', () => {
     ).toBeInTheDocument()
   })
 
+  it('covers the selected maximum city ring and stroke with a centered target that can toggle off', () => {
+    render(<AtlasHarness />)
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Bratislava: 2 vymenovania, nevybrané' }),
+    )
+
+    const selectedButton = screen.getByRole('button', {
+      name: 'Bratislava: 2 vymenovania, vybrané',
+    })
+    const mark = screen.getByTestId('city-mark-Bratislava')
+    const ring = mark
+      .closest('.slovakia-map__city')
+      ?.querySelector<SVGCircleElement>('.slovakia-map__selected-ring')
+    const target = selectedButton.parentElement
+    const ringRadius = Number(ring?.getAttribute('r'))
+    const ringStrokeWidth = Number(ring?.getAttribute('stroke-width'))
+    const visibleRadius = ringRadius + ringStrokeWidth / 2
+    const targetWidth = Number(target?.getAttribute('width'))
+    const targetHeight = Number(target?.getAttribute('height'))
+
+    expect(Number(mark.getAttribute('r'))).toBe(29)
+    expect(ringRadius).toBe(35)
+    expect(ringStrokeWidth).toBe(3)
+    expect(targetWidth).toBe(2 * visibleRadius)
+    expect(targetHeight).toBe(2 * visibleRadius)
+    expect(Number(target?.getAttribute('x')) + targetWidth / 2).toBe(
+      Number(ring?.getAttribute('cx')),
+    )
+    expect(Number(target?.getAttribute('y')) + targetHeight / 2).toBe(
+      Number(ring?.getAttribute('cy')),
+    )
+
+    fireEvent.click(selectedButton)
+    expect(
+      screen.getByRole('button', { name: 'Bratislava: 2 vymenovania, nevybrané' }),
+    ).toHaveAttribute('aria-pressed', 'false')
+  })
+
   it('does not project fixed city coordinates again when record filters change', () => {
     render(<AtlasHarness />)
     projectPointSpy.mockClear()

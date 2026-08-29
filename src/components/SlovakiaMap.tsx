@@ -27,7 +27,11 @@ interface ProjectedCityLocation {
 }
 
 const DEFAULT_WIDTH = 720
-const TARGET_SIZE = 44
+const MINIMUM_TARGET_SIZE = 44
+const CITY_MARK_MIN_RADIUS = 5
+const CITY_MARK_MAX_RADIUS = 29
+const SELECTED_RING_RADIUS_OFFSET = 6
+const SELECTED_RING_STROKE_WIDTH = 3
 const MAP_PADDING = 24
 
 export default function SlovakiaMap({
@@ -119,7 +123,10 @@ export default function SlovakiaMap({
   )
   const maxCount = Math.max(0, ...projectedCities.map(({ count }) => count))
   const radius = useMemo(
-    () => scaleSqrt().domain([0, Math.max(1, maxCount)]).range([5, 29]),
+    () =>
+      scaleSqrt()
+        .domain([0, Math.max(1, maxCount)])
+        .range([CITY_MARK_MIN_RADIUS, CITY_MARK_MAX_RADIUS]),
     [maxCount],
   )
 
@@ -143,8 +150,12 @@ export default function SlovakiaMap({
         <path className="slovakia-map__outline" d={outline} data-testid="slovakia-outline" />
         {projectedCities.map((city) => {
           const selected = city.city === selectedCity
-          const cityRadius = city.count > 0 ? radius(city.count) : 5
-          const targetSize = Math.max(TARGET_SIZE, cityRadius * 2)
+          const cityRadius = city.count > 0 ? radius(city.count) : CITY_MARK_MIN_RADIUS
+          const selectedRingRadius = cityRadius + SELECTED_RING_RADIUS_OFFSET
+          const visibleRadius = selected
+            ? selectedRingRadius + SELECTED_RING_STROKE_WIDTH / 2
+            : cityRadius
+          const targetSize = Math.max(MINIMUM_TARGET_SIZE, visibleRadius * 2)
           const labelOnLeft = city.x > width * 0.72
           const accessibleLabel = `${city.city}: ${formatAppointmentCount(city.count)}, ${
             selected ? 'vybrané' : 'nevybrané'
@@ -157,7 +168,8 @@ export default function SlovakiaMap({
                   className="slovakia-map__selected-ring"
                   cx={city.x}
                   cy={city.y}
-                  r={cityRadius + 6}
+                  r={selectedRingRadius}
+                  strokeWidth={SELECTED_RING_STROKE_WIDTH}
                   aria-hidden="true"
                 />
               )}
