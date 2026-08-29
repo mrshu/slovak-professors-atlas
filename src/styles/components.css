@@ -1124,6 +1124,102 @@
   line-height: 1.5;
 }
 
+.analysis-era-profile {
+  grid-column: 1 / -1;
+  padding: clamp(1.75rem, 4vw, 3rem) 0;
+  border-top: 1px solid rgb(243 236 223 / 38%);
+}
+
+.analysis-era-profile__heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(16rem, 0.75fr);
+  gap: 1.5rem;
+  align-items: end;
+  margin-bottom: 1.5rem;
+}
+
+.analysis-era-profile__heading .eyebrow {
+  margin-bottom: 0.35rem;
+  color: var(--color-brass);
+}
+
+.analysis-era-profile__heading h3 {
+  margin: 0;
+}
+
+.analysis-era-profile__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid rgb(243 236 223 / 22%);
+  list-style: none;
+}
+
+.analysis-era-profile__list > li {
+  min-width: 0;
+  padding: 1rem;
+  border-left: 1px solid rgb(243 236 223 / 22%);
+}
+
+.analysis-era-profile__list > li:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.analysis-era-profile__term header {
+  min-height: 5.25rem;
+}
+
+.analysis-era-profile__term h4 {
+  margin: 0 0 0.3rem;
+  color: var(--color-paper-light);
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+}
+
+.analysis-era-profile__term header p {
+  margin: 0;
+  color: var(--color-sage);
+  font-size: 0.65rem;
+  line-height: 1.45;
+}
+
+.analysis-era-profile__term dl {
+  margin: 0;
+}
+
+.analysis-era-profile__term dl > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: baseline;
+  padding: 0.5rem 0;
+  border-top: 1px solid rgb(243 236 223 / 18%);
+}
+
+.analysis-era-profile__term dt {
+  color: #c7d2c4;
+  font-size: 0.65rem;
+  line-height: 1.35;
+}
+
+.analysis-era-profile__term dd {
+  max-width: 9.5rem;
+  margin: 0;
+  color: var(--color-paper-light);
+  font-size: 0.74rem;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: right;
+}
+
+.analysis-era-profile__empty {
+  margin: 0;
+  color: var(--color-sage);
+  font-size: var(--text-sm);
+}
+
 .appointment-timeline {
   margin-top: clamp(4rem, 8vw, 7rem);
 }
@@ -2183,6 +2279,27 @@
 
   .analysis-lens h3 {
     min-height: 0;
+  }
+
+  .analysis-era-profile__heading {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .analysis-era-profile__list > li,
+  .analysis-era-profile__list > li:first-child {
+    padding: 1rem 0;
+    border-top: 1px solid rgb(243 236 223 / 22%);
+    border-left: 0;
+  }
+
+  .analysis-era-profile__list > li:first-child {
+    border-top: 0;
+  }
+
+  .analysis-era-profile__term header {
+    min-height: 0;
+    margin-bottom: 0.85rem;
   }
 
   .institution-ranking__name {

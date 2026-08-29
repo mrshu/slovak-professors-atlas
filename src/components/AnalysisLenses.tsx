@@ -4,13 +4,15 @@ import {
   academicBreadth,
   ceremonyCadence,
   institutionConcentration,
+  presidentialEraProfiles,
 } from '../analysis/selectors'
-import type { Appointment, Institution } from '../data/types'
-import { formatNumber } from '../utils/format'
+import type { Appointment, Institution, President } from '../data/types'
+import { formatDate, formatNumber } from '../utils/format'
 
 interface AnalysisLensesProps {
   records: readonly Appointment[]
   institutions: readonly Institution[]
+  presidents: readonly President[]
 }
 
 function formatMedian(value: number | null, suffix = ''): string {
@@ -20,12 +22,20 @@ function formatMedian(value: number | null, suffix = ''): string {
   return `${formatNumber(value, { maximumFractionDigits: 1 })}${suffix}`
 }
 
-export default function AnalysisLenses({ records, institutions }: AnalysisLensesProps) {
+export default function AnalysisLenses({
+  records,
+  institutions,
+  presidents,
+}: AnalysisLensesProps) {
   const cadence = useMemo(() => ceremonyCadence(records), [records])
   const breadth = useMemo(() => academicBreadth(records, institutions), [institutions, records])
   const concentration = useMemo(
     () => institutionConcentration(records, institutions),
     [institutions, records],
+  )
+  const eraProfiles = useMemo(
+    () => presidentialEraProfiles(records, institutions, presidents),
+    [institutions, presidents, records],
   )
 
   let cadenceNote = 'Rozostup je počet kalendárnych dní medzi po sebe idúcimi slávnosťami.'
@@ -135,6 +145,77 @@ export default function AnalysisLenses({ records, institutions }: AnalysisLenses
           Vedúca znamená najvyšší počet v aktívnom výbere; nejde o hodnotenie pracoviska.
         </p>
       </article>
+
+      <section className="analysis-era-profile" aria-labelledby="era-profile-title">
+        <div className="analysis-era-profile__heading">
+          <div>
+            <p className="eyebrow">Historický kontext aktívneho výberu</p>
+            <h3 id="era-profile-title">Profil prezidentských období</h3>
+          </div>
+          <p className="analysis-lens__note">
+            Profily sú zoradené podľa oficiálneho začiatku obdobia. Porovnávajú šírku
+            zastúpenia a koncentráciu; nejde o rebríček prezidentov ani hodnotenie kvality.
+          </p>
+        </div>
+
+        {eraProfiles.length === 0 ? (
+          <p className="analysis-era-profile__empty">
+            Aktívny výber neobsahuje vymenovanie v žiadnom prezidentskom období.
+          </p>
+        ) : (
+          <ol className="analysis-era-profile__list">
+            {eraProfiles.map((profile) => {
+              const endLabel = profile.to === null ? 'súčasnosti' : formatDate(profile.to)
+              const dateSpan = `od ${formatDate(profile.from)} do ${endLabel}`
+              return (
+                <li key={profile.presidentId}>
+                  <article
+                    className="analysis-era-profile__term"
+                    aria-label={`Prezidentské obdobie ${profile.presidentName}: ${dateSpan}${
+                      profile.to === null ? '' : ', koniec sa nezapočítava'
+                    }`}
+                  >
+                    <header>
+                      <h4>{profile.presidentName}</h4>
+                      <p>
+                        {dateSpan}
+                        {profile.to === null ? '' : ' · koniec sa nezapočítava'}
+                      </p>
+                    </header>
+                    <dl>
+                      <div>
+                        <dt>Vedúca inštitúcia</dt>
+                        <dd>{profile.leadingInstitutionName}</dd>
+                      </div>
+                      <div>
+                        <dt>Odlišné mestá</dt>
+                        <dd>{formatNumber(profile.cityCount)}</dd>
+                      </div>
+                      <div>
+                        <dt>Kanonické inštitúcie</dt>
+                        <dd>{formatNumber(profile.institutionCount)}</dd>
+                      </div>
+                      <div>
+                        <dt>Fakulty s názvom</dt>
+                        <dd>{formatNumber(profile.facultyCount)}</dd>
+                      </div>
+                      <div>
+                        <dt>Podiel prvej trojice</dt>
+                        <dd>
+                          {formatNumber(profile.topThreeShare * 100, {
+                            maximumFractionDigits: 1,
+                          })}{' '}
+                          %
+                        </dd>
+                      </div>
+                    </dl>
+                  </article>
+                </li>
+              )
+            })}
+          </ol>
+        )}
+      </section>
     </div>
   )
 }

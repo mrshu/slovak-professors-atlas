@@ -463,6 +463,31 @@ describe('AtlasSection visual and analytical contracts', () => {
     expect(metricValue('Vedúca inštitúcia', 'Vymenovania')).toBe('2 z 4')
   })
 
+  it('presents chronological era profiles with Slovak labels and explicit non-leaderboard context', () => {
+    render(<AtlasHarness />)
+
+    const profile = screen.getByRole('region', { name: 'Profil prezidentských období' })
+    const eraCards = within(profile).getAllByRole('article')
+    expect(eraCards.map((card) => card.getAttribute('aria-label'))).toEqual([
+      expect.stringMatching(/^Prezidentské obdobie Zuzana Čaputová:/),
+      expect.stringMatching(/^Prezidentské obdobie Peter Pellegrini:/),
+    ])
+    expect(within(eraCards[0]!).getByText('Vedúca inštitúcia', { selector: 'dt' })).toBeInTheDocument()
+    expect(within(eraCards[0]!).getByText('Odlišné mestá', { selector: 'dt' })).toBeInTheDocument()
+    expect(within(eraCards[0]!).getByText('Kanonické inštitúcie', { selector: 'dt' })).toBeInTheDocument()
+    expect(within(eraCards[0]!).getByText('Fakulty s názvom', { selector: 'dt' })).toBeInTheDocument()
+    expect(within(eraCards[0]!).getByText('Podiel prvej trojice', { selector: 'dt' })).toBeInTheDocument()
+    expect(within(profile).getByText(/nejde o rebríček prezidentov ani hodnotenie kvality/)).toBeInTheDocument()
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Prezident' }), {
+      target: { value: 'pellegrini' },
+    })
+    expect(within(profile).getAllByRole('article')).toHaveLength(1)
+    expect(within(profile).getByRole('article')).toHaveAccessibleName(
+      /^Prezidentské obdobie Peter Pellegrini:/,
+    )
+  })
+
   it('defines one-ceremony and empty-cohort lens behavior without quality claims', () => {
     render(<AtlasHarness />)
 

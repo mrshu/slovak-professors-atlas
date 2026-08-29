@@ -1,4 +1,4 @@
-import type { Appointment, AtlasData, Institution } from '../data/types'
+import type { Appointment, AtlasData, Institution, President } from '../data/types'
 import type { FilterState } from '../state/filters'
 import { createSearchMatcher, normalizeForSearch } from '../utils/search'
 
@@ -48,6 +48,19 @@ export interface InstitutionConcentration {
   leadingInstitutionId: string | null
   leadingInstitutionName: string | null
   leadingInstitutionCount: number
+}
+
+export interface PresidentialEraProfile {
+  presidentId: string
+  presidentName: string
+  from: string
+  to: string | null
+  leadingInstitutionId: string
+  leadingInstitutionName: string
+  cityCount: number
+  institutionCount: number
+  facultyCount: number
+  topThreeShare: number
 }
 
 const DAY_IN_MILLISECONDS = 86_400_000
@@ -297,4 +310,56 @@ export function institutionConcentration(
     leadingInstitutionName: leading?.name ?? null,
     leadingInstitutionCount: leading?.count ?? 0,
   }
+}
+
+export function presidentialEraProfiles(
+  records: readonly Appointment[],
+  institutions: readonly Institution[],
+  presidents: readonly President[],
+): PresidentialEraProfile[] {
+  const recordsByPresident = new Map<string, Appointment[]>()
+  for (const appointment of records) {
+    const eraRecords = recordsByPresident.get(appointment.presidentId)
+    if (eraRecords === undefined) {
+      recordsByPresident.set(appointment.presidentId, [appointment])
+    } else {
+      eraRecords.push(appointment)
+    }
+  }
+
+  return [...presidents]
+    .sort(
+      (left, right) =>
+        left.from.localeCompare(right.from) || left.id.localeCompare(right.id),
+    )
+    .flatMap((president) => {
+      const eraRecords = recordsByPresident.get(president.id)
+      if (eraRecords === undefined || eraRecords.length === 0) {
+        return []
+      }
+
+      const breadth = academicBreadth(eraRecords, institutions)
+      const concentration = institutionConcentration(eraRecords, institutions)
+      if (
+        concentration.leadingInstitutionId === null ||
+        concentration.leadingInstitutionName === null
+      ) {
+        return []
+      }
+
+      return [
+        {
+          presidentId: president.id,
+          presidentName: president.name,
+          from: president.from,
+          to: president.to,
+          leadingInstitutionId: concentration.leadingInstitutionId,
+          leadingInstitutionName: concentration.leadingInstitutionName,
+          cityCount: breadth.cityCount,
+          institutionCount: breadth.institutionCount,
+          facultyCount: breadth.facultyCount,
+          topThreeShare: concentration.topThreeShare,
+        },
+      ]
+    })
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import type { Appointment, AtlasData, Institution } from '../data/types'
+import type { Appointment, AtlasData, Institution, President } from '../data/types'
 import type { FilterState } from '../state/filters'
 import {
   academicBreadth,
@@ -11,6 +11,7 @@ import {
   filterAppointments,
   institutionConcentration,
   institutionRanking,
+  presidentialEraProfiles,
   yearCounts,
 } from './selectors'
 
@@ -44,6 +45,23 @@ const institutions: Institution[] = [
     longitude: 19.15,
     sourceLabels: ['Akadémia umení'],
     citationUrl: 'https://example.test/aku',
+  },
+]
+
+const presidents: President[] = [
+  {
+    id: 'later',
+    name: 'Neskoršie obdobie',
+    from: '2024-06-15',
+    to: null,
+    citationUrl: 'https://example.test/later',
+  },
+  {
+    id: 'earlier',
+    name: 'Skoršie obdobie',
+    from: '2019-06-15',
+    to: '2024-06-15',
+    citationUrl: 'https://example.test/earlier',
   },
 ]
 
@@ -255,6 +273,107 @@ describe('deterministic aggregate selectors', () => {
 
     expect(facultyCounts(cohort)).toEqual([{ faculty: 'Lekárska fakulta', count: 1 }])
     expect(academicBreadth(cohort, institutions).facultyCount).toBe(1)
+  })
+
+  it('orders represented presidential eras by official start and resolves leader ties by Slovak label', () => {
+    const cohort = [
+      record({ id: 'later-tuke', presidentId: 'later', institutionId: 'tuke' }),
+      record({ id: 'later-aku', presidentId: 'later', institutionId: 'aku' }),
+      record({ id: 'earlier-u', presidentId: 'earlier', institutionId: 'uniba' }),
+    ]
+
+    expect(presidentialEraProfiles(cohort, institutions, presidents)).toEqual([
+      {
+        presidentId: 'earlier',
+        presidentName: 'Skoršie obdobie',
+        from: '2019-06-15',
+        to: '2024-06-15',
+        leadingInstitutionId: 'uniba',
+        leadingInstitutionName: 'UK v Bratislave',
+        cityCount: 1,
+        institutionCount: 1,
+        facultyCount: 1,
+        topThreeShare: 1,
+      },
+      {
+        presidentId: 'later',
+        presidentName: 'Neskoršie obdobie',
+        from: '2024-06-15',
+        to: null,
+        leadingInstitutionId: 'aku',
+        leadingInstitutionName: 'Akadémia umení',
+        cityCount: 2,
+        institutionCount: 2,
+        facultyCount: 1,
+        topThreeShare: 1,
+      },
+    ])
+  })
+
+  it('counts only distinct nonblank named faculties and computes each era top-three share', () => {
+    const cohort = [
+      record({
+        id: 'u1',
+        presidentId: 'earlier',
+        institutionId: 'uniba',
+        faculty: 'Fakulta A',
+      }),
+      record({
+        id: 'u2',
+        presidentId: 'earlier',
+        institutionId: 'uniba',
+        faculty: 'Fakulta A',
+      }),
+      record({ id: 't1', presidentId: 'earlier', institutionId: 'tuke', faculty: '' }),
+      record({ id: 'a1', presidentId: 'earlier', institutionId: 'aku', faculty: '   ' }),
+      record({ id: 'x1', presidentId: 'earlier', institutionId: 'stvrta', faculty: null }),
+    ]
+    const expandedInstitutions = [
+      ...institutions,
+      {
+        ...institutions[0]!,
+        id: 'stvrta',
+        shortName: 'Žilinská univerzita',
+        fullName: 'Žilinská univerzita v Žiline',
+        city: 'Žilina',
+      },
+    ]
+
+    expect(presidentialEraProfiles(cohort, expandedInstitutions, presidents)[0]).toMatchObject({
+      facultyCount: 1,
+      cityCount: 4,
+      institutionCount: 4,
+      topThreeShare: 0.8,
+    })
+  })
+
+  it('uses the already-filtered cohort, omits unrepresented terms, and defines empty output', () => {
+    const eraData = {
+      records: [
+        record({ id: 'earlier', presidentId: 'earlier', appointedOn: '2023-05-12' }),
+        record({ id: 'later', presidentId: 'later', appointedOn: '2025-05-12' }),
+      ],
+      institutions,
+    } as AtlasData
+    const laterOnly = filterAppointments(eraData, {
+      ...allFilters,
+      startYear: 2025,
+      endYear: 2025,
+      presidentId: 'later',
+      city: null,
+      institutionId: null,
+      faculty: null,
+      field: null,
+      query: '',
+      selectedYear: 2025,
+    })
+
+    expect(
+      presidentialEraProfiles(laterOnly, institutions, presidents).map(
+        ({ presidentId }) => presidentId,
+      ),
+    ).toEqual(['later'])
+    expect(presidentialEraProfiles([], institutions, presidents)).toEqual([])
   })
 
   it('never mutates record or institution source arrays', () => {

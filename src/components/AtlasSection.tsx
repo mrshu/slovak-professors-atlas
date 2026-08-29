@@ -290,7 +290,11 @@ function LoadedAtlasSection({ data, atlasState }: LoadedAtlasSectionProps) {
         />
       </div>
 
-      <AnalysisLenses records={filteredRecords} institutions={data.institutions} />
+      <AnalysisLenses
+        records={filteredRecords}
+        institutions={data.institutions}
+        presidents={data.presidents}
+      />
 
       <AppointmentTimeline
         records={filteredRecords}
