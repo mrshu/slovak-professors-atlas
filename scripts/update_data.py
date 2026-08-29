@@ -36,7 +36,7 @@ def _load_provenance(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def _write_provenance(path: Path, provenance: dict[str, Any]) -> None:
+def _stage_provenance(path: Path, provenance: dict[str, Any]) -> Path:
     temporary_path: Path | None = None
     try:
         with tempfile.NamedTemporaryFile(
@@ -50,12 +50,56 @@ def _write_provenance(path: Path, provenance: dict[str, Any]) -> None:
             temporary_path = Path(temporary_file.name)
             json.dump(provenance, temporary_file, ensure_ascii=False, indent=2)
             temporary_file.write("\n")
-
-        temporary_path.replace(path)
     except BaseException:
         if temporary_path is not None:
             temporary_path.unlink(missing_ok=True)
         raise
+
+    return temporary_path
+
+
+def _replace_staged_files(replacements: Sequence[tuple[Path, Path]]) -> None:
+    backups: list[tuple[Path, Path | None]] = []
+    for _, target in replacements:
+        backup_path: Path | None = None
+        if target.exists():
+            with tempfile.NamedTemporaryFile(
+                dir=target.parent,
+                prefix=f".{target.name}.",
+                suffix=".bak",
+                delete=False,
+            ) as backup_file:
+                backup_path = Path(backup_file.name)
+            backup_path.unlink()
+        backups.append((target, backup_path))
+
+    replaced: list[tuple[Path, Path | None]] = []
+    try:
+        for (staged_path, target), (_, backup_path) in zip(
+            replacements, backups, strict=True
+        ):
+            if backup_path is not None:
+                target.replace(backup_path)
+            replaced.append((target, backup_path))
+            staged_path.replace(target)
+    except BaseException as replacement_error:
+        rollback_errors: list[BaseException] = []
+        for target, backup_path in reversed(replaced):
+            try:
+                target.unlink(missing_ok=True)
+                if backup_path is not None:
+                    backup_path.replace(target)
+            except BaseException as rollback_error:
+                rollback_errors.append(rollback_error)
+        if rollback_errors:
+            raise RuntimeError(
+                f"Failed to roll back {len(rollback_errors)} staged replacement(s)"
+            ) from replacement_error
+        raise
+    else:
+        for _, backup_path in backups:
+            if backup_path is not None:
+                backup_path.unlink(missing_ok=True)
 
 
 def _download_sources(
@@ -68,55 +112,64 @@ def _download_sources(
     sources = provenance["sources"]
     destination.mkdir(parents=True, exist_ok=True)
     downloaded: list[DownloadedSource] = []
+    staged_replacements: list[tuple[Path, Path]] = []
     retrieved_on = date.today().isoformat()
 
-    for name, filename in SOURCE_DESTINATIONS.items():
-        source = sources[name]
-        url = source["url"]
-        expected_sha256 = source.get("sha256")
-        target = destination / filename
-        temporary_path: Path | None = None
+    try:
+        for name, filename in SOURCE_DESTINATIONS.items():
+            source = sources[name]
+            url = source["url"]
+            expected_sha256 = source.get("sha256")
+            target = destination / filename
+            temporary_path: Path | None = None
 
-        try:
-            with tempfile.NamedTemporaryFile(
-                dir=destination,
-                prefix=f".{filename}.",
-                suffix=".tmp",
-                delete=False,
-            ) as temporary_file:
-                temporary_path = Path(temporary_file.name)
-                digest = hashlib.sha256()
-                size = 0
+            try:
+                with tempfile.NamedTemporaryFile(
+                    dir=destination,
+                    prefix=f".{filename}.",
+                    suffix=".tmp",
+                    delete=False,
+                ) as temporary_file:
+                    temporary_path = Path(temporary_file.name)
+                    digest = hashlib.sha256()
+                    size = 0
 
-                with urllib.request.urlopen(url) as response:
-                    while chunk := response.read(CHUNK_SIZE):
-                        temporary_file.write(chunk)
-                        digest.update(chunk)
-                        size += len(chunk)
+                    with urllib.request.urlopen(url) as response:
+                        while chunk := response.read(CHUNK_SIZE):
+                            temporary_file.write(chunk)
+                            digest.update(chunk)
+                            size += len(chunk)
 
-            sha256 = digest.hexdigest()
-            if (
-                expected_sha256
-                and sha256 != expected_sha256
-                and not accept_new_checksums
-            ):
-                raise SourceIntegrityError(
-                    f"Checksum mismatch for {name}: expected {expected_sha256}, "
-                    f"downloaded {sha256}"
-                )
+                sha256 = digest.hexdigest()
+                if (
+                    expected_sha256
+                    and sha256 != expected_sha256
+                    and not accept_new_checksums
+                ):
+                    raise SourceIntegrityError(
+                        f"Checksum mismatch for {name}: expected {expected_sha256}, "
+                        f"downloaded {sha256}"
+                    )
 
-            temporary_path.replace(target)
-            downloaded.append(DownloadedSource(name, url, sha256, size))
-            if accept_new_checksums:
-                source["sha256"] = sha256
-                source["retrievedOn"] = retrieved_on
-        except BaseException:
-            if temporary_path is not None:
-                temporary_path.unlink(missing_ok=True)
-            raise
+                staged_replacements.append((temporary_path, target))
+                downloaded.append(DownloadedSource(name, url, sha256, size))
+                if accept_new_checksums:
+                    source["sha256"] = sha256
+                    source["retrievedOn"] = retrieved_on
+            except BaseException:
+                if temporary_path is not None:
+                    temporary_path.unlink(missing_ok=True)
+                raise
 
-    if accept_new_checksums:
-        _write_provenance(provenance_path, provenance)
+        if accept_new_checksums:
+            staged_provenance = _stage_provenance(provenance_path, provenance)
+            staged_replacements.append((staged_provenance, provenance_path))
+
+        _replace_staged_files(staged_replacements)
+    except BaseException:
+        for staged_path, _ in staged_replacements:
+            staged_path.unlink(missing_ok=True)
+        raise
 
     return downloaded
 

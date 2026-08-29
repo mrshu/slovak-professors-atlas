@@ -80,6 +80,39 @@ def test_checksum_mismatch_preserves_existing_destination(tmp_path: Path) -> Non
     assert {path.name for path in destination.iterdir()} == {"professors.xls"}
 
 
+def test_accept_new_checksums_rolls_back_when_later_download_fails(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    provenance_path = tmp_path / "provenance.json"
+    destination = tmp_path / "source"
+    destination.mkdir()
+    professor_path = destination / "professors.xls"
+    higher_education_path = destination / "higher-education.xls"
+    previous_professor_bytes = b"previous professor workbook"
+    previous_higher_education_bytes = b"previous higher education workbook"
+    professor_path.write_bytes(previous_professor_bytes)
+    higher_education_path.write_bytes(previous_higher_education_bytes)
+    write_provenance(
+        provenance_path,
+        professor_sha256=hashlib.sha256(previous_professor_bytes).hexdigest(),
+    )
+    previous_provenance_bytes = provenance_path.read_bytes()
+    monkeypatch.setattr(update_data, "DEFAULT_PROVENANCE_PATH", provenance_path)
+    monkeypatch.setattr(update_data, "DEFAULT_SOURCE_DESTINATION", destination)
+
+    with patch(
+        "scripts.update_data.urllib.request.urlopen",
+        side_effect=[io.BytesIO(PROFESSOR_BYTES), OSError("second download failed")],
+    ):
+        with pytest.raises(OSError, match="second download failed"):
+            update_data.main(["--accept-new-checksums"])
+
+    assert professor_path.read_bytes() == previous_professor_bytes
+    assert higher_education_path.read_bytes() == previous_higher_education_bytes
+    assert provenance_path.read_bytes() == previous_provenance_bytes
+
+
 def test_accept_new_checksums_updates_provenance_and_reports_changes(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
