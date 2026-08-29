@@ -1,0 +1,7 @@
+[
+  {"id":"schuster","name":"Rudolf Schuster","from":"1999-06-15","to":"2004-06-15"},
+  {"id":"gasparovic","name":"Ivan Gašparovič","from":"2004-06-15","to":"2014-06-15"},
+  {"id":"kiska","name":"Andrej Kiska","from":"2014-06-15","to":"2019-06-15"},
+  {"id":"caputova","name":"Zuzana Čaputová","from":"2019-06-15","to":"2024-06-15"},
+  {"id":"pellegrini","name":"Peter Pellegrini","from":"2024-06-15","to":null}
+]
