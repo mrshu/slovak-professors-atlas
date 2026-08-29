@@ -260,7 +260,8 @@ def build_payload(
     ceremony_count = len({item.appointed_on for item in dataset.appointments})
 
     return {
-        "metadata": {
+        "meta": {
+            "schemaVersion": 1,
             "sourceRowCount": dataset.source_row_count,
             "duplicateSourceRowCount": dataset.duplicate_source_row_count,
             "analyticalAppointmentCount": len(dataset.appointments),
@@ -329,12 +330,12 @@ def main(argv: list[str] | None = None) -> int:
         geography_path=args.geometry,
         provenance_path=args.provenance,
     )
-    metadata = payload["metadata"]
-    assert isinstance(metadata, dict)
+    meta = payload["meta"]
+    assert isinstance(meta, dict)
     print(
-        f"Wrote {args.output}: {metadata['analyticalAppointmentCount']} appointments, "
+        f"Wrote {args.output}: {meta['analyticalAppointmentCount']} appointments, "
         f"{len(payload['context'])} context years, "
-        f"{metadata['ceremonyCount']} ceremonies"
+        f"{meta['ceremonyCount']} ceremonies"
     )
     return 0
 

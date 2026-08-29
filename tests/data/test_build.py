@@ -26,12 +26,25 @@ def test_build_is_byte_deterministic_and_serializes_public_contract(tmp_path: Pa
     assert b"Zuzana \xc4\x8caputov\xc3\xa1" in first_bytes
     assert first_payload == second_payload == json.loads(first_bytes)
 
-    assert first_payload["metadata"] == {
+    assert set(first_payload) == {
+        "cities",
+        "context",
+        "editorialFacts",
+        "geography",
+        "institutions",
+        "meta",
+        "presidents",
+        "records",
+        "sources",
+    }
+    assert "metadata" not in first_payload
+    assert first_payload["meta"] == {
         "analyticalAppointmentCount": 2_378,
         "appointmentDateMax": "2026-06-03",
         "appointmentDateMin": "2000-02-22",
         "ceremonyCount": 67,
         "duplicateSourceRowCount": 41,
+        "schemaVersion": 1,
         "sourceRowCount": 2_419,
     }
     assert len(first_payload["records"]) == 2_378
