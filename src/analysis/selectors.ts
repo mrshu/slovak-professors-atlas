@@ -19,7 +19,7 @@ export interface YearCount {
 }
 
 export interface FacultyCount {
-  faculty: string | null
+  faculty: string
   count: number
 }
 
@@ -175,24 +175,18 @@ export function cityCounts(
 }
 
 export function facultyCounts(records: readonly Appointment[]): FacultyCount[] {
-  const counts = new Map<string | null, number>()
+  const counts = new Map<string, number>()
   for (const appointment of records) {
-    incrementCount(counts, appointment.faculty)
+    const { faculty } = appointment
+    if (faculty !== null && faculty.trim().length > 0) {
+      incrementCount(counts, faculty)
+    }
   }
 
-  return Array.from(counts, ([faculty, count]) => ({ faculty, count })).sort((left, right) => {
-    const countDifference = right.count - left.count
-    if (countDifference !== 0) {
-      return countDifference
-    }
-    if (left.faculty === null) {
-      return 1
-    }
-    if (right.faculty === null) {
-      return -1
-    }
-    return slovakCollator.compare(left.faculty, right.faculty)
-  })
+  return Array.from(counts, ([faculty, count]) => ({ faculty, count })).sort(
+    (left, right) =>
+      right.count - left.count || slovakCollator.compare(left.faculty, right.faculty),
+  )
 }
 
 export function yearCounts(records: readonly Appointment[]): YearCount[] {
@@ -257,7 +251,7 @@ export function academicBreadth(
     if (city !== undefined) {
       cities.add(city)
     }
-    if (appointment.faculty !== null) {
+    if (appointment.faculty !== null && appointment.faculty.trim().length > 0) {
       faculties.add(appointment.faculty)
     }
   }

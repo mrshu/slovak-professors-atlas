@@ -15,6 +15,8 @@ const data = {
   records: [
     { faculty: 'Lekárska fakulta', field: 'vnútorné lekárstvo' },
     { faculty: null, field: 'hudobné umenie' },
+    { faculty: '', field: 'hudobné umenie' },
+    { faculty: '   ', field: 'hudobné umenie' },
     { faculty: 'Lekárska fakulta', field: 'vnútorné lekárstvo' },
   ],
 } as AtlasData

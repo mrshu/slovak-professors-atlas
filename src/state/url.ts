@@ -51,7 +51,11 @@ export function parseFilters(search: string | URLSearchParams, options: FilterOp
 
   for (const key of FILTER_VALUE_KEYS) {
     const value = params.get(key)
-    if (value !== null && options[OPTION_KEY_BY_FILTER[key]].includes(value)) {
+    if (
+      value !== null &&
+      value.trim().length > 0 &&
+      options[OPTION_KEY_BY_FILTER[key]].includes(value)
+    ) {
       parsed[key] = value
     }
   }
@@ -84,7 +88,7 @@ export function serializeFilters(filters: FilterState, defaults: FilterState): s
   }
   for (const key of FILTER_VALUE_KEYS) {
     const value = filters[key]
-    if (value !== defaults[key] && value !== null) {
+    if (value !== defaults[key] && value !== null && value.trim().length > 0) {
       params.set(key, value)
     }
   }

@@ -205,10 +205,7 @@ describe('deterministic aggregate selectors', () => {
       { city: 'Bratislava', count: 2 },
       { city: 'Košice', count: 1 },
     ])
-    expect(facultyCounts(cohort)).toEqual([
-      { faculty: 'Lekárska fakulta', count: 2 },
-      { faculty: null, count: 1 },
-    ])
+    expect(facultyCounts(cohort)).toEqual([{ faculty: 'Lekárska fakulta', count: 2 }])
     expect(yearCounts(cohort)).toEqual([
       { year: 2022, count: 1 },
       { year: 2023, count: 2 },
@@ -246,6 +243,18 @@ describe('deterministic aggregate selectors', () => {
       leadingInstitutionName: 'UK v Bratislave',
       leadingInstitutionCount: 2,
     })
+  })
+
+  it('excludes empty, whitespace-only, and null faculties from aggregation and breadth', () => {
+    const cohort = [
+      record({ id: 'named', faculty: 'Lekárska fakulta' }),
+      record({ id: 'empty', faculty: '' }),
+      record({ id: 'whitespace', faculty: '   ' }),
+      record({ id: 'null', faculty: null }),
+    ]
+
+    expect(facultyCounts(cohort)).toEqual([{ faculty: 'Lekárska fakulta', count: 1 }])
+    expect(academicBreadth(cohort, institutions).facultyCount).toBe(1)
   })
 
   it('never mutates record or institution source arrays', () => {

@@ -76,4 +76,16 @@ describe('atlas URL filters', () => {
       city: 'Košice',
     })
   })
+
+  it('discards blank optional values instead of persisting an active faculty filter', () => {
+    const optionsWithBlankFaculties: FilterOptions = {
+      ...options,
+      faculties: ['', '   ', ...options.faculties],
+    }
+
+    expect(parseFilters('?faculty=', optionsWithBlankFaculties)).toEqual(defaults)
+    expect(parseFilters('?faculty=+++', optionsWithBlankFaculties)).toEqual(defaults)
+    expect(serializeFilters({ ...defaults, faculty: '' }, defaults)).toBe('')
+    expect(serializeFilters({ ...defaults, faculty: '   ' }, defaults)).toBe('')
+  })
 })

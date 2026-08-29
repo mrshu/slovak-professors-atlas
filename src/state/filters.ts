@@ -34,7 +34,11 @@ const slovakCollator = new Intl.Collator('sk-SK')
 
 function uniqueSorted(values: Iterable<string | null>): string[] {
   return Array.from(
-    new Set(Array.from(values).filter((value): value is string => value !== null)),
+    new Set(
+      Array.from(values).filter(
+        (value): value is string => value !== null && value.trim().length > 0,
+      ),
+    ),
   ).sort(slovakCollator.compare)
 }
 
