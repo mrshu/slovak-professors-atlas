@@ -1,3 +1,4 @@
+import { prepareSearchIndex } from '../utils/search'
 import type { AtlasData } from './types'
 
 export const ATLAS_LOAD_MESSAGE =
@@ -131,6 +132,7 @@ export async function loadAtlas(signal?: AbortSignal): Promise<AtlasData> {
 
     const payload: unknown = await response.json()
     assertAtlasData(payload)
+    prepareSearchIndex(payload.records)
     return payload
   } catch (cause) {
     if (cause instanceof DOMException && cause.name === 'AbortError') {
