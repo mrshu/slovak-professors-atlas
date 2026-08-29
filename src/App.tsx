@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 
+import AtlasSection from './components/AtlasSection'
 import { ContextSectionBody, ContextSectionShell } from './components/ContextSection'
 import ErrorPanel from './components/ErrorPanel'
 import Findings from './components/Findings'
@@ -15,15 +16,20 @@ type LoadState =
 
 const slovakInteger = new Intl.NumberFormat('sk-SK')
 
-function LoadedContext({ data }: { data: AtlasData }) {
-  const { filters, setSelectedYear } = useAtlasState(data)
+function LoadedInteractiveSections({ data }: { data: AtlasData }) {
+  const atlasState = useAtlasState(data)
 
   return (
-    <ContextSectionBody
-      years={data.context}
-      selectedYear={filters.selectedYear}
-      setSelectedYear={setSelectedYear}
-    />
+    <>
+      <ContextSectionShell>
+        <ContextSectionBody
+          years={data.context}
+          selectedYear={atlasState.filters.selectedYear}
+          setSelectedYear={atlasState.setSelectedYear}
+        />
+      </ContextSectionShell>
+      <AtlasSection data={data} atlasState={atlasState} />
+    </>
   )
 }
 
@@ -109,44 +115,14 @@ export default function App() {
             <ErrorPanel />
           </section>
         )}
-        <ContextSectionShell status={state.status === 'ready' ? undefined : state.status}>
-          {state.status === 'ready' && <LoadedContext data={state.data} />}
-        </ContextSectionShell>
-
-
-        <section id="atlas" className="section section--atlas" aria-labelledby="atlas-title">
-          <svg className="atlas-contours" viewBox="0 0 1200 520" aria-hidden="true">
-            <path d="M-80 94c190-96 344-91 494-20 139 66 252 65 398-6 138-68 257-70 438-5" />
-            <path d="M-92 155C93 63 250 68 399 137c143 66 261 66 407-5 136-66 253-69 438-7" />
-            <path d="M-104 223C77 134 235 139 385 207c145 66 266 65 412-7 136-66 253-68 442-6" />
-            <path d="M-108 301c179-87 335-82 486-16 148 65 271 63 416-9 136-67 254-69 448-7" />
-            <path d="M-98 385c174-83 326-78 476-14 151 65 276 61 421-12 137-68 258-69 449-6" />
-          </svg>
-          <div className="section__heading section__heading--split section__heading--light">
-            <div>
-              <p className="eyebrow eyebrow--light">Prepojená akademická mapa</p>
-              <h2 id="atlas-title">Atlas pracovísk a období</h2>
-            </div>
-            <p>
-              Mesto označuje sídlo navrhujúcej inštitúcie, nie bydlisko profesora. Mapa,
-              pracoviská a časová os čítajú ten istý analytický súbor.
-            </p>
-          </div>
-          <dl className="atlas-register" aria-label="Čítanie akademického atlasu">
-            <div>
-              <dt>Poloha</dt>
-              <dd>Mestá a kanonické inštitúcie</dd>
-            </div>
-            <div>
-              <dt>Štruktúra</dt>
-              <dd>Zdrojové názvy fakúlt a odborov</dd>
-            </div>
-            <div>
-              <dt>Čas</dt>
-              <dd>Dátumy slávností a prezidentské obdobia</dd>
-            </div>
-          </dl>
-        </section>
+        {state.status === 'ready' ? (
+          <LoadedInteractiveSections data={state.data} />
+        ) : (
+          <>
+            <ContextSectionShell status={state.status} />
+            <AtlasSection status={state.status} />
+          </>
+        )}
 
         <section id="zaznamy" className="section section--records" aria-labelledby="records-title">
           <div className="section__heading section__heading--split">

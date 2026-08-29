@@ -189,6 +189,22 @@ export function facultyCounts(records: readonly Appointment[]): FacultyCount[] {
   )
 }
 
+export function facultyDistribution(records: readonly Appointment[]): FacultyCount[] {
+  const counts = new Map<string, number>()
+  for (const appointment of records) {
+    const faculty =
+      appointment.faculty === null || appointment.faculty.trim().length === 0
+        ? 'neuvedené'
+        : appointment.faculty
+    incrementCount(counts, faculty)
+  }
+
+  return Array.from(counts, ([faculty, count]) => ({ faculty, count })).sort(
+    (left, right) =>
+      right.count - left.count || slovakCollator.compare(left.faculty, right.faculty),
+  )
+}
+
 export function yearCounts(records: readonly Appointment[]): YearCount[] {
   const counts = new Map<number, number>()
   for (const appointment of records) {
