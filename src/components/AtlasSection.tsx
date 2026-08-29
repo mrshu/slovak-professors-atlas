@@ -246,7 +246,7 @@ function LoadedAtlasSection({ data, atlasState }: LoadedAtlasSectionProps) {
       </div>
 
       <div className="atlas-active-state">
-        <p role="status" aria-live="polite" aria-atomic="true">
+        <p role="status" aria-live="off">
           <strong>{formatAppointmentCount(filteredRecords.length)}</strong> v aktívnom výbere
         </p>
         {activeChips.length > 0 && (

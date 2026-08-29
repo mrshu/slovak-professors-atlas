@@ -247,7 +247,7 @@ describe('archívny atlas', () => {
     const context = await screen.findByRole('region', {
       name: 'Vymenovania v národnom kontexte',
     })
-    const panel = within(context).getByRole('group', {
+    const panel = await screen.findByRole('group', {
       name: 'Presné národné hodnoty pre rok 2000',
     })
     expect(within(panel).getByText('Vymenovania v kalendárnom roku').parentElement).toHaveTextContent(

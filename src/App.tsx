@@ -3,8 +3,10 @@ import { useEffect, useState } from 'react'
 import AtlasSection from './components/AtlasSection'
 import { ContextSectionBody, ContextSectionShell } from './components/ContextSection'
 import ErrorPanel from './components/ErrorPanel'
+import Explorer from './components/Explorer'
 import Findings from './components/Findings'
 import Hero from './components/Hero'
+import Methodology from './components/Methodology'
 import { loadAtlas } from './data/load'
 import type { AtlasData } from './data/types'
 import { useAtlasState } from './state/useAtlasState'
@@ -14,7 +16,6 @@ type LoadState =
   | { status: 'ready'; data: AtlasData }
   | { status: 'error'; data: null }
 
-const slovakInteger = new Intl.NumberFormat('sk-SK')
 
 function LoadedInteractiveSections({ data }: { data: AtlasData }) {
   const atlasState = useAtlasState(data)
@@ -29,6 +30,7 @@ function LoadedInteractiveSections({ data }: { data: AtlasData }) {
         />
       </ContextSectionShell>
       <AtlasSection data={data} atlasState={atlasState} />
+      <Explorer data={data} atlasState={atlasState} />
     </>
   )
 }
@@ -121,70 +123,14 @@ export default function App() {
           <>
             <ContextSectionShell status={state.status} />
             <AtlasSection status={state.status} />
+            <Explorer status={state.status} />
           </>
         )}
 
-        <section id="zaznamy" className="section section--records" aria-labelledby="records-title">
-          <div className="section__heading section__heading--split">
-            <div>
-              <p className="eyebrow">Úplný register</p>
-              <h2 id="records-title">Záznamy bez skrytých skratiek</h2>
-            </div>
-            <p>
-              Mená, pôvodné názvy pracovísk, fakulty, odbory, dátumy aj zdrojové riadky
-              zostávajú dohľadateľné. Nevyplnený titul alebo fakulta sa označí slovom
-              „neuvedené“ — nikdy sa nedopĺňa odhadom.
-            </p>
-          </div>
-          <div className="records-principles" aria-label="Princípy registra">
-            <p>
-              <span>01</span> Vyhľadávanie zachováva slovenskú diakritiku v zobrazenom texte.
-            </p>
-            <p>
-              <span>02</span> Opakované zdrojové varianty ostávajú pripojené k záznamu.
-            </p>
-            <p>
-              <span>03</span> Výber údajov nemení význam pôvodného odboru ani pracoviska.
-            </p>
-          </div>
-        </section>
-
-        <section id="metodika" className="section section--method" aria-labelledby="method-title">
-          <div className="method-grid">
-            <div>
-              <p className="eyebrow">Metodika a pramene</p>
-              <h2 id="method-title">Ako čítať archív</h2>
-            </div>
-            <div className="method-copy">
-              <p>
-                Jednotkou je analytické profesorské vymenovanie, nie jedinečná fyzická osoba.
-                Zhodné meno v rôznych dátumoch sa nezlučuje. Iba preskúmané opakovania toho
-                istého mena a dátumu sa viažu k ponechanému záznamu.
-              </p>
-              <p>
-                Prezidentské obdobia poskytujú časové členenie; atlas z nich nerobí rebríček.
-                Počty pri inštitúciách opisujú aktivitu vymenovaní, nie kvalitu školy.
-              </p>
-            </div>
-          </div>
-
-          {state.data && (
-            <dl className="source-audit" aria-label="Audit zdrojových riadkov">
-              <div>
-                <dt>Riadky v zdroji</dt>
-                <dd>{slovakInteger.format(state.data.meta.sourceRowCount)}</dd>
-              </div>
-              <div>
-                <dt>Preskúmané opakovania</dt>
-                <dd>{slovakInteger.format(state.data.meta.duplicateSourceRowCount)}</dd>
-              </div>
-              <div>
-                <dt>Analytické vymenovania</dt>
-                <dd>{slovakInteger.format(state.data.meta.analyticalAppointmentCount)}</dd>
-              </div>
-            </dl>
-          )}
-        </section>
+        <Methodology
+          data={state.data ?? undefined}
+          status={state.status === 'ready' ? undefined : state.status}
+        />
       </main>
 
       <footer className="site-footer">
