@@ -117,6 +117,22 @@ const data: AtlasData = {
       sha256: 'def7a52f5fe139dfcd01d88a141d3d65fafc33581a19082bf07fa62b1d06f59e',
       retrievedOn: '2026-08-29',
     },
+    graduates_by_field_2025: {
+      url: 'https://www.cvtisr.sk/buxus/docs//JC/ROCENKA/VS/abvs_2.xls',
+      catalogUrl:
+        'https://www.cvtisr.sk/cvti-sr-vedecka-kniznica/informacie-o-skolstve/statistiky/statisticka-rocenka-publikacia/statisticka-rocenka-vysoke-skoly.html?page_id=9596',
+      sha256: '2bfc9bf67bcf7c1d4ed5e80296d498f634a9c8c9b949bf70f839a9bf90ba7729',
+      retrievedOn: '2026-08-29',
+    },
+    population: {
+      url: 'https://data.statistics.sk/api/v2/dataset/om7102rr/SK0/2000:2025/IN010114/SPOLU?lang=en&type=json',
+      catalogUrl:
+        'https://datacube.statistics.sk/#!/view/en/VBD_DEM/om7102rr/v_om7102rr_00_00_00_en',
+      sha256: 'd09a892509ac4c746fe87ac4f825502d491ad4b2ac5b79e9751b2cec0431efa6',
+      retrievedOn: '2026-08-29',
+      denominatorDateConvention:
+        'Mid-year population at midnight from 30 June to 1 July of the reference calendar year.',
+    },
   },
   records,
   institutions,
@@ -140,6 +156,23 @@ const data: AtlasData = {
       citationUrl: 'https://www.prezident.sk/zivotopis-petra-pellegriniho',
     },
   ],
+  fieldGraduateComparison: {
+    schemaVersion: 1,
+    year: 2025,
+    source: {
+      url: 'https://www.cvtisr.sk/buxus/docs//JC/ROCENKA/VS/abvs_2.xls',
+      catalogUrl:
+        'https://www.cvtisr.sk/cvti-sr-vedecka-kniznica/informacie-o-skolstve/statistiky/statisticka-rocenka-publikacia/statisticka-rocenka-vysoke-skoly.html?page_id=9596',
+      sha256: '2bfc9bf67bcf7c1d4ed5e80296d498f634a9c8c9b949bf70f839a9bf90ba7729',
+      retrievedOn: '2026-08-29',
+    },
+    appointmentCount: 0,
+    matchedAppointmentCount: 0,
+    matchedAppointmentShare: 0,
+    distinctFieldCount: 0,
+    matchedDistinctFieldCount: 0,
+    rows: [],
+  },
   context: [],
   geography: {
     type: 'Feature',
@@ -233,7 +266,7 @@ describe('úplný register', () => {
     expect(screen.getByTestId('linked-count')).toHaveTextContent('1')
     reset()
 
-    fireEvent.change(within(explorer).getByLabelText('Odbor'), { target: { value: 'história' } })
+    fireEvent.change(within(explorer).getByLabelText('Odbor'), { target: { value: 'historia' } })
     expect(screen.getByTestId('linked-count')).toHaveTextContent('1')
     reset()
 
@@ -306,6 +339,10 @@ describe('úplný register', () => {
     fireEvent.click(within(explorer).getByText('Zobraziť detail'))
 
     const detail = within(explorer).getByRole('group', { name: 'Detail záznamu Štefan Šimek' })
+    const detailRow = detail.closest('tr')
+    expect(detailRow).toHaveClass('record-detail-row')
+    expect(detailRow?.querySelector('td')).toHaveAttribute('colspan', '6')
+    expect(detailRow?.previousElementSibling).toHaveClass('record-row')
     expect(detail).toHaveTextContent('prof. RNDr.')
     expect(detail).toHaveTextContent('CSc.')
     expect(detail).toHaveTextContent('Univerzita Komenského v Bratislave')
@@ -497,10 +534,17 @@ describe('metodika a pramene', () => {
     expect(methodology).toHaveTextContent('3. júna 2026')
     expect(methodology).toHaveTextContent(/vymenovania aj absolventi sú ročné toky/i)
     expect(methodology).toHaveTextContent(/študenti a interní učitelia sú stavom k 31\. októbru/i)
+    expect(
+      within(methodology).getByRole('link', {
+        name: 'Katalóg DATAcube Štatistického úradu SR',
+      }),
+    ).toHaveAttribute('href', data.sources.population.catalogUrl)
+    expect(methodology).toHaveTextContent(data.sources.population.sha256)
+    expect(methodology).toHaveTextContent(/stredný stav obyvateľstva.*30\. júna.*1\. júla/i)
     expect(methodology).toHaveTextContent(/ORCID ani rovnocenný stabilný vedecký identifikátor/i)
     expect(methodology).toHaveTextContent(/párovanie iba podľa mena nie je bezpečné/i)
-    expect(methodology).toHaveTextContent(/normalizáciu podľa odboru a dĺžky kariéry/i)
-    expect(methodology).toHaveTextContent(/manuálnu kontrolu/i)
+    expect(methodology).toHaveTextContent(/normalizované podľa odboru aj roku publikovania/i)
+    expect(methodology).toHaveTextContent(/ručne preskúmané identifikátory autorov OpenAlex/i)
     expect(within(methodology).queryByRole('button', { name: /citáci/i })).not.toBeInTheDocument()
     expect(within(methodology).getByRole('link', { name: /Oficiálne obdobie: Ivan Gašparovič/ })).toHaveAttribute(
       'href',

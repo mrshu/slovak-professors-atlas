@@ -23,6 +23,53 @@ export interface FacultyCount {
   count: number
 }
 
+export interface FieldLabelVariant {
+  label: string
+  count: number
+}
+
+export interface FieldAppointmentRankingRow {
+  fieldKey: string
+  field: string
+  appointmentCount: number
+  appointmentShare: number
+  firstYear: number
+  lastYear: number
+  variants: FieldLabelVariant[]
+}
+
+export interface FieldLandscapeSummary {
+  appointmentCount: number
+  distinctFieldCount: number
+  singletonFieldCount: number
+  leadingFieldKey: string | null
+  leadingField: string | null
+  leadingAppointmentCount: number
+  leadingShare: number
+  topTenCount: number
+  topTenShare: number
+  firstYear: number | null
+  lastYear: number | null
+}
+
+export interface FieldLandscapeRow {
+  fieldKey: string
+  field: string
+  wholeRegisterAppointmentCount: number
+  wholeRegisterShare: number
+  selectionAppointmentCount: number
+  selectionShare: number
+  firstYear: number
+  lastYear: number
+  variants: FieldLabelVariant[]
+}
+
+export interface FieldAppointmentLandscape {
+  wholeRegister: FieldLandscapeSummary
+  selection: FieldLandscapeSummary
+  rows: FieldLandscapeRow[]
+}
+
 export interface CeremonyCount {
   appointedOn: string
   count: number
@@ -125,7 +172,10 @@ export function filterAppointments(data: AtlasData, filters: FilterState): Appoi
     if (filters.faculty !== null && appointment.faculty !== filters.faculty) {
       return false
     }
-    if (filters.field !== null && appointment.field !== filters.field) {
+    if (
+      filters.field !== null &&
+      normalizeForSearch(appointment.field) !== filters.field
+    ) {
       return false
     }
     if (
@@ -139,6 +189,13 @@ export function filterAppointments(data: AtlasData, filters: FilterState): Appoi
 
     return true
   })
+}
+
+export function filterAppointmentsExceptField(
+  data: AtlasData,
+  filters: FilterState,
+): Appointment[] {
+  return filterAppointments(data, { ...filters, field: null })
 }
 
 export function institutionRanking(
@@ -216,6 +273,129 @@ export function facultyDistribution(records: readonly Appointment[]): FacultyCou
     (left, right) =>
       right.count - left.count || slovakCollator.compare(left.faculty, right.faculty),
   )
+}
+
+export function fieldAppointmentRanking(
+  records: readonly Appointment[],
+): FieldAppointmentRankingRow[] {
+  const groups = new Map<
+    string,
+    {
+      count: number
+      firstYear: number
+      lastYear: number
+      variants: Map<string, number>
+    }
+  >()
+
+  for (const appointment of records) {
+    const key = normalizeForSearch(appointment.field)
+    const year = Number.parseInt(appointment.appointedOn.slice(0, 4), 10)
+    const group = groups.get(key)
+    if (group === undefined) {
+      groups.set(key, {
+        count: 1,
+        firstYear: year,
+        lastYear: year,
+        variants: new Map([[appointment.field, 1]]),
+      })
+      continue
+    }
+
+    group.count += 1
+    group.firstYear = Math.min(group.firstYear, year)
+    group.lastYear = Math.max(group.lastYear, year)
+    incrementCount(group.variants, appointment.field)
+  }
+
+  return Array.from(groups.values(), (group) => {
+    const variants = Array.from(group.variants, ([label, count]) => ({ label, count })).sort(
+      (left, right) =>
+        right.count - left.count ||
+        slovakCollator.compare(left.label, right.label) ||
+        left.label.localeCompare(right.label),
+    )
+    const field = (variants[0]?.label ?? '').replace(/\s+/g, ' ').trim()
+
+    return {
+      fieldKey: normalizeForSearch(field),
+      field,
+      appointmentCount: group.count,
+      appointmentShare: records.length === 0 ? 0 : group.count / records.length,
+      firstYear: group.firstYear,
+      lastYear: group.lastYear,
+      variants,
+    }
+  }).sort(
+    (left, right) =>
+      right.appointmentCount - left.appointmentCount ||
+      slovakCollator.compare(left.field, right.field),
+  )
+}
+
+function fieldLandscapeSummary(
+  records: readonly Appointment[],
+  ranking: readonly FieldAppointmentRankingRow[],
+): FieldLandscapeSummary {
+  const leading = ranking[0]
+  const topTenCount = ranking
+    .slice(0, 10)
+    .reduce((total, row) => total + row.appointmentCount, 0)
+  let firstYear: number | null = null
+  let lastYear: number | null = null
+  for (const record of records) {
+    const year = Number.parseInt(record.appointedOn.slice(0, 4), 10)
+    firstYear = firstYear === null ? year : Math.min(firstYear, year)
+    lastYear = lastYear === null ? year : Math.max(lastYear, year)
+  }
+
+  return {
+    appointmentCount: records.length,
+    distinctFieldCount: ranking.length,
+    singletonFieldCount: ranking.filter(({ appointmentCount }) => appointmentCount === 1).length,
+    leadingFieldKey: leading?.fieldKey ?? null,
+    leadingField: leading?.field ?? null,
+    leadingAppointmentCount: leading?.appointmentCount ?? 0,
+    leadingShare: leading?.appointmentShare ?? 0,
+    topTenCount,
+    topTenShare: records.length === 0 ? 0 : topTenCount / records.length,
+    firstYear,
+    lastYear,
+  }
+}
+
+export function fieldAppointmentLandscape(
+  wholeRegisterRecords: readonly Appointment[],
+  selectionRecords: readonly Appointment[],
+): FieldAppointmentLandscape {
+  const wholeRanking = fieldAppointmentRanking(wholeRegisterRecords)
+  const selectionRanking = fieldAppointmentRanking(selectionRecords)
+  const wholeByKey = new Map(wholeRanking.map((row) => [row.fieldKey, row] as const))
+  const selectionByKey = new Map(selectionRanking.map((row) => [row.fieldKey, row] as const))
+  const selectionSummary = fieldLandscapeSummary(selectionRecords, selectionRanking)
+  if (selectionSummary.leadingFieldKey !== null) {
+    selectionSummary.leadingField =
+      wholeByKey.get(selectionSummary.leadingFieldKey)?.field ?? selectionSummary.leadingField
+  }
+
+  return {
+    wholeRegister: fieldLandscapeSummary(wholeRegisterRecords, wholeRanking),
+    selection: selectionSummary,
+    rows: wholeRanking.map((row) => {
+      const selected = selectionByKey.get(row.fieldKey)
+      return {
+        fieldKey: row.fieldKey,
+        field: row.field,
+        wholeRegisterAppointmentCount: row.appointmentCount,
+        wholeRegisterShare: row.appointmentShare,
+        selectionAppointmentCount: selected?.appointmentCount ?? 0,
+        selectionShare: selected?.appointmentShare ?? 0,
+        firstYear: row.firstYear,
+        lastYear: row.lastYear,
+        variants: row.variants,
+      }
+    }),
+  }
 }
 
 export function yearCounts(records: readonly Appointment[]): YearCount[] {

@@ -50,6 +50,9 @@ export interface ContextYear {
   internalTeachers: number
   internalProfessors: number
   appointments: number
+  population: number
+  appointmentsPerMillionResidents: number
+  professorsPer100kResidents: number
   appointmentsPer1kGraduates: number
   graduatesPerAppointment: number | null
   appointmentsPer10kStudents: number
@@ -69,9 +72,20 @@ export interface SourceMetadata {
   retrievedOn: string
 }
 
+export interface GraduateFieldSourceMetadata extends SourceMetadata {
+  catalogUrl: string
+}
+export interface PopulationSourceMetadata extends SourceMetadata {
+  catalogUrl: string
+  denominatorDateConvention: string
+}
+
+
 export interface AtlasSources {
   professors: SourceMetadata
   higher_education: SourceMetadata
+  graduates_by_field_2025: GraduateFieldSourceMetadata
+  population: PopulationSourceMetadata
 }
 
 export interface AtlasMeta {
@@ -82,6 +96,26 @@ export interface AtlasMeta {
   ceremonyCount: number
   appointmentDateMin: string
   appointmentDateMax: string
+}
+
+export interface FieldGraduateComparisonRow {
+  field: string
+  appointmentCount: number
+  graduateCount: number | null
+  graduatesPerAppointment: number | null
+  matchStatus: 'exact' | 'unmatched'
+}
+
+export interface FieldGraduateComparison {
+  schemaVersion: 1
+  year: 2025
+  source: GraduateFieldSourceMetadata
+  appointmentCount: number
+  matchedAppointmentCount: number
+  matchedAppointmentShare: number
+  distinctFieldCount: number
+  matchedDistinctFieldCount: number
+  rows: FieldGraduateComparisonRow[]
 }
 
 export interface GeographyProperties {
@@ -166,6 +200,7 @@ export interface AtlasData {
   cities: City[]
   presidents: President[]
   context: ContextYear[]
+  fieldGraduateComparison: FieldGraduateComparison
   geography: AtlasGeography
   editorialFacts: EditorialFacts
 }

@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { filterAppointmentsExceptField } from './analysis/selectors'
 
 import AtlasSection from './components/AtlasSection'
 import { ContextSectionBody, ContextSectionShell } from './components/ContextSection'
 import ErrorPanel from './components/ErrorPanel'
 import Explorer from './components/Explorer'
+import FieldGraduateComparison from './components/FieldGraduateComparison'
 import Findings from './components/Findings'
 import Hero from './components/Hero'
 import Methodology from './components/Methodology'
@@ -19,6 +21,10 @@ type LoadState =
 
 function LoadedInteractiveSections({ data }: { data: AtlasData }) {
   const atlasState = useAtlasState(data)
+  const fieldComparisonRecords = useMemo(
+    () => filterAppointmentsExceptField(data, atlasState.filters),
+    [atlasState.filters, data],
+  )
 
   return (
     <>
@@ -29,6 +35,13 @@ function LoadedInteractiveSections({ data }: { data: AtlasData }) {
           setSelectedYear={atlasState.setSelectedYear}
         />
       </ContextSectionShell>
+      <FieldGraduateComparison
+        comparison={data.fieldGraduateComparison}
+        allRecords={data.records}
+        comparisonRecords={fieldComparisonRecords}
+        selectedField={atlasState.filters.field}
+        onFieldSelect={(field) => atlasState.setFilter('field', field, 'push')}
+      />
       <AtlasSection data={data} atlasState={atlasState} />
       <Explorer data={data} atlasState={atlasState} />
     </>
@@ -82,6 +95,9 @@ export default function App() {
               <a href="#kontext">Kontext</a>
             </li>
             <li>
+              <a href="#odbory-absolventi">Odbory</a>
+            </li>
+            <li>
               <a href="#atlas">Atlas</a>
             </li>
             <li>
@@ -95,7 +111,9 @@ export default function App() {
       </nav>
 
       <main id="obsah">
-        {state.status === 'ready' && <Findings facts={state.data.editorialFacts} />}
+        {state.status === 'ready' && (
+          <Findings records={state.data.records} institutions={state.data.institutions} />
+        )}
         {state.status === 'loading' && (
           <section
             id="zistenia"

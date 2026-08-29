@@ -13,11 +13,11 @@ const data = {
   cities: [{ name: 'Bratislava' }, { name: 'Košice' }],
   institutions: [{ id: 'uniba' }, { id: 'tuke' }],
   records: [
-    { faculty: 'Lekárska fakulta', field: 'vnútorné lekárstvo' },
+    { faculty: 'Lekárska fakulta', field: 'Vnútorné lekárstvo' },
     { faculty: null, field: 'hudobné umenie' },
-    { faculty: '', field: 'hudobné umenie' },
-    { faculty: '   ', field: 'hudobné umenie' },
-    { faculty: 'Lekárska fakulta', field: 'vnútorné lekárstvo' },
+    { faculty: '', field: 'HUDOBNÉ   UMENIE' },
+    { faculty: '   ', field: ' hudobne umenie ' },
+    { faculty: 'Lekárska fakulta', field: 'vnútorNÉ lekárstvo' },
   ],
 } as AtlasData
 
@@ -36,14 +36,14 @@ describe('filter state metadata', () => {
     })
   })
 
-  it('derives unique valid URL values without inventing a missing faculty label', () => {
+  it('derives unique valid URL values and stable normalized field keys', () => {
     expect(createFilterOptions(data)).toEqual({
       defaults: createFilterDefaults(data),
       presidentIds: ['caputova', 'kiska'],
       cities: ['Bratislava', 'Košice'],
       institutionIds: ['tuke', 'uniba'],
       faculties: ['Lekárska fakulta'],
-      fields: ['hudobné umenie', 'vnútorné lekárstvo'],
+      fields: ['hudobne umenie', 'vnutorne lekarstvo'],
     })
   })
 })

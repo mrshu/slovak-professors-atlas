@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Appointment, AtlasData } from '../data/types'
 import { useAtlasState } from './useAtlasState'
 
-function record(id: string, institutionId: string): Appointment {
+function record(id: string, institutionId: string, field = 'Vnútorné lekárstvo'): Appointment {
   return {
     id,
     name: id === 'one' ? 'Zuzana Čaputová' : 'Ján Novák',
@@ -13,7 +13,7 @@ function record(id: string, institutionId: string): Appointment {
     faculty: 'Lekárska fakulta',
     institutionId,
     institutionSource: institutionId === 'uniba' ? 'UK v Bratislave' : 'TU v Košiciach',
-    field: 'vnútorné lekárstvo',
+    field,
     appointedOn: '2023-05-12',
     presidentId: 'caputova',
     sourceVariants: [],
@@ -35,7 +35,11 @@ const data = {
     { id: 'uniba', city: 'Bratislava' },
     { id: 'tuke', city: 'Košice' },
   ],
-  records: [record('one', 'uniba'), record('two', 'tuke')],
+  records: [
+    record('one', 'uniba'),
+    record('two', 'tuke', 'vnútorNÉ   lekárstvo'),
+    record('three', 'tuke', 'história'),
+  ],
 } as AtlasData
 
 const basePath = '/slovak-professors/index.html'
@@ -67,6 +71,15 @@ describe('useAtlasState', () => {
     expect(replaceState).toHaveBeenCalledTimes(1)
     expect(window.location.search).toBe('?city=Bratislava&query=Caputova')
     expect(result.current.filters.query).toBe('Caputova')
+  })
+
+  it('loads a normalized field deep link and applies it across raw-label variants', () => {
+    window.history.replaceState(null, '', `${basePath}?field=vnutorne+lekarstvo`)
+    const { result } = renderHook(() => useAtlasState(data))
+
+    expect(result.current.filters.field).toBe('vnutorne lekarstvo')
+    expect(result.current.filteredRecords.map(({ id }) => id)).toEqual(['one', 'two'])
+    expect(window.location.search).toBe('?field=vnutorne+lekarstvo')
   })
 
   it('keeps context highlighting independent and applies timeline years atomically', () => {
@@ -134,6 +147,33 @@ describe('useAtlasState', () => {
     act(() => window.history.forward())
     await waitFor(() => expect(result.current.filters.city).toBe('Košice'))
     expect(window.location.search).toBe('?city=Ko%C5%A1ice')
+  })
+
+  it('restores normalized field facets through Back and Forward', async () => {
+    const { result } = renderHook(() => useAtlasState(data))
+
+    act(() => result.current.setFilter('field', 'vnutorne lekarstvo'))
+    act(() => result.current.setFilter('field', 'historia'))
+    expect(result.current.filteredRecords.map(({ id }) => id)).toEqual(['three'])
+
+    act(() => window.history.back())
+    await waitFor(() => expect(result.current.filters.field).toBe('vnutorne lekarstvo'))
+    expect(result.current.filteredRecords.map(({ id }) => id)).toEqual(['one', 'two'])
+
+    act(() => window.history.forward())
+    await waitFor(() => expect(result.current.filters.field).toBe('historia'))
+    expect(window.location.search).toBe('?field=historia')
+  })
+
+  it('clears the field facet with the shared reset action', () => {
+    window.history.replaceState(null, '', `${basePath}?field=historia`)
+    const { result } = renderHook(() => useAtlasState(data))
+
+    act(() => result.current.resetFilters())
+
+    expect(result.current.filters.field).toBeNull()
+    expect(result.current.filteredRecords).toHaveLength(3)
+    expect(window.location.search).toBe('')
   })
 
   it('restores state whenever the browser emits popstate', () => {

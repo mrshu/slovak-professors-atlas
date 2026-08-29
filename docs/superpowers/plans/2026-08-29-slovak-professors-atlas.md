@@ -4,7 +4,7 @@
 
 **Goal:** Build and deploy a polished Slovak-language static atlas of presidential professor appointments, with official higher-education context, linked visual analysis, complete person lookup, and transparent methodology.
 
-**Architecture:** A Python/`uv` build-time pipeline validates two committed legacy XLS workbooks and emits one deterministic JSON payload. A React/TypeScript/Vite client loads that payload and performs all filtering, aggregation, SVG rendering, URL synchronization, and CSV export in the browser; GitHub Actions publishes only the static `dist` artifact to GitHub Pages.
+**Architecture:** A Python/`uv` build-time pipeline validates three committed legacy XLS workbooks and one pinned official JSON-stat population extract, then emits one deterministic JSON payload. A React/TypeScript/Vite client loads that payload, derives the all-time appointment-field ranking from analytical records, and performs all filtering, aggregation, SVG rendering, URL synchronization, and CSV export in the browser; GitHub Actions publishes only the static `dist` artifact to GitHub Pages.
 
 **Tech Stack:** Python 3.12+, `uv`, `xlrd`, `pytest`, React 19, TypeScript, Vite, D3 modules (`d3-array`, `d3-geo`, `d3-scale`, `d3-shape`), Vitest, React Testing Library, plain CSS, GitHub Actions/Pages.
 
@@ -18,12 +18,16 @@
 - Use React for DOM ownership and D3 only for scales, geometry, shapes, and ticks.
 - Preserve all raw source variants while using exactly 41 reviewed duplicate resolutions to produce 2,378 analytical appointments from 2,419 source rows.
 - Treat appointments and graduates as calendar-year flows and CVTI student/staff counts as 31 October stocks; annotate the 2007 staff-definition break and omit context ratios for 2026.
+- Treat the graduate-by-field workbook as a 2025-only snapshot. Make no historical graduate-by-field claim, and never substitute national time-series totals for field-level history.
+- Match appointment fields to study programs only by exact equality after case, diacritic, and whitespace normalization. Never infer synonyms, substrings, code families, or broad categories; identical program names can span source categories.
+- Aggregate the 2025 graduate source across every required `spolu` column, repeated program codes, and public/private/state sheets exactly once; never add the `z toho ženy` subset columns.
+- Use only the national mid-year population for per-capita rates. Publish annual appointments per million residents and internal professors per 100,000 residents; do not divide workplace-city appointments by city population.
 - Never infer gender, discipline clusters, institutional quality, causality, or a president leaderboard.
 - Use self-hosted open-source fonts, WCAG AA contrast, keyboard-equivalent interactions, semantic records, and `prefers-reduced-motion`.
 - Store filter state in `URLSearchParams`; reload and Back/Forward must preserve the selected view.
 - Use Conventional Commits with explanatory bodies and verify the author, committer, and full message after every commit.
 - Context cards and trends always consume national appointment counts stored in `ContextYear`; local atlas filters never alter those numerators.
-- Do not publish citation counts or other per-person bibliometrics without stable scholarly identifiers and manual entity-resolution review.
+- Do not publish citation counts or other per-person bibliometrics in this release. Any later work must resolve ORCID first, manually review OpenAlex IDs with affiliation/field evidence, and exclude ambiguous names; descriptive h-index/total citations are not cross-person comparisons without active-year and field/publication-year normalization that separates recent from lifetime impact.
 
 ## File structure
 
@@ -34,6 +38,8 @@
 - `pipeline/models.py` — immutable appointment/context data classes and serialization.
 - `pipeline/text.py` — whitespace and search normalization.
 - `pipeline/professors.py` — primary workbook schema validation, canonicalization, duplicate resolution, and president assignment.
+- `pipeline/graduates.py` — strict 2025 CVTI study-program parsing, seven-column aggregation, and exact normalized field matching.
+- `pipeline/population.py` — strict official JSON-stat parsing for national mid-year population.
 - `pipeline/context.py` — CVTI workbook parsing and stock/flow indicators.
 - `pipeline/build.py` — payload assembly, editorial facts, deterministic JSON output, and CLI.
 - `data/config/institutions.json` — canonical institutions, aliases, cities, coordinates, and citation URLs.
@@ -42,9 +48,11 @@
 - `data/config/slovakia.geojson` — simplified Natural Earth Slovakia geometry.
 - `public/data/source/professors.xls` — pinned ministry workbook, also downloadable from the page.
 - `public/data/source/higher-education.xls` — pinned CVTI time series, also downloadable.
-- `public/data/provenance.json` — source URLs, retrieval date, and expected SHA-256 values.
-- `public/data/atlas.json` — deterministic generated client payload.
-- `tests/data/` — parser, reconciliation, context, and deterministic-build contracts.
+- `public/data/source/graduates-by-field-2025.xls` — pinned official CVTI 2025 graduate-by-study-program workbook, also downloadable.
+- `public/data/source/population.json` — pinned official DATAcube national mid-year population extract.
+- `public/data/provenance.json` — source/catalog URLs, retrieval dates, and expected SHA-256 values.
+- `public/data/atlas.json` — deterministic generated client payload, including versioned 2025 field comparison and national per-capita context.
+- `tests/data/` — parser, reconciliation, context, population, graduate-field, and deterministic-build contracts.
 
 ### Client
 
@@ -55,9 +63,9 @@
 - `src/analysis/selectors.ts` — pure filtering, aggregation, ranking, and chart-series selectors.
 - `src/state/filters.ts`, `src/state/url.ts`, `src/state/useAtlasState.ts` — filter model and browser-history synchronization.
 - `src/utils/search.ts`, `src/utils/csv.ts`, `src/utils/format.ts` — accent-insensitive matching, export, and Slovak formatting.
-- `src/components/Hero.tsx`, `Findings.tsx`, `ContextSection.tsx`, `ContextTrend.tsx` — story and official context.
+- `src/components/Hero.tsx`, `Findings.tsx`, `ContextSection.tsx`, `ContextTrend.tsx`, `FieldGraduateComparison.tsx` — story, official context, all-time field analysis, and the 2025 exact comparison.
 - `src/components/AtlasSection.tsx`, `SlovakiaMap.tsx`, `AppointmentTimeline.tsx`, `InstitutionRanking.tsx` — linked centerpiece.
-- `src/components/Explorer.tsx`, `RecordList.tsx`, `Methodology.tsx`, `ErrorPanel.tsx` — lookup, source detail, and failures.
+- `src/components/Explorer.tsx`, `RecordList.tsx`, `Methodology.tsx`, `ErrorPanel.tsx` — lookup, source detail, failures, and limits.
 - `src/**/*.test.ts(x)` — pure and component behavior contracts.
 - `.github/workflows/pages.yml` — test, build, and GitHub Pages deployment.
 
@@ -578,7 +586,7 @@ Desktop uses a real table with sortable button headers. Narrow screens use CSS d
 
 - [ ] **Step 5: Implement CSV download and methodology**
 
-Create a Blob only on activation, download as `profesori-filter-YYYY-MM-DD.csv`, then revoke the object URL. Methodology includes direct downloads for both committed XLS files, source page links, hashes, duplicate resolution, aliases, term sources, geographic sources, and GitHub repository link when available from package metadata. Explain that the source has no ORCID or equivalent stable scholarly identifier, why name-only citation matching is unsafe, and why raw citation totals would require field/career normalization and manual review.
+Create a Blob only on activation, download as `profesori-filter-YYYY-MM-DD.csv`, then revoke the object URL. Methodology includes direct downloads for every committed XLS file, source/catalog page links, hashes, duplicate resolution, aliases, term sources, geographic sources, and GitHub repository link when available from package metadata. It explicitly states that this release includes no bibliometrics. Any later layer must resolve ORCID first, then manually review OpenAlex author IDs using affiliation and field evidence and exclude ambiguous names. H-index and total citations remain descriptive; cross-person comparison additionally requires citations per active career year and field- and publication-year-normalized percentiles, with recent impact separated from lifetime impact.
 
 - [ ] **Step 6: Finish responsive/focus/print rules**
 
@@ -665,3 +673,148 @@ Stage only deployment and verified-fix files; inspect the staged diff. Commit su
 - [ ] **Step 9: Final evidence check**
 
 Run the full deterministic data, test, and build commands once. Verify `git status --short` is clean, inspect the latest commit metadata, and record exact command results plus browser scenarios for the final delivery response.
+
+### Task 11: Add exact appointment-field depth and the official 2025 graduate comparison
+
+**Official source contract:**
+
+- Catalog: `https://www.cvtisr.sk/cvti-sr-vedecka-kniznica/informacie-o-skolstve/statistiky/statisticka-rocenka-publikacia/statisticka-rocenka-vysoke-skoly.html?page_id=9596`
+- Workbook: `https://www.cvtisr.sk/buxus/docs//JC/ROCENKA/VS/abvs_2.xls`
+- Destination: `public/data/source/graduates-by-field-2025.xls`
+- Source key: `graduates_by_field_2025`
+- SHA-256: `2bfc9bf67bcf7c1d4ed5e80296d498f634a9c8c9b949bf70f839a9bf90ba7729`
+- Retrieved on: `2026-08-29`
+
+**Files:**
+
+- Create: `public/data/source/graduates-by-field-2025.xls`
+- Create: `pipeline/graduates.py`
+- Create: `tests/data/test_graduates.py`
+- Create: `src/components/FieldGraduateComparison.tsx`
+- Create: `src/components/FieldGraduateComparison.test.tsx`
+- Modify: `scripts/update_data.py`
+- Modify: `public/data/provenance.json`
+- Modify: `pipeline/build.py`
+- Modify: `public/data/atlas.json`
+- Modify: `tests/data/test_update_data.py`
+- Modify: `tests/data/test_build.py`
+- Modify: `src/data/types.ts`
+- Modify: `src/data/load.ts`
+- Modify: `src/analysis/selectors.ts`
+- Modify: `src/analysis/selectors.test.ts`
+- Modify: `src/App.tsx`
+- Modify: `src/App.test.tsx`
+- Modify: `src/components/Findings.tsx`
+- Modify: `src/components/Methodology.tsx`
+- Modify: `src/components/Explorer.test.tsx`
+- Modify: `src/styles/components.css`
+- Modify: `docs/superpowers/specs/2026-08-29-slovak-professors-atlas-design.md`
+- Modify: `docs/superpowers/plans/2026-08-29-slovak-professors-atlas.md`
+
+**Interfaces:**
+
+- Adds `graduates_by_field_2025` to `SOURCE_DESTINATIONS`, atomic downloads, provenance validation, and build-time checksum verification.
+- Produces `load_graduates_by_field(path: Path) -> GraduateFieldDataset` for calendar year 2025. The parser requires sheets `Tab2v`, `Tab2s`, and `Tab2š`, their exact 2025 titles, six exact multirow headers, and 16 columns.
+- A study-program row is identified from its `code / label` first cell. For that row, sum only zero-based columns `2, 4, 6, 8, 10, 12, 14`: the seven non-overlapping `spolu` totals for first-/second- and third-degree forms/citizenship groups plus external educational institutions. Validate every cell as a non-negative integer. Do not add the adjacent `z toho ženy` subsets.
+- Aggregate the exact normalized label across repeated program codes and all public/private/state sheets. Normalization trims and collapses whitespace, case-folds, and removes Unicode diacritics; it does not infer synonyms or categories.
+- Produces this exact top-level payload contract:
+
+```text
+fieldGraduateComparison: {
+  schemaVersion: 1,
+  year: 2025,
+  source: {
+    url: string,
+    catalogUrl: string,
+    sha256: string,
+    retrievedOn: string
+  },
+  appointmentCount: number,
+  matchedAppointmentCount: number,
+  matchedAppointmentShare: number,
+  distinctFieldCount: number,
+  matchedDistinctFieldCount: number,
+  rows: Array<{
+    field: string,
+    appointmentCount: number,
+    graduateCount: number | null,
+    graduatesPerAppointment: number | null,
+    matchStatus: "exact" | "unmatched"
+  }>
+}
+```
+
+- `rows` contains every distinct 2025 appointment-field label. An exact normalized label match receives the fully aggregated graduate count and a two-decimal `graduatesPerAppointment`; an unmatched row keeps both values `null`. Sort appointment count descending, then normalized field, then displayed field. The versioned source block is copied from committed provenance.
+- The client independently derives the all-time appointment-field ranking from every analytical `record`. It groups only trim/internal-whitespace/case/diacritic equivalents; chooses the highest-frequency raw label as display text with a Slovak lexical tie-break; reports count, share, first/last appointment year, and all trimmed raw variants with counts; and sorts count descending then Slovak display label.
+- The all-time ranking contains no graduate counts. The 2025 comparison contains no inferred history. Neither analysis uses substring, synonym, code-family, broad-taxonomy, quality, or causal claims.
+
+- [ ] **Step 1: Extend source acquisition and pin the official bytes**
+
+Add `graduates_by_field_2025` to the updater without weakening atomic replacement or checksum-failure behavior. Commit the catalog URL, workbook URL, retrieval date, and exact SHA above to provenance. The direct workbook remains a subpath-safe public download; the deployed client makes no runtime CVTI request.
+
+Extend `tests/data/test_update_data.py` to assert all three source names and destinations, successful replacement, checksum reporting, and preservation of the prior graduate workbook when downloaded bytes fail integrity.
+
+- [ ] **Step 2: Write strict parser and aggregation tests**
+
+In `tests/data/test_graduates.py`, construct a three-sheet workbook fixture with the exact titles and six header rows. Prove that only the seven `spolu` cells are added, while every `z toho ženy` value is ignored. Repeat `Právo` with whitespace/case/diacritic variants, different codes, and different public/private/state sheets and assert one exact normalized total.
+
+Add failing cases for a changed sheet set, 2025 title, header cell, column count, missing/fractional/negative total, and a workbook with no study-program rows. Pin the official source facts: 1,723 program rows, 1,302 normalized labels, 37,627 graduates, `psychológia` = 1,146, and `strojárske technológie a materiály` = 17.
+
+- [ ] **Step 3: Prove exact matching and its limits**
+
+Test a 2025 appointment field `PRÁVO` against graduate label `Právo` and assert an exact match after normalization. Put `občianske právo` beside it and assert `unmatched`; no substring or broader legal-category rule is permitted. Include an identical program name under different source categories and aggregate its graduate number without claiming that the name belongs to one inferred category.
+
+Pin the reviewed 2025 coverage: 55 appointments, 46 distinct appointment-field labels, 47 matched appointments (85.45%), and 39 matched labels. Assert all 46 rows are emitted, the seven reviewed unmatched labels retain `null` values, and zero appointments produce a finite `0.0` coverage rather than division by zero.
+
+- [ ] **Step 4: Implement the parser and deterministic payload**
+
+Implement strict workbook validation and immutable sorted graduate aggregates in `pipeline/graduates.py`. Wire the third input and provenance checksum into `pipeline/build.py`, call the exact comparison builder against analytical appointments, and emit `fieldGraduateComparison` without a timestamp. Reject missing `url`, `catalogUrl`, `sha256`, or `retrievedOn`.
+
+Update TypeScript types and fail-closed payload guards for the exact schema above, including `schemaVersion === 1`, row `matchStatus`, nullable graduate values, and source metadata. Do not generate an all-time field aggregate in JSON; the records are its single source of truth.
+
+- [ ] **Step 5: Add the all-time appointment-field analysis**
+
+Add a pure selector over all analytical records with fixtures that cover case, Unicode diacritics, repeated/internal whitespace, representative-label ties, variant counts, count/share arithmetic, first/last year, deterministic order, input immutability, and an empty dataset. Prove with non-equivalent labels that no synonym, substring, code, or taxonomy mapping occurs.
+
+Render a semantic all-time ranking table/disclosure before the 2025 snapshot. Show appointment count, share, first/last year, and every raw label variant. Keep all-time scope independent of shared filters and identify its coverage as the complete appointment archive through 3 June 2026.
+
+- [ ] **Step 6: Render the complete 2025 comparison and methodology**
+
+Render source coverage (`47 z 55`, `85,45 %`, `39 zo 46 odborov`), every matched and unmatched row, sortable native column-header buttons, `aria-sort`, null values as visibly unavailable, and a keyboard-scrollable table region. Link the official catalog, upstream workbook, and the committed download through `new URL('data/source/graduates-by-field-2025.xls', new URL(import.meta.env.BASE_URL, window.location.href))` so the link remains safe at a Pages subpath.
+
+The adjacent note and methodology must say that the inputs are two different administrative registers, matches require exact normalized names, unmatched does not mean zero graduates, the source is only a 2025 snapshot, and no historical, causal, quality, or broad-taxonomy conclusion follows. Explain that identical study-program names can occur under more than one broad source category, which is why the release does not force a category crosswalk.
+
+Keep bibliometrics explicitly outside this release. Document the only acceptable future route: ORCID-first identity; then manually reviewed OpenAlex author IDs supported by affiliation and field evidence; ambiguous names excluded. Treat h-index and total citations as descriptive only. Any cross-person view additionally requires citations per active year plus field- and publication-year-normalized percentiles, with recent and lifetime impact separated.
+
+- [ ] **Step 7: Run focused and deterministic verification**
+
+Run:
+
+```bash
+sha256sum public/data/source/graduates-by-field-2025.xls
+uv run pytest tests/data/test_update_data.py tests/data/test_graduates.py tests/data/test_build.py -q
+npm test -- --run src/analysis/selectors.test.ts src/components/FieldGraduateComparison.test.tsx src/App.test.tsx src/components/Explorer.test.tsx
+npm run data:build
+sha256sum public/data/atlas.json
+npm run data:build
+sha256sum public/data/atlas.json
+npm run build
+```
+
+Expected: the source hash exactly equals `2bfc9bf67bcf7c1d4ed5e80296d498f634a9c8c9b949bf70f839a9bf90ba7729`; focused tests and production build pass; both generated payload hashes are identical; the second build changes no generated bytes.
+
+- [ ] **Step 8: Browser-verify the actual production artifact**
+
+Serve the built `dist` beneath a temporary `/slovak-professors/` subpath. At desktop and narrow mobile widths:
+
+- confirm the all-time ranking totals all analytical records and exposes field variants, share, and first/last year;
+- confirm the 2025 comparison shows all 46 rows, including matched ratios and seven visibly unmatched rows;
+- activate each native sort header by pointer and keyboard and confirm `aria-sort` follows the visible order;
+- open the all-time variant disclosures and scroll the comparison region with the keyboard;
+- follow the catalog, upstream XLS, and committed subpath-safe XLS links without a 404;
+- confirm methodology states 2025-only coverage, exact normalized matching, multi-code/multi-sector aggregation, unmatched-not-zero, no forced broad taxonomy, and no causal or quality claim;
+- inspect the mobile table/overflow surface, focus visibility, console errors, and failed network requests.
+
+- [ ] **Step 9: Commit the completed field analysis**
+
+After the focused commands and browser scenarios pass, stage only Task 11 files and inspect the staged diff. Commit subject: `feat: compare appointment fields with 2025 graduates`. The body must name the official CVTI snapshot and SHA, exact matching/aggregation rules, all-time appointment-only ranking, tested 2025 coverage, deterministic payload, and explicit analytical limits. Verify the full commit message.

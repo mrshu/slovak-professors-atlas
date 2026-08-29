@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 
 import type { Appointment, Institution, President, SourceVariant } from '../data/types'
 import { formatDate, formatNumber } from '../utils/format'
@@ -143,21 +143,24 @@ function SourceVariants({ record }: { record: Appointment }) {
 }
 
 function RecordDetail({
+  id,
   record,
   institution,
   president,
 }: {
+  id: string
   record: Appointment
   institution: Institution | undefined
   president: President | undefined
 }) {
   const sourceRows = record.sourceVariants.map(({ rowNumber }) => formatNumber(rowNumber)).join(', ')
   return (
-    <details
+    <div
+      id={id}
       className="record-detail"
+      role="group"
       aria-label={`Detail záznamu ${record.name}`}
     >
-      <summary>Zobraziť detail</summary>
       <div className="record-detail__body">
         <dl className="record-detail__summary">
           <div>
@@ -202,13 +205,14 @@ function RecordDetail({
           <SourceVariants record={record} />
         </section>
       </div>
-    </details>
+    </div>
   )
 }
 
 export default function RecordList({ records, institutions, presidents }: RecordListProps) {
   const [sort, setSort] = useState<SortState>({ key: 'appointedOn', direction: 'descending' })
   const [page, setPage] = useState(1)
+  const [openRecordId, setOpenRecordId] = useState<string | null>(null)
   const institutionById = useMemo(
     () => new Map(institutions.map((institution) => [institution.id, institution] as const)),
     [institutions],
@@ -220,6 +224,7 @@ export default function RecordList({ records, institutions, presidents }: Record
 
   useEffect(() => {
     setPage(1)
+    setOpenRecordId(null)
   }, [records])
 
   const sortedRecords = useMemo(() => {
@@ -327,24 +332,52 @@ export default function RecordList({ records, institutions, presidents }: Record
                 {pageRecords.map((record) => {
                   const institution = institutionById.get(record.institutionId)
                   const president = presidentById.get(record.presidentId)
+                  const detailId = `record-detail-${record.id}`
+                  const detailOpen = openRecordId === record.id
                   return (
-                    <tr key={record.id}>
-                      <td data-label="Meno">
-                        <strong>{record.name}</strong>
-                      </td>
-                      <td data-label="Inštitúcia a fakulta">
-                        <span>{institution?.fullName ?? record.institutionId}</span>
-                        <small>{shown(record.faculty)}</small>
-                      </td>
-                      <td data-label="Odbor">{record.field}</td>
-                      <td data-label="Dátum">
-                        <time dateTime={record.appointedOn}>{formatDate(record.appointedOn)}</time>
-                      </td>
-                      <td data-label="Prezident">{president?.name ?? record.presidentId}</td>
-                      <td data-label="Podrobnosti">
-                        <RecordDetail record={record} institution={institution} president={president} />
-                      </td>
-                    </tr>
+                    <Fragment key={record.id}>
+                      <tr className="record-row">
+                        <td data-label="Meno">
+                          <strong>{record.name}</strong>
+                        </td>
+                        <td data-label="Inštitúcia a fakulta">
+                          <span>{institution?.fullName ?? record.institutionId}</span>
+                          <small>{shown(record.faculty)}</small>
+                        </td>
+                        <td data-label="Odbor">{record.field}</td>
+                        <td data-label="Dátum">
+                          <time dateTime={record.appointedOn}>{formatDate(record.appointedOn)}</time>
+                        </td>
+                        <td data-label="Prezident">{president?.name ?? record.presidentId}</td>
+                        <td data-label="Podrobnosti">
+                          <button
+                            type="button"
+                            className="record-detail__toggle"
+                            aria-expanded={detailOpen}
+                            aria-controls={detailId}
+                            onClick={() =>
+                              setOpenRecordId((current) =>
+                                current === record.id ? null : record.id,
+                              )
+                            }
+                          >
+                            {detailOpen ? 'Skryť detail' : 'Zobraziť detail'}
+                          </button>
+                        </td>
+                      </tr>
+                      {detailOpen && (
+                        <tr className="record-detail-row">
+                          <td colSpan={6}>
+                            <RecordDetail
+                              id={detailId}
+                              record={record}
+                              institution={institution}
+                              president={president}
+                            />
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
                   )
                 })}
               </tbody>

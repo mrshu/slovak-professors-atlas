@@ -10,10 +10,18 @@ interface ContextSectionProps {
   setSelectedYear: (year: number, mode: 'push') => void
 }
 
-interface MetricDefinition {
+interface ScaleMetricDefinition {
+  series: 'appointments' | 'internalProfessors' | 'internalTeachers' | 'graduates' | 'students'
+  label: string
+  value: number
+  kind: 'flow' | 'stock'
+  detail: string
+}
+
+interface CalloutDefinition {
   label: string
   value: string
-  kind: 'flow' | 'stock' | 'ratio'
+  dominant: boolean
 }
 
 const ratioFormat: Intl.NumberFormatOptions = {
@@ -24,6 +32,29 @@ const ratioFormat: Intl.NumberFormatOptions = {
 const percentageFormat: Intl.NumberFormatOptions = {
   minimumFractionDigits: 1,
   maximumFractionDigits: 1,
+}
+const SCALE_MIN = 10
+const SCALE_MAX = 1_000_000
+const SCALE_MIN_POWER = Math.log10(SCALE_MIN)
+const SCALE_MAX_POWER = Math.log10(SCALE_MAX)
+const SCALE_VIEWBOX_WIDTH = 900
+const SCALE_VIEWBOX_HEIGHT = 390
+const SCALE_LEFT = 210
+const SCALE_RIGHT = 860
+const SCALE_AXIS_Y = 54
+const SCALE_FIRST_ROW_Y = 104
+const SCALE_ROW_GAP = 61
+const scaleTicks = [10, 100, 1_000, 10_000, 100_000, 1_000_000] as const
+
+function scaleX(value: number): number {
+  const boundedValue = Math.min(SCALE_MAX, Math.max(SCALE_MIN, value))
+  const share =
+    (Math.log10(boundedValue) - SCALE_MIN_POWER) / (SCALE_MAX_POWER - SCALE_MIN_POWER)
+  return SCALE_LEFT + share * (SCALE_RIGHT - SCALE_LEFT)
+}
+
+function scaleMetricLabel(metric: ScaleMetricDefinition): string {
+  return `${metric.label}: ${formatNumber(metric.value)}; ${metric.detail}`
 }
 
 export function ContextSectionBody({
@@ -37,66 +68,66 @@ export function ContextSectionBody({
     null,
   )
 
-  let metrics: MetricDefinition[] = []
+  let scaleMetrics: ScaleMetricDefinition[] = []
+  let callouts: CalloutDefinition[] = []
   if (selected !== undefined) {
-    metrics = [
+    scaleMetrics = ([
       {
-        label: 'Vymenovania v kalendárnom roku',
-        value: formatNumber(selected.appointments),
+        series: 'appointments',
+        label: 'Vymenovania',
+        value: selected.appointments,
         kind: 'flow',
+        detail: 'ročný tok',
       },
       {
-        label: 'Absolventi I., II. a III. stupňa v kalendárnom roku',
-        value: formatNumber(selected.graduates),
+        series: 'internalProfessors',
+        label: 'Interní profesori',
+        value: selected.internalProfessors,
+        kind: 'stock',
+        detail: 'stav k 31. októbru',
+      },
+      {
+        series: 'internalTeachers',
+        label: 'Interní učitelia',
+        value: selected.internalTeachers,
+        kind: 'stock',
+        detail: 'stav k 31. októbru',
+      },
+      {
+        series: 'graduates',
+        label: 'Absolventi',
+        value: selected.graduates,
         kind: 'flow',
+        detail: 'ročný tok',
       },
       {
-        label: `Študenti v akademickom roku ${selected.academicYear} — stav k 31. októbru`,
-        value: formatNumber(selected.students),
+        series: 'students',
+        label: 'Študenti',
+        value: selected.students,
         kind: 'stock',
+        detail: 'stav k 31. októbru',
+      },
+    ] satisfies ScaleMetricDefinition[]).sort((left, right) => left.value - right.value)
+    callouts = [
+      {
+        label: 'Vymenovania na milión obyvateľov',
+        value: formatNumber(selected.appointmentsPerMillionResidents, ratioFormat),
+        dominant: true,
       },
       {
-        label: 'Interní vysokoškolskí učitelia — stav k 31. októbru',
-        value: formatNumber(selected.internalTeachers),
-        kind: 'stock',
-      },
-      {
-        label: 'Interní profesori — stav k 31. októbru',
-        value: formatNumber(selected.internalProfessors),
-        kind: 'stock',
-      },
-      {
-        label: 'Vymenovania na 1 000 absolventov',
-        value: formatNumber(selected.appointmentsPer1kGraduates, ratioFormat),
-        kind: 'ratio',
-      },
-      {
-        label: 'Absolventi na jedno vymenovanie',
-        value:
-          selected.graduatesPerAppointment === null
-            ? '—'
-            : formatNumber(selected.graduatesPerAppointment, ratioFormat),
-        kind: 'ratio',
-      },
-      {
-        label: 'Vymenovania na 10 000 študentov',
-        value: formatNumber(selected.appointmentsPer10kStudents, ratioFormat),
-        kind: 'ratio',
-      },
-      {
-        label: 'Vymenovania na 1 000 interných učiteľov',
-        value: formatNumber(selected.appointmentsPer1kTeachers, ratioFormat),
-        kind: 'ratio',
+        label: 'Interní profesori na 100 000 obyvateľov',
+        value: formatNumber(selected.professorsPer100kResidents, ratioFormat),
+        dominant: true,
       },
       {
         label: 'Vymenovania na 100 interných profesorov v existujúcom stave',
         value: formatNumber(selected.appointmentsPer100Professors, ratioFormat),
-        kind: 'ratio',
+        dominant: false,
       },
       {
         label: 'Podiel profesorov medzi internými učiteľmi',
         value: `${formatNumber(selected.professorShare, percentageFormat)} %`,
-        kind: 'ratio',
+        dominant: false,
       },
     ]
   }
@@ -147,23 +178,153 @@ export function ContextSectionBody({
             </p>
           </div>
         ) : (
-          <div role="group" aria-label={`Presné národné hodnoty pre rok ${selected.year}`}>
-            <dl className="context-metrics">
-              {metrics.map((metric) => (
-                <div
-                  className={`context-metric context-metric--${metric.kind}`}
-                  key={metric.label}
+          <div
+            className="context-snapshot"
+            role="group"
+            aria-label={`Presné národné hodnoty pre rok ${selected.year}`}
+          >
+            <figure
+              className="context-scale"
+              aria-label={`Mierkový rebrík národných hodnôt pre rok ${selected.year}`}
+            >
+              <figcaption className="context-scale__caption">
+                <div>
+                  <p className="eyebrow">Päť rádov veľkosti</p>
+                  <h4>Logaritmická os · základ 10</h4>
+                </div>
+                <p>
+                  Každý krok osi násobí hodnotu desiatimi. Poloha ukazuje veľkosť; presné
+                  národné hodnoty zostávajú uvedené pri značkách.
+                </p>
+              </figcaption>
+              <svg
+                className="context-scale__chart"
+                viewBox={`0 0 ${SCALE_VIEWBOX_WIDTH} ${SCALE_VIEWBOX_HEIGHT}`}
+                role="img"
+                aria-label={`Logaritmické porovnanie piatich národných hodnôt pre rok ${selected.year}`}
+              >
+                <title>
+                  Logaritmické porovnanie vymenovaní, interných profesorov, interných
+                  učiteľov, absolventov a študentov
+                </title>
+                <desc>
+                  Hodnoty sú zoradené od najmenšej po najväčšiu na osi so základom desať.
+                  Toky a stavy sa porovnávajú iba ako veľkosti.
+                </desc>
+                <g className="context-scale__axis" aria-hidden="true">
+                  <line
+                    x1={SCALE_LEFT}
+                    x2={SCALE_RIGHT}
+                    y1={SCALE_AXIS_Y}
+                    y2={SCALE_AXIS_Y}
+                  />
+                  {scaleTicks.map((tick, index) => {
+                    const x = scaleX(tick)
+                    return (
+                      <g key={tick} transform={`translate(${x} 0)`}>
+                        <line y1={SCALE_AXIS_Y} y2={SCALE_VIEWBOX_HEIGHT - 20} />
+                        <text
+                          x={0}
+                          y={SCALE_AXIS_Y - 16}
+                          textAnchor={
+                            index === 0
+                              ? 'start'
+                              : index === scaleTicks.length - 1
+                                ? 'end'
+                                : 'middle'
+                          }
+                        >
+                          {formatNumber(tick)}
+                        </text>
+                      </g>
+                    )
+                  })}
+                </g>
+                <g
+                  className="context-scale__rows"
+                  role="list"
+                  aria-label="Hodnoty zoradené od najmenšej po najväčšiu"
                 >
-                  <dt>{metric.label}</dt>
-                  <dd>{metric.value}</dd>
+                  {scaleMetrics.map((metric, index) => {
+                    const y = SCALE_FIRST_ROW_Y + index * SCALE_ROW_GAP
+                    const x = scaleX(metric.value)
+                    const valueOnLeft = x > SCALE_RIGHT - 90
+                    return (
+                      <g
+                        className={`context-scale__row context-scale__row--${metric.kind}`}
+                        data-scale-series={metric.series}
+                        key={metric.series}
+                        role="listitem"
+                        aria-label={scaleMetricLabel(metric)}
+                      >
+                        <text className="context-scale__row-label" x={0} y={y - 7}>
+                          {metric.label}
+                        </text>
+                        <text className="context-scale__row-detail" x={0} y={y + 13}>
+                          {metric.detail}
+                        </text>
+                        <line
+                          className="context-scale__rail"
+                          x1={SCALE_LEFT}
+                          x2={x}
+                          y1={y}
+                          y2={y}
+                          aria-hidden="true"
+                        />
+                        <circle
+                          className="context-scale__mark"
+                          cx={x}
+                          cy={y}
+                          r={6}
+                          aria-hidden="true"
+                        />
+                        <text
+                          className="context-scale__value"
+                          x={x + (valueOnLeft ? -12 : 12)}
+                          y={y - 10}
+                          textAnchor={valueOnLeft ? 'end' : 'start'}
+                          aria-hidden="true"
+                        >
+                          {formatNumber(metric.value)}
+                        </text>
+                      </g>
+                    )
+                  })}
+                </g>
+              </svg>
+            </figure>
+
+            <dl
+              className="context-callouts"
+              aria-label={`Národné pomery pre rok ${selected.year}`}
+            >
+              {callouts.map((callout) => (
+                <div
+                  className={`context-callout${
+                    callout.dominant ? ' context-callout--dominant' : ''
+                  }`}
+                  key={callout.label}
+                >
+                  <dt>{callout.label}</dt>
+                  <dd>{callout.value}</dd>
                 </div>
               ))}
             </dl>
-            <p className="context-metrics__note">
-              Prvých päť hodnôt rozlišuje ročné toky a stavy k 31. októbru. Pomery používajú
-              výlučne národný počet vymenovaní; sú mierkou medzi tokmi a stavmi, nie zmena
-              počtu profesorov ani dôkaz príčinného vzťahu.
+            <p className="context-callouts__population">
+              Národné obyvateľstvo v roku {selected.year}: {formatNumber(selected.population)}
             </p>
+            <aside
+              className="context-scale__caveat"
+              role="note"
+              aria-label="Ako čítať mierkový rebrík"
+            >
+              <p>
+                Toky a stavy sú odlišné typy veličín: vymenovania a absolventi sú ročné
+                toky, kým študenti, interní učitelia a interní profesori sú stavy k 31.
+                októbru. Rebrík porovnáva iba ich rád veľkosti. Nejde o lievik, konverziu
+                ani príčinný reťazec.
+              </p>
+            </aside>
           </div>
         )}
       </div>

@@ -8,7 +8,10 @@ import {
   ceremonyCounts,
   cityCounts,
   facultyCounts,
+  fieldAppointmentLandscape,
+  fieldAppointmentRanking,
   filterAppointments,
+  filterAppointmentsExceptField,
   institutionConcentration,
   institutionRanking,
   presidentialEraProfiles,
@@ -120,7 +123,7 @@ const allFilters: FilterState = {
   city: 'Bratislava',
   institutionId: 'uniba',
   faculty: 'Lekárska fakulta',
-  field: 'vnútorné lekárstvo',
+  field: 'vnutorne lekarstvo',
   query: 'Caputova',
   selectedYear: 2023,
 }
@@ -140,7 +143,7 @@ describe('filterAppointments', () => {
     ['city resolved from the canonical institution', { city: 'Košice' }, ['other-city']],
     ['canonical institution', { institutionId: 'aku' }, ['other-president']],
     ['source faculty', { faculty: 'Strojnícka fakulta' }, ['other-city']],
-    ['raw field', { field: 'chirurgia' }, ['other-year']],
+    ['normalized field key', { field: 'chirurgia' }, ['other-year']],
     ['normalized query', { query: 'Simkova' }, ['other-city']],
   ] satisfies ReadonlyArray<[string, Partial<FilterState>, string[]]>)(
     'applies the %s dimension independently',
@@ -162,6 +165,26 @@ describe('filterAppointments', () => {
       ).toEqual(expectedIds)
     },
   )
+
+  it('can exclude only the field facet for a comparison cohort', () => {
+    const filters: FilterState = {
+      startYear: 2000,
+      endYear: 2026,
+      presidentId: null,
+      city: null,
+      institutionId: 'uniba',
+      faculty: null,
+      field: 'vnutorne lekarstvo',
+      query: '',
+      selectedYear: 2025,
+    }
+
+    expect(filterAppointments(data, filters).map(({ id }) => id)).toEqual(['match'])
+    expect(filterAppointmentsExceptField(data, filters).map(({ id }) => id)).toEqual([
+      'match',
+      'other-year',
+    ])
+  })
 
   it('matches canonical institution display text while preserving the source label', () => {
     const filters = { ...allFilters, query: 'Univerzita Komenskeho' }
@@ -376,6 +399,191 @@ describe('deterministic aggregate selectors', () => {
     expect(presidentialEraProfiles([], institutions, presidents)).toEqual([])
   })
 
+  it('groups all-time fields only across accent, case, and whitespace variants', () => {
+    const cohort = [
+      record({
+        id: 'art-2000',
+        field: 'Teória a dejiny umenia',
+        appointedOn: '2000-02-22',
+      }),
+      record({
+        id: 'art-2010',
+        field: ' teoria  A dejiny umenia ',
+        appointedOn: '2010-05-12',
+      }),
+      record({
+        id: 'art-2025',
+        field: 'Teória a dejiny umenia',
+        appointedOn: '2025-05-12',
+      }),
+      record({ id: 'music-1', field: 'teória a dejiny hudby' }),
+      record({ id: 'music-2', field: 'TEORIA A DEJINY HUDBY' }),
+      record({ id: 'hyphenated', field: 'Teória-a dejiny umenia' }),
+    ]
+
+    expect(fieldAppointmentRanking(cohort)).toEqual([
+      {
+        fieldKey: 'teoria a dejiny umenia',
+        field: 'Teória a dejiny umenia',
+        appointmentCount: 3,
+        appointmentShare: 0.5,
+        firstYear: 2000,
+        lastYear: 2025,
+        variants: [
+          { label: 'Teória a dejiny umenia', count: 2 },
+          { label: ' teoria  A dejiny umenia ', count: 1 },
+        ],
+      },
+      {
+        fieldKey: 'teoria a dejiny hudby',
+        field: 'TEORIA A DEJINY HUDBY',
+        appointmentCount: 2,
+        appointmentShare: 2 / 6,
+        firstYear: 2023,
+        lastYear: 2023,
+        variants: [
+          { label: 'TEORIA A DEJINY HUDBY', count: 1 },
+          { label: 'teória a dejiny hudby', count: 1 },
+        ],
+      },
+      {
+        fieldKey: 'teoria-a dejiny umenia',
+        field: 'Teória-a dejiny umenia',
+        appointmentCount: 1,
+        appointmentShare: 1 / 6,
+        firstYear: 2023,
+        lastYear: 2023,
+        variants: [{ label: 'Teória-a dejiny umenia', count: 1 }],
+      },
+    ])
+  })
+
+  it('summarizes whole-register and selected-cohort shares without applying the field facet', () => {
+    const wholeRegister = [
+      record({ id: 'art-2000', field: 'Teória a dejiny umenia', appointedOn: '2000-02-22' }),
+      record({ id: 'art-2010', field: ' teoria  A dejiny umenia ', appointedOn: '2010-05-12' }),
+      record({ id: 'art-2025', field: 'Teória a dejiny umenia', appointedOn: '2025-05-12' }),
+      record({ id: 'music-1', field: 'teória a dejiny hudby' }),
+      record({ id: 'music-2', field: 'TEORIA A DEJINY HUDBY' }),
+      record({ id: 'hyphenated', field: 'Teória-a dejiny umenia' }),
+    ]
+    const selection = [wholeRegister[0], wholeRegister[1], wholeRegister[3]].filter(
+      (appointment): appointment is Appointment => appointment !== undefined,
+    )
+
+    expect(fieldAppointmentLandscape(wholeRegister, selection)).toEqual({
+      wholeRegister: {
+        appointmentCount: 6,
+        distinctFieldCount: 3,
+        singletonFieldCount: 1,
+        leadingFieldKey: 'teoria a dejiny umenia',
+        leadingField: 'Teória a dejiny umenia',
+        leadingAppointmentCount: 3,
+        leadingShare: 0.5,
+        topTenCount: 6,
+        topTenShare: 1,
+        firstYear: 2000,
+        lastYear: 2025,
+      },
+      selection: {
+        appointmentCount: 3,
+        distinctFieldCount: 2,
+        singletonFieldCount: 1,
+        leadingFieldKey: 'teoria a dejiny umenia',
+        leadingField: 'Teória a dejiny umenia',
+        leadingAppointmentCount: 2,
+        leadingShare: 2 / 3,
+        topTenCount: 3,
+        topTenShare: 1,
+        firstYear: 2000,
+        lastYear: 2023,
+      },
+      rows: [
+        {
+          fieldKey: 'teoria a dejiny umenia',
+          field: 'Teória a dejiny umenia',
+          wholeRegisterAppointmentCount: 3,
+          wholeRegisterShare: 0.5,
+          selectionAppointmentCount: 2,
+          selectionShare: 2 / 3,
+          firstYear: 2000,
+          lastYear: 2025,
+          variants: [
+            { label: 'Teória a dejiny umenia', count: 2 },
+            { label: ' teoria  A dejiny umenia ', count: 1 },
+          ],
+        },
+        {
+          fieldKey: 'teoria a dejiny hudby',
+          field: 'TEORIA A DEJINY HUDBY',
+          wholeRegisterAppointmentCount: 2,
+          wholeRegisterShare: 1 / 3,
+          selectionAppointmentCount: 1,
+          selectionShare: 1 / 3,
+          firstYear: 2023,
+          lastYear: 2023,
+          variants: [
+            { label: 'TEORIA A DEJINY HUDBY', count: 1 },
+            { label: 'teória a dejiny hudby', count: 1 },
+          ],
+        },
+        {
+          fieldKey: 'teoria-a dejiny umenia',
+          field: 'Teória-a dejiny umenia',
+          wholeRegisterAppointmentCount: 1,
+          wholeRegisterShare: 1 / 6,
+          selectionAppointmentCount: 0,
+          selectionShare: 0,
+          firstYear: 2023,
+          lastYear: 2023,
+          variants: [{ label: 'Teória-a dejiny umenia', count: 1 }],
+        },
+      ],
+    })
+  })
+
+  it('defines empty field landscape summaries without invented leaders or years', () => {
+    expect(fieldAppointmentLandscape([], [])).toEqual({
+      wholeRegister: {
+        appointmentCount: 0,
+        distinctFieldCount: 0,
+        singletonFieldCount: 0,
+        leadingFieldKey: null,
+        leadingField: null,
+        leadingAppointmentCount: 0,
+        leadingShare: 0,
+        topTenCount: 0,
+        topTenShare: 0,
+        firstYear: null,
+        lastYear: null,
+      },
+      selection: {
+        appointmentCount: 0,
+        distinctFieldCount: 0,
+        singletonFieldCount: 0,
+        leadingFieldKey: null,
+        leadingField: null,
+        leadingAppointmentCount: 0,
+        leadingShare: 0,
+        topTenCount: 0,
+        topTenShare: 0,
+        firstYear: null,
+        lastYear: null,
+      },
+      rows: [],
+    })
+  })
+
+  it('does not infer broad categories and defines an empty ranking', () => {
+    const distinctProgrammeNames = [
+      record({ id: 'program-1', field: 'učiteľstvo psychológie' }),
+      record({ id: 'program-2', field: 'psychológia' }),
+    ]
+
+    expect(fieldAppointmentRanking(distinctProgrammeNames)).toHaveLength(2)
+    expect(fieldAppointmentRanking([])).toEqual([])
+  })
+
   it('never mutates record or institution source arrays', () => {
     const beforeRecords = structuredClone(records)
     const beforeInstitutions = structuredClone(institutions)
@@ -387,6 +595,7 @@ describe('deterministic aggregate selectors', () => {
     ceremonyCadence(records)
     academicBreadth(records, institutions)
     institutionConcentration(records, institutions)
+    fieldAppointmentRanking(records)
 
     expect(records).toEqual(beforeRecords)
     expect(institutions).toEqual(beforeInstitutions)

@@ -14,6 +14,9 @@ const contextYears: ContextYear[] = [
     internalTeachers: 9_535,
     internalProfessors: 938,
     appointments: 105,
+    population: 5_400_000,
+    appointmentsPerMillionResidents: 19.44,
+    professorsPer100kResidents: 17.37,
     appointmentsPer1kGraduates: 5.11,
     graduatesPerAppointment: 195.79,
     appointmentsPer10kStudents: 7.61,
@@ -29,6 +32,9 @@ const contextYears: ContextYear[] = [
     internalTeachers: 9_892,
     internalProfessors: 1_452,
     appointments: 46,
+    population: 5_400_000,
+    appointmentsPerMillionResidents: 8.52,
+    professorsPer100kResidents: 26.89,
     appointmentsPer1kGraduates: 1.06,
     graduatesPerAppointment: 944.72,
     appointmentsPer10kStudents: 2.04,
@@ -44,6 +50,9 @@ const contextYears: ContextYear[] = [
     internalTeachers: 9_296,
     internalProfessors: 1_627,
     appointments: 55,
+    population: 5_420_000,
+    appointmentsPerMillionResidents: 10.15,
+    professorsPer100kResidents: 30.02,
     appointmentsPer1kGraduates: 1.46,
     graduatesPerAppointment: 684.13,
     appointmentsPer10kStudents: 3.71,
@@ -53,7 +62,7 @@ const contextYears: ContextYear[] = [
   },
 ]
 
-function metric(panel: HTMLElement, label: string) {
+function callout(panel: HTMLElement, label: string) {
   return within(panel).getByText(label, { selector: 'dt' }).parentElement
 }
 
@@ -63,7 +72,7 @@ afterEach(() => {
 })
 
 describe('ContextSection', () => {
-  it('shows the exact 2000 national flows, 31 October stocks, graduate total, and every ratio', () => {
+  it('orders the five selected-year values on an explicitly labelled base-10 scale', () => {
     render(
       <ContextSection
         years={contextYears}
@@ -73,26 +82,102 @@ describe('ContextSection', () => {
     )
 
     const panel = screen.getByRole('group', { name: 'Presné národné hodnoty pre rok 2000' })
-    const expectedCards = [
-      ['Vymenovania v kalendárnom roku', '105'],
-      ['Absolventi I., II. a III. stupňa v kalendárnom roku', '20 558'],
-      ['Študenti v akademickom roku 2000/2001 — stav k 31. októbru', '137 908'],
-      ['Interní vysokoškolskí učitelia — stav k 31. októbru', '9 535'],
-      ['Interní profesori — stav k 31. októbru', '938'],
-      ['Vymenovania na 1 000 absolventov', '5,11'],
-      ['Absolventi na jedno vymenovanie', '195,79'],
-      ['Vymenovania na 10 000 študentov', '7,61'],
-      ['Vymenovania na 1 000 interných učiteľov', '11,01'],
-      ['Vymenovania na 100 interných profesorov v existujúcom stave', '11,19'],
-      ['Podiel profesorov medzi internými učiteľmi', '9,8 %'],
-    ]
+    const figure = within(panel).getByRole('figure', {
+      name: 'Mierkový rebrík národných hodnôt pre rok 2000',
+    })
+    const scale = within(figure).getByRole('img', {
+      name: 'Logaritmické porovnanie piatich národných hodnôt pre rok 2000',
+    })
+    const rows = within(scale).getAllByRole('listitem')
 
-    for (const [label, value] of expectedCards) {
-      expect(metric(panel, label)).toHaveTextContent(value)
+    expect(
+      rows.map((row) => row.getAttribute('aria-label')?.replaceAll('\u00a0', ' ')),
+    ).toEqual([
+      'Vymenovania: 105; ročný tok',
+      'Interní profesori: 938; stav k 31. októbru',
+      'Interní učitelia: 9 535; stav k 31. októbru',
+      'Absolventi: 20 558; ročný tok',
+      'Študenti: 137 908; stav k 31. októbru',
+    ])
+    expect(figure).toHaveTextContent('Logaritmická os · základ 10')
+    for (const tick of ['10', '100', '1 000', '10 000', '100 000', '1 000 000']) {
+      expect(within(scale).getByText(tick)).toBeInTheDocument()
     }
-    expect(panel).toHaveTextContent('ročné toky')
-    expect(panel).toHaveTextContent('stavy k 31. októbru')
-    expect(panel).toHaveTextContent('nie zmena počtu profesorov ani dôkaz príčinného vzťahu')
+  })
+
+  it('shows the four selected-year callouts including both national per-capita rates', () => {
+    render(
+      <ContextSection
+        years={contextYears}
+        selectedYear={2000}
+        setSelectedYear={vi.fn()}
+      />,
+    )
+
+    const panel = screen.getByRole('group', { name: 'Presné národné hodnoty pre rok 2000' })
+    expect(callout(panel, 'Vymenovania na milión obyvateľov')).toHaveTextContent('19,44')
+    expect(callout(panel, 'Interní profesori na 100 000 obyvateľov')).toHaveTextContent(
+      '17,37',
+    )
+    expect(
+      callout(panel, 'Vymenovania na 100 interných profesorov v existujúcom stave'),
+    ).toHaveTextContent('11,19')
+    expect(callout(panel, 'Podiel profesorov medzi internými učiteľmi')).toHaveTextContent(
+      '9,8 %',
+    )
+    expect(panel).toHaveTextContent('Národné obyvateľstvo v roku 2000: 5 400 000')
+  })
+
+  it('updates the scale and per-capita callouts when the selected year changes', () => {
+    const setSelectedYear = vi.fn()
+    const { rerender } = render(
+      <ContextSection
+        years={contextYears}
+        selectedYear={2000}
+        setSelectedYear={setSelectedYear}
+      />,
+    )
+
+    expect(
+      screen.getByRole('figure', {
+        name: 'Mierkový rebrík národných hodnôt pre rok 2000',
+      }),
+    ).toBeInTheDocument()
+
+    rerender(
+      <ContextSection
+        years={contextYears}
+        selectedYear={2025}
+        setSelectedYear={setSelectedYear}
+      />,
+    )
+
+    const panel = screen.getByRole('group', { name: 'Presné národné hodnoty pre rok 2025' })
+    const scale = within(panel).getByRole('img', {
+      name: 'Logaritmické porovnanie piatich národných hodnôt pre rok 2025',
+    })
+    expect(within(scale).getAllByRole('listitem')[0]).toHaveAccessibleName(
+      'Vymenovania: 55; ročný tok',
+    )
+    expect(callout(panel, 'Vymenovania na milión obyvateľov')).toHaveTextContent('10,15')
+    expect(callout(panel, 'Interní profesori na 100 000 obyvateľov')).toHaveTextContent(
+      '30,02',
+    )
+    expect(screen.getByRole('heading', { name: '2025' })).toBeVisible()
+  })
+
+  it('states that flows and stocks differ without implying a funnel or causal pipeline', () => {
+    render(
+      <ContextSection
+        years={contextYears}
+        selectedYear={2000}
+        setSelectedYear={vi.fn()}
+      />,
+    )
+
+    const note = screen.getByRole('note', { name: 'Ako čítať mierkový rebrík' })
+    expect(note).toHaveTextContent('Toky a stavy sú odlišné typy veličín')
+    expect(note).toHaveTextContent('Nejde o lievik, konverziu ani príčinný reťazec')
   })
 
   it('indexes every series to 100 in 2000 and gives each focus target an exact four-series label', () => {

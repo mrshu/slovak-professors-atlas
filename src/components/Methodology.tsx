@@ -120,8 +120,24 @@ export default function Methodology({ data, status }: MethodologyProps) {
               </p>
             </section>
 
-            <section aria-labelledby="method-bibliometrics-title">
+            <section aria-labelledby="method-fields-title">
               <p className="methodology-sections__index" aria-hidden="true">03</p>
+              <h3 id="method-fields-title">Presné názvy odborov, nie taxonómia</h3>
+              <p>
+                Celkový rebríček zoskupuje odbory iba po odstránení diakritiky, zjednotení veľkosti
+                písmen a orezaní či zlúčení medzier; interpunkcia a význam názvu sa nemenia a
+                zdrojové podoby zostávajú viditeľné. Rovnaké názvy programov môžu patriť do rôznych
+                kategórií, preto atlas nevytvára širšie disciplíny.
+              </p>
+              <p>
+                Porovnanie za rok 2025 spája dva samostatné registre iba pri presnej zhode takto
+                normalizovaného názvu. Nezhody ostávajú označené a pomer absolventov k vymenovaniu
+                nie je konverziou, príčinným vzťahom ani hodnotením kvality.
+              </p>
+            </section>
+
+            <section aria-labelledby="method-bibliometrics-title">
+              <p className="methodology-sections__index" aria-hidden="true">04</p>
               <h3 id="method-bibliometrics-title">Prečo atlas neuvádza citácie</h3>
               <p>
                 Ministerský zdroj neobsahuje ORCID ani rovnocenný stabilný vedecký identifikátor.
@@ -130,9 +146,12 @@ export default function Methodology({ data, status }: MethodologyProps) {
                 skresľovali rozdiely medzi odbormi a dĺžkou kariéry.
               </p>
               <p>
-                Dôveryhodná bibliometrická analýza by preto vyžadovala normalizáciu podľa odboru a
-                dĺžky kariéry, stabilné identifikátory a manuálnu kontrolu každej zhody. Bez tejto
-                práce atlas citácie zámerne vylučuje namiesto zobrazenia nebezpečného odhadu.
+                Budúca porovnateľná vrstva by musela párovať najprv cez ORCID a až potom cez ručne
+                preskúmané identifikátory autorov OpenAlex s dôkazmi o afiliácii a odbore; nejasné
+                zhody by vylúčila. H-index a celkové citácie by uvádzala iba opisne. Porovnanie
+                osôb by používalo citácie na aktívny rok a percentily citácií normalizované podľa
+                odboru aj roku publikovania, pričom nedávny výkon by zostal oddelený od celoživotného.
+                Súčasné dáta túto vrstvu neobsahujú, preto atlas citácie zámerne nezobrazuje.
               </p>
             </section>
           </div>
@@ -175,6 +194,58 @@ export default function Methodology({ data, status }: MethodologyProps) {
               </ul>
               <p className="method-sources__hash">
                 SHA-256: <code>{data.sources.higher_education.sha256}</code>
+              </p>
+            </section>
+            <section aria-labelledby="population-sources-title">
+              <h3 id="population-sources-title">Obyvateľstvo Slovenska</h3>
+              <ul>
+                <li>
+                  <a href={data.sources.population.catalogUrl}>
+                    Katalóg DATAcube Štatistického úradu SR
+                  </a>
+                </li>
+                <li>
+                  <a href={data.sources.population.url}>
+                    Priamy oficiálny výber obyvateľstva (JSON-stat)
+                  </a>
+                </li>
+                <li>
+                  <a href={`${baseUrl}data/source/population.json`} download>
+                    Uložený národný rad obyvateľstva (JSON)
+                  </a>
+                </li>
+              </ul>
+              <p>
+                Menovateľom je národný stredný stav obyvateľstva o polnoci z 30. júna na
+                1. júla referenčného roka.
+              </p>
+              <p className="method-sources__hash">
+                SHA-256: <code>{data.sources.population.sha256}</code>
+              </p>
+            </section>
+
+
+            <section aria-labelledby="field-graduate-sources-title">
+              <h3 id="field-graduate-sources-title">Absolventi podľa odboru 2025</h3>
+              <ul>
+                <li>
+                  <a href={data.sources.graduates_by_field_2025.catalogUrl}>
+                    Katalóg štatistickej ročenky CVTI SR
+                  </a>
+                </li>
+                <li>
+                  <a href={data.sources.graduates_by_field_2025.url}>
+                    Priamy oficiálny zošit absolventov (XLS)
+                  </a>
+                </li>
+                <li>
+                  <a href={`${baseUrl}data/source/graduates-by-field-2025.xls`} download>
+                    Uložený zošit absolventov podľa odboru (XLS)
+                  </a>
+                </li>
+              </ul>
+              <p className="method-sources__hash">
+                SHA-256: <code>{data.sources.graduates_by_field_2025.sha256}</code>
               </p>
             </section>
           </div>

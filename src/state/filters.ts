@@ -1,4 +1,5 @@
 import type { AtlasData } from '../data/types'
+import { normalizeForSearch } from '../utils/search'
 
 export interface FilterState {
   startYear: number
@@ -70,6 +71,6 @@ export function createFilterOptions(data: AtlasData): FilterOptions {
     cities: uniqueSorted(data.cities.map(({ name }) => name)),
     institutionIds: uniqueSorted(data.institutions.map(({ id }) => id)),
     faculties: uniqueSorted(data.records.map(({ faculty }) => faculty)),
-    fields: uniqueSorted(data.records.map(({ field }) => field)),
+    fields: uniqueSorted(data.records.map(({ field }) => normalizeForSearch(field))),
   }
 }
