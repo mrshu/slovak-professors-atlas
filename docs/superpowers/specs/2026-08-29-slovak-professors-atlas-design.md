@@ -51,7 +51,7 @@ Observed source baseline:
 
 The contextual series supplies national totals for students, internal university teachers, and professors among internal teachers. The product uses academic years 2000/2001 through 2025/2026 and aligns each row to its starting calendar year. CVTI states that the figures are measured at 31 October; annual appointments are calendar-year flows, while student and staff values are point-in-time stocks. The interface states this distinction wherever the series are compared.
 
-Student totals equal regular daily first/second-degree students plus external first/second-degree students plus third-degree doctoral students. Foreign students are already a subset and are not added again. CVTI notes a staff-definition break in 2007: from that year, internal teachers mean teachers working the established full working time. The chart marks this break.
+Student totals equal Slovak-citizen daily first/second-degree students plus foreign daily first/second-degree students, external first/second-degree students, and third-degree doctoral students. Each source column is included exactly once. CVTI notes a staff-definition break in 2007: from that year, internal teachers mean teachers working the established full working time. The chart marks this break.
 
 No student or staff denominator is shown for 2026 because the official series currently ends at 2025/2026.
 
@@ -126,10 +126,10 @@ A line chart indexes appointments, students, and internal teachers to 100 in 200
 
 The current pinned sources support, subject to generated-value tests, these observations:
 
-- student counts peaked in 2008/2009 at 227,604 and were 122,598 in 2025/2026;
+- student counts peaked in 2008/2009 at 230,519 and were 148,189 in 2025/2026;
 - internal teachers changed much less than student totals over the same period;
 - professors were 9.8% of internal teachers in 2000 and 17.5% in 2025;
-- annual appointment intensity varied substantially, from 2.07 appointments per 10,000 students in 2007 to 9.44 in 2023;
+- annual appointment intensity varied substantially, from 2.04 appointments per 10,000 students in 2007 to 8.13 in 2023;
 - 108 appointments occurred on 24 January 2011, the largest ceremony in the analytical dataset.
 
 The build computes these statements and their values. If an upstream update changes an extremum, tests force editorial copy review rather than silently publishing a stale claim.

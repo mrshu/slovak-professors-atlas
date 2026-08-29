@@ -251,15 +251,15 @@ Use the repository-safe staged-diff and commit-message workflow. Commit subject:
 Assert years 2000–2025, use only `spolu` total rows, and test known values:
 
 ```python
-assert context[0].students == 136348
+assert context[0].students == 137908
 assert context[0].internal_teachers == 9535
 assert context[0].internal_professors == 938
-assert context[-1].students == 122598
+assert context[-1].students == 148189
 assert context[-1].internal_teachers == 9296
 assert context[-1].internal_professors == 1627
 ```
 
-Assert student arithmetic equals daily plus external plus doctoral columns and foreign students are not added.
+Assert student arithmetic equals Slovak-citizen daily plus foreign daily plus external plus doctoral columns, with each column included exactly once.
 
 - [ ] **Step 2: Write deterministic payload tests**
 
