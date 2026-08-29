@@ -144,7 +144,15 @@ const atlasWithActiveLocalFilters = {
     },
   ],
   cities: [{ name: 'Bratislava', institutionIds: ['uniba'] }],
-  presidents: [{ id: 'schuster', name: 'Rudolf Schuster', from: '1999-06-15', to: '2004-06-15' }],
+  presidents: [
+    {
+      id: 'schuster',
+      name: 'Rudolf Schuster',
+      from: '1999-06-15',
+      to: '2004-06-15',
+      citationUrl: 'https://www.prezident.sk/rudolf-schuster/',
+    },
+  ],
   context: [context2000],
 }
 

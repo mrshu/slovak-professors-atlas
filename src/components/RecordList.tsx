@@ -17,11 +17,15 @@ interface SortState {
   direction: SortDirection
 }
 
-interface SortButtonProps {
-  activeSort: SortState
+interface SortColumn {
+  key: SortKey
   label: string
   sortLabel: string
-  sortKey: SortKey
+}
+
+interface SortButtonProps {
+  activeSort: SortState
+  column: SortColumn
   onSort: (key: SortKey) => void
 }
 
@@ -32,6 +36,13 @@ interface VariantDifference {
 }
 
 const PAGE_SIZE = 25
+const SORT_COLUMNS: readonly SortColumn[] = [
+  { key: 'name', label: 'Meno', sortLabel: 'mena' },
+  { key: 'institution', label: 'Inštitúcia', sortLabel: 'inštitúcie' },
+  { key: 'field', label: 'Odbor', sortLabel: 'odboru' },
+  { key: 'appointedOn', label: 'Dátum', sortLabel: 'dátumu' },
+  { key: 'president', label: 'Prezident', sortLabel: 'prezidenta' },
+]
 const slovakCollator = new Intl.Collator('sk-SK', { sensitivity: 'base' })
 
 function shown(value: string | null): string {
@@ -55,11 +66,15 @@ function variantDifferences(
     .map(([label, primaryValue, variantValue]) => ({ label, primaryValue, variantValue }))
 }
 
-function SortButton({ activeSort, label, sortLabel, sortKey, onSort }: SortButtonProps) {
-  const active = activeSort.key === sortKey
+function SortButton({ activeSort, column, onSort }: SortButtonProps) {
+  const active = activeSort.key === column.key
   return (
-    <button type="button" onClick={() => onSort(sortKey)} aria-label={`Zoradiť podľa ${sortLabel}`}>
-      <span>{label}</span>
+    <button
+      type="button"
+      onClick={() => onSort(column.key)}
+      aria-label={`Zoradiť podľa ${column.sortLabel}`}
+    >
+      <span>{column.label}</span>
       <span aria-hidden="true">
         {active ? (activeSort.direction === 'ascending' ? '↑' : '↓') : '↕'}
       </span>
@@ -244,6 +259,21 @@ export default function RecordList({ records, institutions, presidents }: Record
     setPage(1)
   }
 
+  const selectSortKey = (key: SortKey) => {
+    setSort((current) =>
+      current.key === key ? current : { key, direction: 'ascending' },
+    )
+    setPage(1)
+  }
+
+  const toggleSortDirection = () => {
+    setSort((current) => ({
+      ...current,
+      direction: current.direction === 'ascending' ? 'descending' : 'ascending',
+    }))
+    setPage(1)
+  }
+
   return (
     <div className="record-list">
       {records.length === 0 ? (
@@ -251,86 +281,76 @@ export default function RecordList({ records, institutions, presidents }: Record
           Výberu nezodpovedá nijaký záznam.
         </p>
       ) : (
-        <div className="record-table-wrap">
-          <table className="record-table">
-            <caption className="visually-hidden">Záznamy v aktívnom výbere</caption>
-            <thead>
-              <tr>
-                <th scope="col" aria-sort={sort.key === 'name' ? sort.direction : 'none'}>
-                  <SortButton
-                    activeSort={sort}
-                    label="Meno"
-                    sortLabel="mena"
-                    sortKey="name"
-                    onSort={changeSort}
-                  />
-                </th>
-                <th scope="col" aria-sort={sort.key === 'institution' ? sort.direction : 'none'}>
-                  <SortButton
-                    activeSort={sort}
-                    label="Inštitúcia"
-                    sortLabel="inštitúcie"
-                    sortKey="institution"
-                    onSort={changeSort}
-                  />
-                </th>
-                <th scope="col" aria-sort={sort.key === 'field' ? sort.direction : 'none'}>
-                  <SortButton
-                    activeSort={sort}
-                    label="Odbor"
-                    sortLabel="odboru"
-                    sortKey="field"
-                    onSort={changeSort}
-                  />
-                </th>
-                <th scope="col" aria-sort={sort.key === 'appointedOn' ? sort.direction : 'none'}>
-                  <SortButton
-                    activeSort={sort}
-                    label="Dátum"
-                    sortLabel="dátumu"
-                    sortKey="appointedOn"
-                    onSort={changeSort}
-                  />
-                </th>
-                <th scope="col" aria-sort={sort.key === 'president' ? sort.direction : 'none'}>
-                  <SortButton
-                    activeSort={sort}
-                    label="Prezident"
-                    sortLabel="prezidenta"
-                    sortKey="president"
-                    onSort={changeSort}
-                  />
-                </th>
-                <th scope="col">Podrobnosti</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pageRecords.map((record) => {
-                const institution = institutionById.get(record.institutionId)
-                const president = presidentById.get(record.presidentId)
-                return (
-                  <tr key={record.id}>
-                    <td data-label="Meno">
-                      <strong>{record.name}</strong>
-                    </td>
-                    <td data-label="Inštitúcia a fakulta">
-                      <span>{institution?.fullName ?? record.institutionId}</span>
-                      <small>{shown(record.faculty)}</small>
-                    </td>
-                    <td data-label="Odbor">{record.field}</td>
-                    <td data-label="Dátum">
-                      <time dateTime={record.appointedOn}>{formatDate(record.appointedOn)}</time>
-                    </td>
-                    <td data-label="Prezident">{president?.name ?? record.presidentId}</td>
-                    <td data-label="Podrobnosti">
-                      <RecordDetail record={record} institution={institution} president={president} />
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+        <>
+          <div className="record-sort-toolbar" role="group" aria-label="Zoradenie záznamov">
+            <label>
+              <span>Zoradiť záznamy podľa</span>
+              <select
+                value={sort.key}
+                onChange={(event) => selectSortKey(event.currentTarget.value as SortKey)}
+              >
+                {SORT_COLUMNS.map((column) => (
+                  <option value={column.key} key={column.key}>
+                    {column.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="button"
+              aria-label={`Zmeniť smer zoradenia, teraz ${
+                sort.direction === 'ascending' ? 'vzostupne' : 'zostupne'
+              }`}
+              onClick={toggleSortDirection}
+            >
+              {sort.direction === 'ascending' ? 'Vzostupne ↑' : 'Zostupne ↓'}
+            </button>
+          </div>
+          <div className="record-table-wrap">
+            <table className="record-table">
+              <caption className="visually-hidden">Záznamy v aktívnom výbere</caption>
+              <thead>
+                <tr>
+                  {SORT_COLUMNS.map((column) => (
+                    <th
+                      scope="col"
+                      aria-sort={sort.key === column.key ? sort.direction : 'none'}
+                      key={column.key}
+                    >
+                      <SortButton activeSort={sort} column={column} onSort={changeSort} />
+                    </th>
+                  ))}
+                  <th scope="col">Podrobnosti</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pageRecords.map((record) => {
+                  const institution = institutionById.get(record.institutionId)
+                  const president = presidentById.get(record.presidentId)
+                  return (
+                    <tr key={record.id}>
+                      <td data-label="Meno">
+                        <strong>{record.name}</strong>
+                      </td>
+                      <td data-label="Inštitúcia a fakulta">
+                        <span>{institution?.fullName ?? record.institutionId}</span>
+                        <small>{shown(record.faculty)}</small>
+                      </td>
+                      <td data-label="Odbor">{record.field}</td>
+                      <td data-label="Dátum">
+                        <time dateTime={record.appointedOn}>{formatDate(record.appointedOn)}</time>
+                      </td>
+                      <td data-label="Prezident">{president?.name ?? record.presidentId}</td>
+                      <td data-label="Podrobnosti">
+                        <RecordDetail record={record} institution={institution} president={president} />
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       {records.length > 0 && (

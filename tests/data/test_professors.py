@@ -78,7 +78,16 @@ def empty_resolutions(tmp_path: Path) -> Path:
 
 def write_presidents(tmp_path: Path, terms: list[dict[str, object]]) -> Path:
     path = tmp_path / "presidents.json"
-    path.write_text(json.dumps(terms), encoding="utf-8")
+    terms_with_citations = [
+        {
+            **term,
+            "citationUrl": term.get(
+                "citationUrl", f"https://example.test/presidents/{term['id']}"
+            ),
+        }
+        for term in terms
+    ]
+    path.write_text(json.dumps(terms_with_citations), encoding="utf-8")
     return path
 
 

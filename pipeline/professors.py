@@ -121,7 +121,7 @@ _INSTITUTION_KEYS = {
     "sourceLabels",
     "citationUrl",
 }
-_PRESIDENT_KEYS = {"id", "name", "from", "to"}
+_PRESIDENT_KEYS = {"id", "name", "from", "to", "citationUrl"}
 _RESOLUTION_KEYS = {
     "primaryRow",
     "secondaryRow",
@@ -268,6 +268,9 @@ def _load_presidents(path: Path) -> tuple[President, ...]:
         item = _require_object_keys(raw_item, _PRESIDENT_KEYS, f"president entry {index}")
         president_id = _nonempty_string(item["id"], f"president {index} id")
         name = _nonempty_string(item["name"], f"president {president_id} name")
+        citation_url = _nonempty_string(
+            item["citationUrl"], f"president {president_id} citation URL"
+        )
         from_date = _iso_date(item["from"], f"president {president_id} from")
         to_value = item["to"]
         to_date = (
@@ -288,6 +291,7 @@ def _load_presidents(path: Path) -> tuple[President, ...]:
                 name=name,
                 from_date=from_date,
                 to_date=to_date,
+                citation_url=citation_url,
             )
         )
     if not presidents:

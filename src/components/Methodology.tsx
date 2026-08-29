@@ -10,28 +10,6 @@ const MINISTRY_PAGE_URL = 'https://www.minedu.sk/profesori-vysokych-skol/'
 const CVTI_PAGE_URL =
   'https://www.cvtisr.sk/cvti-sr-vedecka-kniznica/informacie-o-skolstve/statistiky/casove-rady.html?page_id=9724'
 
-const PRESIDENTIAL_CITATIONS = [
-  {
-    name: 'Rudolf Schuster',
-    url: 'https://www.prezident.sk/rudolf-schuster/',
-  },
-  {
-    name: 'Ivan Gašparovič',
-    url: 'https://www.prezident.sk/ivan-gasparovic/',
-  },
-  {
-    name: 'Andrej Kiska',
-    url: 'https://www.prezident.sk/andrej-kiska/',
-  },
-  {
-    name: 'Zuzana Čaputová',
-    url: 'https://www.prezident.sk/zuzana-caputova/',
-  },
-  {
-    name: 'Peter Pellegrini',
-    url: 'https://www.prezident.sk/informacie/',
-  },
-] as const
 
 function SourceAudit({ data }: { data: AtlasData }) {
   return (
@@ -209,9 +187,9 @@ export default function Methodology({ data, status }: MethodologyProps) {
                 vymenovania musí patriť práve jednému obdobiu.
               </p>
               <ul>
-                {PRESIDENTIAL_CITATIONS.map(({ name, url }) => (
+                {data.presidents.map(({ name, citationUrl }) => (
                   <li key={name}>
-                    <a href={url} aria-label={`Oficiálne obdobie: ${name}`}>
+                    <a href={citationUrl} aria-label={`Oficiálne obdobie: ${name}`}>
                       {name} — oficiálny profil
                     </a>
                   </li>

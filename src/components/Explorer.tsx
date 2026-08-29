@@ -89,6 +89,7 @@ function LoadedExplorer({ data, atlasState }: LoadedExplorerProps) {
   const options = useMemo(() => createFilterOptions(data), [data])
   const defaults = useMemo(() => createFilterDefaults(data), [data])
   const [announcedCount, setAnnouncedCount] = useState(filteredRecords.length)
+  const [exportError, setExportError] = useState<string | null>(null)
   const presidentById = useMemo(
     () => new Map(data.presidents.map((president) => [president.id, president] as const)),
     [data.presidents],
@@ -111,7 +112,7 @@ function LoadedExplorer({ data, atlasState }: LoadedExplorerProps) {
       setAnnouncedCount(filteredRecords.length)
     }, 150)
     return () => window.clearTimeout(timeout)
-  }, [filteredRecords.length])
+  }, [filteredRecords.length, filters.query])
 
   const activeChips: ActiveChip[] = []
   if (filters.startYear !== defaults.startYear || filters.endYear !== defaults.endYear) {
@@ -173,20 +174,40 @@ function LoadedExplorer({ data, atlasState }: LoadedExplorerProps) {
     activeChips.length > 0 || filters.selectedYear !== defaults.selectedYear
 
   const downloadFilteredCsv = () => {
-    const blob = new Blob([recordsToCsv(filteredRecords, data)], {
-      type: 'text/csv;charset=utf-8',
-    })
-    const objectUrl = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = objectUrl
-    link.download = `profesori-filter-${new Date().toISOString().slice(0, 10)}.csv`
-    link.hidden = true
-    document.body.append(link)
+    setExportError(null)
+    let objectUrl: string | null = null
+    let link: HTMLAnchorElement | null = null
+    let failed = false
+
     try {
+      const blob = new Blob([recordsToCsv(filteredRecords, data)], {
+        type: 'text/csv;charset=utf-8',
+      })
+      objectUrl = URL.createObjectURL(blob)
+      link = document.createElement('a')
+      link.href = objectUrl
+      link.download = `profesori-filter-${new Date().toISOString().slice(0, 10)}.csv`
+      link.hidden = true
+      document.body.append(link)
       link.click()
+    } catch {
+      failed = true
     } finally {
-      link.remove()
-      URL.revokeObjectURL(objectUrl)
+      try {
+        link?.remove()
+      } catch {
+        failed = true
+      }
+      if (objectUrl !== null) {
+        try {
+          URL.revokeObjectURL(objectUrl)
+        } catch {
+          failed = true
+        }
+      }
+      if (failed) {
+        setExportError('CSV sa nepodarilo stiahnuť. Skúste to znova.')
+      }
     }
   }
 
@@ -327,6 +348,12 @@ function LoadedExplorer({ data, atlasState }: LoadedExplorerProps) {
           </button>
         </div>
       </form>
+
+      {exportError !== null && (
+        <p className="explorer-export-error" role="alert">
+          {exportError}
+        </p>
+      )}
 
       <div className="explorer-active-state">
         <p aria-hidden="true">

@@ -159,6 +159,7 @@ def _president_payload(president: President) -> dict[str, object]:
         "name": president.name,
         "from": president.from_date.isoformat(),
         "to": president.to_date.isoformat() if president.to_date is not None else None,
+        "citationUrl": president.citation_url,
     }
 
 

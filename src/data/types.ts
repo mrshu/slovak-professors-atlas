@@ -39,6 +39,7 @@ export interface President {
   name: string
   from: string
   to: string | null
+  citationUrl: string
 }
 
 export interface ContextYear {

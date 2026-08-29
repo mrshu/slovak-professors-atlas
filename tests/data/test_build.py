@@ -50,6 +50,15 @@ def test_build_is_byte_deterministic_and_serializes_public_contract(tmp_path: Pa
     assert len(first_payload["records"]) == 2_378
     assert len(first_payload["institutions"]) == 22
     assert len(first_payload["presidents"]) == 5
+    pellegrini = next(
+        president
+        for president in first_payload["presidents"]
+        if president["id"] == "pellegrini"
+    )
+    assert (
+        pellegrini["citationUrl"]
+        == "https://www.prezident.sk/zivotopis-petra-pellegriniho"
+    )
     assert len(first_payload["context"]) == 26
     assert first_payload["geography"]["geometry"]["type"] in {
         "Polygon",

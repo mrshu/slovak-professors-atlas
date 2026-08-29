@@ -125,8 +125,20 @@ const data: AtlasData = {
     { name: 'Košice', institutionIds: ['tuke'] },
   ],
   presidents: [
-    { id: 'gasparovic', name: 'Ivan Gašparovič', from: '2004-06-15', to: '2014-06-15' },
-    { id: 'pellegrini', name: 'Peter Pellegrini', from: '2024-06-15', to: null },
+    {
+      id: 'gasparovic',
+      name: 'Ivan Gašparovič',
+      from: '2004-06-15',
+      to: '2014-06-15',
+      citationUrl: 'https://www.prezident.sk/ivan-gasparovic/',
+    },
+    {
+      id: 'pellegrini',
+      name: 'Peter Pellegrini',
+      from: '2024-06-15',
+      to: null,
+      citationUrl: 'https://www.prezident.sk/zivotopis-petra-pellegriniho',
+    },
   ],
   context: [],
   geography: {
@@ -152,12 +164,12 @@ const data: AtlasData = {
   editorialFacts: {} as AtlasData['editorialFacts'],
 }
 
-function ExplorerHarness() {
-  const atlasState = useAtlasState(data)
+function ExplorerHarness({ atlasData = data }: { atlasData?: AtlasData }) {
+  const atlasState = useAtlasState(atlasData)
   return (
     <>
       <output data-testid="linked-count">{atlasState.filteredRecords.length}</output>
-      <Explorer data={data} atlasState={atlasState} />
+      <Explorer data={atlasData} atlasState={atlasState} />
     </>
   )
 }
@@ -233,12 +245,13 @@ describe('úplný register', () => {
   it('stránkuje po 25 záznamoch, radí tlačidlami a ukazuje prázdny výsledok', () => {
     const { container } = render(<ExplorerHarness />)
     const explorer = screen.getByRole('region', { name: 'Úplný register profesorských vymenovaní' })
+    const table = within(explorer).getByRole('table', { name: 'Záznamy v aktívnom výbere' })
 
-    expect(within(explorer).getByText('Meno', { selector: 'th button span:first-child' })).toBeVisible()
+    expect(within(table).getByText('Meno', { selector: 'th button span:first-child' })).toBeVisible()
     expect(container.querySelectorAll('tbody > tr')).toHaveLength(25)
     expect(within(explorer).getByText('Strana 1 z 2')).toBeVisible()
 
-    const nameSort = within(explorer).getByRole('button', { name: 'Zoradiť podľa mena' })
+    const nameSort = within(table).getByRole('button', { name: 'Zoradiť podľa mena' })
     fireEvent.click(nameSort)
     expect(nameSort.closest('th')).toHaveAttribute('aria-sort', 'ascending')
     fireEvent.click(nameSort)
@@ -253,6 +266,35 @@ describe('úplný register', () => {
     })
     expect(within(explorer).getByText('Výberu nezodpovedá nijaký záznam.')).toBeVisible()
     expect(container.querySelectorAll('tbody > tr')).toHaveLength(0)
+  })
+
+  it('ponúka viditeľné mobilné zoradenie so stavom zhodným s hlavičkou tabuľky', () => {
+    const { container } = render(<ExplorerHarness />)
+    const explorer = screen.getByRole('region', { name: 'Úplný register profesorských vymenovaní' })
+    const toolbar = within(explorer).getByRole('group', { name: 'Zoradenie záznamov' })
+    const table = within(explorer).getByRole('table', { name: 'Záznamy v aktívnom výbere' })
+    const mobileColumn = within(toolbar).getByLabelText('Zoradiť záznamy podľa')
+
+    expect(toolbar).toBeVisible()
+    expect(mobileColumn).toHaveValue('appointedOn')
+    expect(
+      within(toolbar).getByRole('button', {
+        name: 'Zmeniť smer zoradenia, teraz zostupne',
+      }),
+    ).toBeVisible()
+    expect(container.querySelectorAll('tbody > tr')).toHaveLength(25)
+
+    fireEvent.change(mobileColumn, { target: { value: 'name' } })
+    const desktopNameSort = within(table).getByRole('button', { name: 'Zoradiť podľa mena' })
+    expect(desktopNameSort.closest('th')).toHaveAttribute('aria-sort', 'ascending')
+
+    fireEvent.click(desktopNameSort)
+    expect(mobileColumn).toHaveValue('name')
+    expect(
+      within(toolbar).getByRole('button', {
+        name: 'Zmeniť smer zoradenia, teraz zostupne',
+      }),
+    ).toBeVisible()
   })
 
   it('zverejňuje celý zdrojový detail a rozdiely preskúmaného opakovania', () => {
@@ -307,21 +349,108 @@ describe('úplný register', () => {
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:profesori')
   })
 
-  it('oneskorí iba zdvorilé oznámenie počtu o 150 ms', () => {
-    vi.useFakeTimers()
-    render(<ExplorerHarness />)
-    const explorer = screen.getByRole('region', { name: 'Úplný register profesorských vymenovaní' })
-    const announcement = within(explorer).getByRole('status')
+  it('oznámi chybu serializácie pri chýbajúcich metadátach bez pádu stránky', () => {
+    const createObjectURL = vi.fn((_blob: Blob) => 'blob:profesori')
+    const revokeObjectURL = vi.fn((_url: string) => undefined)
+    const NativeURL = URL
+    class BlobURL extends NativeURL {
+      static createObjectURL = createObjectURL
+      static revokeObjectURL = revokeObjectURL
+    }
+    vi.stubGlobal('URL', BlobURL)
+    const incompleteData: AtlasData = {
+      ...data,
+      institutions: data.institutions.filter(({ id }) => id !== lookupRecord.institutionId),
+    }
 
+    render(<ExplorerHarness atlasData={incompleteData} />)
+    const explorer = screen.getByRole('region', { name: 'Úplný register profesorských vymenovaní' })
+    fireEvent.click(within(explorer).getByRole('button', { name: 'Stiahnuť filtrované CSV' }))
+
+    expect(within(explorer).getByRole('alert')).toHaveTextContent(
+      'CSV sa nepodarilo stiahnuť. Skúste to znova.',
+    )
+    expect(createObjectURL).not.toHaveBeenCalled()
+    expect(revokeObjectURL).not.toHaveBeenCalled()
     fireEvent.change(within(explorer).getByLabelText('Hľadať v záznamoch'), {
       target: { value: 'Šimek' },
     })
+    expect(screen.getByTestId('linked-count')).toHaveTextContent('1')
+  })
 
+  it('oznámi zlyhanie objektovej URL bez pokusu o jej zrušenie', () => {
+    const createObjectURL = vi.fn((_blob: Blob) => {
+      throw new Error('object URLs are unavailable')
+    })
+    const revokeObjectURL = vi.fn((_url: string) => undefined)
+    const NativeURL = URL
+    class BlobURL extends NativeURL {
+      static createObjectURL = createObjectURL
+      static revokeObjectURL = revokeObjectURL
+    }
+    vi.stubGlobal('URL', BlobURL)
+
+    render(<ExplorerHarness />)
+    const explorer = screen.getByRole('region', { name: 'Úplný register profesorských vymenovaní' })
+    fireEvent.click(within(explorer).getByRole('button', { name: 'Stiahnuť filtrované CSV' }))
+
+    expect(within(explorer).getByRole('alert')).toHaveTextContent(
+      'CSV sa nepodarilo stiahnuť. Skúste to znova.',
+    )
+    expect(createObjectURL).toHaveBeenCalledTimes(1)
+    expect(revokeObjectURL).not.toHaveBeenCalled()
+  })
+
+  it('pri zlyhaní kliknutia zruší URL a po úspešnom opakovaní odstráni starú chybu', () => {
+    const createObjectURL = vi.fn((_blob: Blob) => 'blob:profesori')
+    const revokeObjectURL = vi.fn((_url: string) => undefined)
+    const NativeURL = URL
+    class BlobURL extends NativeURL {
+      static createObjectURL = createObjectURL
+      static revokeObjectURL = revokeObjectURL
+    }
+    vi.stubGlobal('URL', BlobURL)
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementationOnce(() => {
+        throw new Error('download blocked')
+      })
+      .mockImplementation(() => undefined)
+
+    render(<ExplorerHarness />)
+    const explorer = screen.getByRole('region', { name: 'Úplný register profesorských vymenovaní' })
+    const exportButton = within(explorer).getByRole('button', { name: 'Stiahnuť filtrované CSV' })
+
+    fireEvent.click(exportButton)
+    expect(within(explorer).getByRole('alert')).toHaveTextContent(
+      'CSV sa nepodarilo stiahnuť. Skúste to znova.',
+    )
+    expect(revokeObjectURL).toHaveBeenNthCalledWith(1, 'blob:profesori')
+
+    fireEvent.click(exportButton)
+    expect(within(explorer).queryByRole('alert')).not.toBeInTheDocument()
+    expect(click).toHaveBeenCalledTimes(2)
+    expect(revokeObjectURL).toHaveBeenNthCalledWith(2, 'blob:profesori')
+  })
+
+  it('reštartuje 150 ms odklad pri každej zmene dopytu aj pri rovnakom počte', () => {
+    vi.useFakeTimers()
+    render(<ExplorerHarness />)
+    const explorer = screen.getByRole('region', { name: 'Úplný register profesorských vymenovaní' })
+    const query = within(explorer).getByLabelText('Hľadať v záznamoch')
+    const announcement = within(explorer).getByRole('status')
+
+    fireEvent.change(query, { target: { value: 'sime' } })
     expect(within(explorer).getByText('1 vymenovanie').parentElement).toHaveTextContent(
       '1 vymenovanie vo výbere',
     )
     expect(announcement).toHaveTextContent('30 vymenovaní vo výbere')
-    expect(window.location.search).toBe('?query=%C5%A0imek')
+
+    act(() => vi.advanceTimersByTime(100))
+    fireEvent.change(query, { target: { value: 'simek' } })
+    expect(within(explorer).getByText('Štefan Šimek')).toBeVisible()
+    expect(window.location.search).toBe('?query=simek')
+
     act(() => vi.advanceTimersByTime(149))
     expect(announcement).toHaveTextContent('30 vymenovaní vo výbere')
     act(() => vi.advanceTimersByTime(1))
@@ -331,7 +460,17 @@ describe('úplný register', () => {
 
 describe('metodika a pramene', () => {
   it('uvádza úplnú provenienciu, obmedzenia a vylúčenie bibliometrie', () => {
-    render(<Methodology data={data} />)
+    const methodologyData = {
+      ...data,
+      presidents: data.presidents.map((president) => ({
+        ...president,
+        citationUrl:
+          president.id === 'pellegrini'
+            ? 'https://www.prezident.sk/zivotopis-petra-pellegriniho'
+            : `https://example.test/presidential-terms/${president.id}`,
+      })),
+    }
+    render(<Methodology data={methodologyData} />)
     const methodology = screen.getByRole('region', { name: 'Metodika a pramene' })
 
     expect(methodology).toHaveTextContent(/2[\s ]419/)
@@ -365,7 +504,11 @@ describe('metodika a pramene', () => {
     expect(within(methodology).queryByRole('button', { name: /citáci/i })).not.toBeInTheDocument()
     expect(within(methodology).getByRole('link', { name: /Oficiálne obdobie: Ivan Gašparovič/ })).toHaveAttribute(
       'href',
-      'https://www.prezident.sk/ivan-gasparovic/',
+      'https://example.test/presidential-terms/gasparovic',
+    )
+    expect(within(methodology).getByRole('link', { name: /Oficiálne obdobie: Peter Pellegrini/ })).toHaveAttribute(
+      'href',
+      'https://www.prezident.sk/zivotopis-petra-pellegriniho',
     )
     expect(within(methodology).getByRole('link', { name: /Wikidata: Univerzita Komenského/ })).toHaveAttribute(
       'href',

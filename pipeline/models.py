@@ -30,6 +30,7 @@ class President:
     name: str
     from_date: date
     to_date: date | None
+    citation_url: str
 
 
 @dataclass(frozen=True, slots=True)

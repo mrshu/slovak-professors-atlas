@@ -56,6 +56,7 @@ const presidents: President[] = [
     name: 'Zuzana Čaputová',
     from: '2019-06-15',
     to: '2024-06-15',
+    citationUrl: 'https://www.prezident.sk/zuzana-caputova/',
   },
 ]
 
