@@ -7,7 +7,7 @@ import xlrd
 from xlrd.xldate import xldate_from_date_tuple
 
 from pipeline.professors import (
-    PresidentAssignmentError,
+    ConfigurationError,
     UnreviewedDuplicateError,
     WorkbookSchemaError,
     load_appointments,
@@ -74,6 +74,39 @@ def empty_resolutions(tmp_path: Path) -> Path:
     path = tmp_path / "duplicate-resolutions.json"
     path.write_text("[]\n", encoding="utf-8")
     return path
+
+
+def write_presidents(tmp_path: Path, terms: list[dict[str, object]]) -> Path:
+    path = tmp_path / "presidents.json"
+    path.write_text(json.dumps(terms), encoding="utf-8")
+    return path
+
+
+def load_synthetic_appointment(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    terms: list[dict[str, object]],
+    appointment_on: tuple[int, int, int],
+) -> None:
+    appointment_date = xldate_from_date_tuple(appointment_on, 0)
+    book = synthetic_book(
+        [
+            "doc.",
+            "Jana",
+            "Nováková",
+            "",
+            "Fakulta",
+            "UK v Bratislave",
+            "história",
+            appointment_date,
+        ]
+    )
+    monkeypatch.setattr(xlrd, "open_workbook", lambda _: book)
+    load_appointments(
+        Path("presidential-terms.xls"),
+        presidents_path=write_presidents(tmp_path, terms),
+        duplicate_resolutions_path=empty_resolutions(tmp_path),
+    )
 
 
 def test_pinned_workbook_reconciles_to_reviewed_appointments() -> None:
@@ -208,46 +241,67 @@ def test_unreviewed_same_name_and_date_collision_fails(
         )
 
 
-def test_appointment_must_map_to_exactly_one_presidential_term(
+def test_presidential_terms_reject_a_gap_between_appointment_dates(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    appointment_date = xldate_from_date_tuple((2020, 1, 1), 0)
-    row = [
-        "doc.",
-        "Jana",
-        "Nováková",
-        "",
-        "Fakulta",
-        "UK v Bratislave",
-        "história",
-        appointment_date,
+    terms = [
+        {
+            "id": "first",
+            "name": "First President",
+            "from": "2019-01-01",
+            "to": "2020-01-01",
+        },
+        {
+            "id": "second",
+            "name": "Second President",
+            "from": "2020-02-01",
+            "to": None,
+        },
     ]
-    book = synthetic_book(row)
-    monkeypatch.setattr(xlrd, "open_workbook", lambda _: book)
-    presidents_path = tmp_path / "presidents.json"
-    presidents_path.write_text(
-        json.dumps(
-            [
-                {
-                    "id": "first",
-                    "name": "First President",
-                    "from": "2019-01-01",
-                    "to": "2021-01-01",
-                },
-                {
-                    "id": "second",
-                    "name": "Second President",
-                    "from": "2019-06-01",
-                    "to": "2020-06-01",
-                },
-            ]
-        ),
-        encoding="utf-8",
-    )
 
-    with pytest.raises(PresidentAssignmentError, match="exactly one"):
-        load_appointments(
-            Path("overlapping-terms.xls"),
-            presidents_path=presidents_path,
-            duplicate_resolutions_path=empty_resolutions(tmp_path),
-        )
+    with pytest.raises(ConfigurationError, match="gap"):
+        load_synthetic_appointment(monkeypatch, tmp_path, terms, (2021, 1, 1))
+
+
+def test_presidential_terms_reject_an_overlap_between_appointment_dates(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    terms = [
+        {
+            "id": "first",
+            "name": "First President",
+            "from": "2019-01-01",
+            "to": "2020-02-01",
+        },
+        {
+            "id": "second",
+            "name": "Second President",
+            "from": "2020-01-01",
+            "to": None,
+        },
+    ]
+
+    with pytest.raises(ConfigurationError, match="overlap"):
+        load_synthetic_appointment(monkeypatch, tmp_path, terms, (2021, 1, 1))
+
+
+def test_presidential_terms_reject_multiple_open_ended_terms(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    terms = [
+        {
+            "id": "first",
+            "name": "First President",
+            "from": "2019-01-01",
+            "to": None,
+        },
+        {
+            "id": "second",
+            "name": "Second President",
+            "from": "2020-01-01",
+            "to": None,
+        },
+    ]
+
+    with pytest.raises(ConfigurationError, match="only the final"):
+        load_synthetic_appointment(monkeypatch, tmp_path, terms, (2019, 6, 1))

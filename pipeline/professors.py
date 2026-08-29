@@ -292,6 +292,27 @@ def _load_presidents(path: Path) -> tuple[President, ...]:
         )
     if not presidents:
         raise ConfigurationError("presidential term metadata must not be empty")
+    for president in presidents[:-1]:
+        if president.to_date is None:
+            raise ConfigurationError(
+                "only the final presidential term may be open-ended"
+            )
+    if presidents[-1].to_date is not None:
+        raise ConfigurationError("the final presidential term must be open-ended")
+    for index in range(len(presidents) - 1):
+        previous = presidents[index]
+        current = presidents[index + 1]
+        assert previous.to_date is not None
+        if current.from_date > previous.to_date:
+            raise ConfigurationError(
+                f"presidential terms have a gap between {previous.id!r} and "
+                f"{current.id!r}"
+            )
+        if current.from_date < previous.to_date:
+            raise ConfigurationError(
+                f"presidential terms overlap between {previous.id!r} and "
+                f"{current.id!r}"
+            )
     return tuple(presidents)
 
 
