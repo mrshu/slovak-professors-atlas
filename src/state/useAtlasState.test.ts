@@ -112,7 +112,7 @@ describe('useAtlasState', () => {
     expect(window.location.search).toBe('?field=vnutorne+lekarstvo')
   })
 
-  it('pushes an exact ceremony date, updates context year, and restores it from the URL', () => {
+  it('pushes an exact ceremony date and restores it through Back and Forward', async () => {
     const { result } = renderHook(() => useAtlasState(data))
 
     act(() => result.current.setAppointmentDate('2011-01-24'))
@@ -123,6 +123,14 @@ describe('useAtlasState', () => {
     })
     expect(result.current.filteredRecords.map(({ id }) => id)).toEqual(['one'])
     expect(window.location.search).toBe('?appointedOn=2011-01-24&selectedYear=2011')
+
+    act(() => window.history.back())
+    await waitFor(() => expect(result.current.filters.appointedOn).toBeNull())
+    expect(result.current.filteredRecords).toHaveLength(3)
+
+    act(() => window.history.forward())
+    await waitFor(() => expect(result.current.filters.appointedOn).toBe('2011-01-24'))
+    expect(result.current.filteredRecords.map(({ id }) => id)).toEqual(['one'])
   })
 
   it('keeps context highlighting independent and applies timeline years atomically', () => {
