@@ -13,9 +13,16 @@ from scripts.update_data import SourceIntegrityError, download_sources
 
 PROFESSOR_BYTES = b"professor workbook"
 HIGHER_EDUCATION_BYTES = b"higher education workbook"
+GRADUATES_BY_FIELD_BYTES = b"graduates by field workbook"
+POPULATION_BYTES = b'{"class":"dataset","value":[]}'
 SOURCE_URLS = {
     "professors": "https://example.test/professors.xls",
     "higher_education": "https://example.test/higher-education.xls",
+    "graduates_by_field_2025": "https://example.test/graduates-by-field-2025.xls",
+    "population": (
+        "https://data.statistics.sk/api/v2/dataset/"
+        "om7102rr/SK0/2000:2025/IN010114/SPOLU?lang=en&type=json"
+    ),
 }
 
 
@@ -35,6 +42,18 @@ def write_provenance(path: Path, *, professor_sha256: str | None = None) -> None
                         "sha256": hashlib.sha256(HIGHER_EDUCATION_BYTES).hexdigest(),
                         "retrievedOn": "2026-08-29",
                     },
+                    "graduates_by_field_2025": {
+                        "url": SOURCE_URLS["graduates_by_field_2025"],
+                        "sha256": hashlib.sha256(
+                            GRADUATES_BY_FIELD_BYTES
+                        ).hexdigest(),
+                        "retrievedOn": "2026-08-29",
+                    },
+                    "population": {
+                        "url": SOURCE_URLS["population"],
+                        "sha256": hashlib.sha256(POPULATION_BYTES).hexdigest(),
+                        "retrievedOn": "2026-08-29",
+                    },
                 }
             }
         ),
@@ -49,16 +68,68 @@ def test_download_sources_writes_verified_workbooks(tmp_path: Path) -> None:
 
     with patch(
         "scripts.update_data.urllib.request.urlopen",
-        side_effect=[io.BytesIO(PROFESSOR_BYTES), io.BytesIO(HIGHER_EDUCATION_BYTES)],
+        side_effect=[
+            io.BytesIO(PROFESSOR_BYTES),
+            io.BytesIO(HIGHER_EDUCATION_BYTES),
+            io.BytesIO(GRADUATES_BY_FIELD_BYTES),
+            io.BytesIO(POPULATION_BYTES),
+        ],
     ):
         result = download_sources(provenance_path, destination)
 
-    assert [item.name for item in result] == ["professors", "higher_education"]
+    assert [item.name for item in result] == [
+        "professors",
+        "higher_education",
+        "graduates_by_field_2025",
+        "population",
+    ]
     assert result[0].sha256 == hashlib.sha256(PROFESSOR_BYTES).hexdigest()
     assert (destination / "professors.xls").read_bytes() == PROFESSOR_BYTES
     assert (
         destination / "higher-education.xls"
     ).read_bytes() == HIGHER_EDUCATION_BYTES
+    assert (
+        destination / "graduates-by-field-2025.xls"
+    ).read_bytes() == GRADUATES_BY_FIELD_BYTES
+    assert (destination / "population.json").read_bytes() == POPULATION_BYTES
+
+
+def test_download_sources_rejects_unpinned_source_before_network(
+    tmp_path: Path,
+) -> None:
+    provenance_path = tmp_path / "provenance.json"
+    destination = tmp_path / "source"
+    write_provenance(provenance_path)
+    provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
+    del provenance["sources"]["graduates_by_field_2025"]["sha256"]
+    provenance_path.write_text(json.dumps(provenance), encoding="utf-8")
+
+    with patch("scripts.update_data.urllib.request.urlopen") as urlopen:
+        with pytest.raises(SourceIntegrityError, match="graduates_by_field_2025"):
+            download_sources(provenance_path, destination)
+
+    urlopen.assert_not_called()
+    assert not destination.exists()
+
+def test_download_sources_rejects_changed_population_selection_before_network(
+    tmp_path: Path,
+) -> None:
+    provenance_path = tmp_path / "provenance.json"
+    destination = tmp_path / "source"
+    write_provenance(provenance_path)
+    provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
+    provenance["sources"]["population"]["url"] = (
+        "https://data.statistics.sk/api/v2/dataset/"
+        "om7102rr/SK0/2000:2025/IN010115/SPOLU?lang=en&type=json"
+    )
+    provenance_path.write_text(json.dumps(provenance), encoding="utf-8")
+
+    with patch("scripts.update_data.urllib.request.urlopen") as urlopen:
+        with pytest.raises(SourceIntegrityError, match="mid-year selection"):
+            download_sources(provenance_path, destination)
+
+    urlopen.assert_not_called()
+    assert not destination.exists()
 
 
 def test_checksum_mismatch_preserves_existing_destination(tmp_path: Path) -> None:
@@ -89,10 +160,13 @@ def test_accept_new_checksums_rolls_back_when_later_download_fails(
     destination.mkdir()
     professor_path = destination / "professors.xls"
     higher_education_path = destination / "higher-education.xls"
+    graduates_by_field_path = destination / "graduates-by-field-2025.xls"
     previous_professor_bytes = b"previous professor workbook"
     previous_higher_education_bytes = b"previous higher education workbook"
+    previous_graduates_by_field_bytes = b"previous graduates by field workbook"
     professor_path.write_bytes(previous_professor_bytes)
     higher_education_path.write_bytes(previous_higher_education_bytes)
+    graduates_by_field_path.write_bytes(previous_graduates_by_field_bytes)
     write_provenance(
         provenance_path,
         professor_sha256=hashlib.sha256(previous_professor_bytes).hexdigest(),
@@ -103,13 +177,18 @@ def test_accept_new_checksums_rolls_back_when_later_download_fails(
 
     with patch(
         "scripts.update_data.urllib.request.urlopen",
-        side_effect=[io.BytesIO(PROFESSOR_BYTES), OSError("second download failed")],
+        side_effect=[
+            io.BytesIO(PROFESSOR_BYTES),
+            io.BytesIO(HIGHER_EDUCATION_BYTES),
+            OSError("third download failed"),
+        ],
     ):
-        with pytest.raises(OSError, match="second download failed"):
+        with pytest.raises(OSError, match="third download failed"):
             update_data.main(["--accept-new-checksums"])
 
     assert professor_path.read_bytes() == previous_professor_bytes
     assert higher_education_path.read_bytes() == previous_higher_education_bytes
+    assert graduates_by_field_path.read_bytes() == previous_graduates_by_field_bytes
     assert provenance_path.read_bytes() == previous_provenance_bytes
 
 
@@ -126,7 +205,12 @@ def test_accept_new_checksums_updates_provenance_and_reports_changes(
 
     with patch(
         "scripts.update_data.urllib.request.urlopen",
-        side_effect=[io.BytesIO(PROFESSOR_BYTES), io.BytesIO(HIGHER_EDUCATION_BYTES)],
+        side_effect=[
+            io.BytesIO(PROFESSOR_BYTES),
+            io.BytesIO(HIGHER_EDUCATION_BYTES),
+            io.BytesIO(GRADUATES_BY_FIELD_BYTES),
+            io.BytesIO(POPULATION_BYTES),
+        ],
     ):
         update_data.main(["--accept-new-checksums"])
 
@@ -135,6 +219,9 @@ def test_accept_new_checksums_updates_provenance_and_reports_changes(
     assert provenance["sources"]["professors"]["sha256"] == professor_sha256
     assert provenance["sources"]["professors"]["retrievedOn"] == date.today().isoformat()
     assert (destination / "professors.xls").read_bytes() == PROFESSOR_BYTES
+    assert (
+        destination / "graduates-by-field-2025.xls"
+    ).read_bytes() == GRADUATES_BY_FIELD_BYTES
 
     output = capsys.readouterr().out
     assert f"old sha256: {'0' * 64}" in output

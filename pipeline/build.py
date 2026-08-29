@@ -3,7 +3,9 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 from collections import Counter, defaultdict
+from datetime import date
 from collections.abc import Mapping, Sequence
 from fractions import Fraction
 from pathlib import Path
@@ -12,6 +14,10 @@ from typing import Any
 import xlrd
 
 from pipeline.context import ContextYear, load_context
+from pipeline.graduates import (
+    build_field_graduate_comparison,
+    load_graduates_by_field,
+)
 from pipeline.models import Appointment, Institution, President, ProfessorDataset, SourceVariant
 from pipeline.professors import APPOINTMENT_SHEET, load_appointments
 from pipeline.text import normalize_display
@@ -20,10 +26,33 @@ from pipeline.text import normalize_display
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_PROFESSORS_PATH = _PROJECT_ROOT / "public/data/source/professors.xls"
 DEFAULT_CONTEXT_PATH = _PROJECT_ROOT / "public/data/source/higher-education.xls"
+DEFAULT_GRADUATES_BY_FIELD_PATH = (
+    _PROJECT_ROOT / "public/data/source/graduates-by-field-2025.xls"
+)
+DEFAULT_POPULATION_PATH = _PROJECT_ROOT / "public/data/source/population.json"
 DEFAULT_GEOMETRY_PATH = _PROJECT_ROOT / "data/config/slovakia.geojson"
 DEFAULT_PROVENANCE_PATH = _PROJECT_ROOT / "public/data/provenance.json"
 DEFAULT_OUTPUT_PATH = _PROJECT_ROOT / "public/data/atlas.json"
-_SOURCE_PATH_KEYS = ("professors", "higher_education")
+_SOURCE_PATH_KEYS = (
+    "professors",
+    "higher_education",
+    "graduates_by_field_2025",
+    "population",
+)
+_SHA256 = re.compile(r"^[0-9a-f]{64}$")
+_POPULATION_SELECTION = {
+    "geography": {"code": "SK0", "label": "Slovak Republic"},
+    "indicator": {
+        "code": "IN010114",
+        "label": "Mid-year (Mean) population (Person)",
+    },
+    "sex": {"code": "SPOLU", "label": "Total"},
+    "years": {"from": 2000, "through": 2025, "count": 26, "missing": []},
+}
+_POPULATION_DENOMINATOR_DATE = (
+    "Mid-year population at midnight from 30 June to 1 July "
+    "of the reference calendar year."
+)
 
 
 class AtlasBuildError(ValueError):
@@ -52,29 +81,61 @@ def _validated_provenance(
     provenance_path: Path,
     professors_path: Path,
     context_path: Path,
+    graduates_by_field_path: Path,
+    population_path: Path,
 ) -> dict[str, Any]:
     provenance = _load_object(provenance_path, "source provenance")
     sources = provenance.get("sources")
     if not isinstance(sources, dict) or set(sources) != set(_SOURCE_PATH_KEYS):
         raise AtlasBuildError(
-            "Source provenance must contain exactly professors and higher_education"
+            f"Source provenance must contain exactly {', '.join(_SOURCE_PATH_KEYS)}"
         )
     paths = {
         "professors": professors_path,
         "higher_education": context_path,
+        "graduates_by_field_2025": graduates_by_field_path,
+        "population": population_path,
     }
     for key in _SOURCE_PATH_KEYS:
         source = sources[key]
         if not isinstance(source, dict):
             raise AtlasBuildError(f"Provenance source {key!r} must be an object")
+        url = source.get("url")
+        if not isinstance(url, str) or not url:
+            raise AtlasBuildError(
+                f"Provenance source {key!r} has no non-empty URL"
+            )
+        retrieved_on = source.get("retrievedOn")
+        try:
+            if not isinstance(retrieved_on, str):
+                raise ValueError
+            date.fromisoformat(retrieved_on)
+        except ValueError as error:
+            raise AtlasBuildError(
+                f"Provenance source {key!r} has no valid ISO retrieval date"
+            ) from error
         expected = source.get("sha256")
-        if not isinstance(expected, str) or len(expected) != 64:
-            raise AtlasBuildError(f"Provenance source {key!r} has no valid SHA-256")
+        if not isinstance(expected, str) or _SHA256.fullmatch(expected) is None:
+            raise AtlasBuildError(
+                f"Provenance source {key!r} has no valid lowercase SHA-256"
+            )
         actual = _sha256(paths[key])
         if actual != expected:
             raise AtlasBuildError(
                 f"Checksum mismatch for {key}: expected {expected}, got {actual}"
             )
+
+    population_source = sources["population"]
+    assert isinstance(population_source, dict)
+    if (
+        population_source.get("selection") != _POPULATION_SELECTION
+        or population_source.get("denominatorDateConvention")
+        != _POPULATION_DENOMINATOR_DATE
+    ):
+        raise AtlasBuildError(
+            "Population provenance must retain the reviewed national mid-year "
+            "denominator contract"
+        )
     return sources
 
 
@@ -172,6 +233,9 @@ def _context_payload(item: ContextYear) -> dict[str, object]:
         "internalTeachers": item.internal_teachers,
         "internalProfessors": item.internal_professors,
         "appointments": item.appointments,
+        "population": item.population,
+        "appointmentsPerMillionResidents": item.appointments_per_million_residents,
+        "professorsPer100kResidents": item.professors_per_100k_residents,
         "appointmentsPer1kGraduates": item.appointments_per_1k_graduates,
         "graduatesPerAppointment": item.graduates_per_appointment,
         "appointmentsPer10kStudents": item.appointments_per_10k_students,
@@ -303,6 +367,7 @@ def build_payload(
     context: Sequence[ContextYear],
     geography: Mapping[str, object],
     sources: Mapping[str, object],
+    field_graduate_comparison: Mapping[str, object],
     *,
     surnames_by_source_row: Mapping[int, str],
 ) -> dict[str, object]:
@@ -350,6 +415,7 @@ def build_payload(
         "institutions": [_institution_payload(item) for item in institutions],
         "cities": _city_payload(institutions),
         "presidents": [_president_payload(item) for item in presidents],
+        "fieldGraduateComparison": dict(field_graduate_comparison),
         "context": [_context_payload(item) for item in context],
         "geography": dict(geography),
         "editorialFacts": _editorial_facts(dataset.appointments, context),
@@ -361,21 +427,40 @@ def build_atlas(
     *,
     professors_path: Path = DEFAULT_PROFESSORS_PATH,
     context_path: Path = DEFAULT_CONTEXT_PATH,
+    graduates_by_field_path: Path = DEFAULT_GRADUATES_BY_FIELD_PATH,
+    population_path: Path = DEFAULT_POPULATION_PATH,
     geography_path: Path = DEFAULT_GEOMETRY_PATH,
     provenance_path: Path = DEFAULT_PROVENANCE_PATH,
 ) -> dict[str, object]:
     """Validate all committed inputs and write deterministic atlas JSON."""
     sources = _validated_provenance(
-        provenance_path, professors_path, context_path
+        provenance_path,
+        professors_path,
+        context_path,
+        graduates_by_field_path,
+        population_path,
     )
     dataset = load_appointments(professors_path)
-    context = load_context(context_path, appointments=dataset.appointments)
+    context = load_context(
+        context_path,
+        population_path=population_path,
+        appointments=dataset.appointments,
+    )
+    graduate_fields = load_graduates_by_field(graduates_by_field_path)
+    graduate_source = sources["graduates_by_field_2025"]
+    assert isinstance(graduate_source, dict)
+    field_graduate_comparison = build_field_graduate_comparison(
+        dataset.appointments,
+        graduate_fields,
+        graduate_source,
+    )
     geography = _validated_geography(geography_path)
     payload = build_payload(
         dataset,
         context,
         geography,
         sources,
+        field_graduate_comparison,
         surnames_by_source_row=_source_surnames(professors_path),
     )
     serialized = json.dumps(
@@ -396,7 +481,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT_PATH)
     parser.add_argument("--professors", type=Path, default=DEFAULT_PROFESSORS_PATH)
     parser.add_argument("--context", type=Path, default=DEFAULT_CONTEXT_PATH)
+    parser.add_argument("--population", type=Path, default=DEFAULT_POPULATION_PATH)
     parser.add_argument("--geometry", type=Path, default=DEFAULT_GEOMETRY_PATH)
+    parser.add_argument(
+        "--graduates-by-field",
+        type=Path,
+        default=DEFAULT_GRADUATES_BY_FIELD_PATH,
+    )
     parser.add_argument("--provenance", type=Path, default=DEFAULT_PROVENANCE_PATH)
     args = parser.parse_args(argv)
     payload = build_atlas(
@@ -404,6 +495,8 @@ def main(argv: list[str] | None = None) -> int:
         professors_path=args.professors,
         context_path=args.context,
         geography_path=args.geometry,
+        graduates_by_field_path=args.graduates_by_field,
+        population_path=args.population,
         provenance_path=args.provenance,
     )
     meta = payload["meta"]

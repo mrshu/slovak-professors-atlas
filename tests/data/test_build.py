@@ -30,6 +30,7 @@ def test_build_is_byte_deterministic_and_serializes_public_contract(tmp_path: Pa
         "cities",
         "context",
         "editorialFacts",
+        "fieldGraduateComparison",
         "geography",
         "institutions",
         "meta",
@@ -60,6 +61,12 @@ def test_build_is_byte_deterministic_and_serializes_public_contract(tmp_path: Pa
         == "https://www.prezident.sk/zivotopis-petra-pellegriniho"
     )
     assert len(first_payload["context"]) == 26
+    assert first_payload["context"][0]["population"] == 5_400_637
+    assert first_payload["context"][0]["appointmentsPerMillionResidents"] == 19.44
+    assert first_payload["context"][0]["professorsPer100kResidents"] == 17.37
+    assert first_payload["context"][-1]["population"] == 5_413_600
+    assert first_payload["context"][-1]["appointmentsPerMillionResidents"] == 10.16
+    assert first_payload["context"][-1]["professorsPer100kResidents"] == 30.05
     assert first_payload["geography"]["geometry"]["type"] in {
         "Polygon",
         "MultiPolygon",
@@ -68,6 +75,66 @@ def test_build_is_byte_deterministic_and_serializes_public_contract(tmp_path: Pa
         "ne_10m_admin_0_countries.geojson"
     )
     assert first_payload["geography"]["properties"]["license"] == "Public domain"
+
+
+def test_build_publishes_versioned_exact_field_graduate_comparison(
+    tmp_path: Path,
+) -> None:
+    payload = build_atlas(tmp_path / "atlas.json")
+    comparison = payload["fieldGraduateComparison"]
+
+    assert payload["meta"]["schemaVersion"] == 1
+    assert set(payload["sources"]) == {
+        "professors",
+        "higher_education",
+        "graduates_by_field_2025",
+        "population",
+    }
+    assert comparison["schemaVersion"] == 1
+    assert comparison["year"] == 2025
+    assert set(comparison) == {
+        "appointmentCount",
+        "distinctFieldCount",
+        "matchedAppointmentCount",
+        "matchedAppointmentShare",
+        "matchedDistinctFieldCount",
+        "rows",
+        "schemaVersion",
+        "source",
+        "year",
+    }
+    assert comparison["source"] == {
+        "url": "https://www.cvtisr.sk/buxus/docs//JC/ROCENKA/VS/abvs_2.xls",
+        "catalogUrl": (
+            "https://www.cvtisr.sk/cvti-sr-vedecka-kniznica/informacie-o-skolstve/"
+            "statistiky/statisticka-rocenka-publikacia/"
+            "statisticka-rocenka-vysoke-skoly.html?page_id=9596"
+        ),
+        "sha256": "2bfc9bf67bcf7c1d4ed5e80296d498f634a9c8c9b949bf70f839a9bf90ba7729",
+        "retrievedOn": "2026-08-29",
+    }
+    assert comparison["appointmentCount"] == 55
+    assert comparison["matchedAppointmentCount"] == 47
+    assert comparison["matchedAppointmentShare"] == 85.45
+    assert comparison["distinctFieldCount"] == 46
+    assert comparison["matchedDistinctFieldCount"] == 39
+    assert len(comparison["rows"]) == 46
+    assert comparison["rows"][0] == {
+        "field": "strojárske technológie a materiály",
+        "appointmentCount": 4,
+        "graduateCount": 17,
+        "graduatesPerAppointment": 4.25,
+        "matchStatus": "exact",
+    }
+
+    rows = {row["field"]: row for row in comparison["rows"]}
+    assert rows["získavanie a spracovanie zemských zdrojov"] == {
+        "field": "získavanie a spracovanie zemských zdrojov",
+        "appointmentCount": 2,
+        "graduateCount": None,
+        "graduatesPerAppointment": None,
+        "matchStatus": "unmatched",
+    }
 
 
 def test_generated_facts_match_reviewed_pinned_source_findings(tmp_path: Path) -> None:

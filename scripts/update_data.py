@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import tempfile
 import urllib.request
 from dataclasses import dataclass
@@ -14,10 +15,17 @@ from typing import Any, Sequence
 SOURCE_DESTINATIONS = {
     "professors": "professors.xls",
     "higher_education": "higher-education.xls",
+    "graduates_by_field_2025": "graduates-by-field-2025.xls",
+    "population": "population.json",
 }
 CHUNK_SIZE = 1024 * 1024
 DEFAULT_PROVENANCE_PATH = Path("public/data/provenance.json")
 DEFAULT_SOURCE_DESTINATION = Path("public/data/source")
+_SHA256 = re.compile(r"^[0-9a-f]{64}$")
+_POPULATION_URL = (
+    "https://data.statistics.sk/api/v2/dataset/"
+    "om7102rr/SK0/2000:2025/IN010114/SPOLU?lang=en&type=json"
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -34,6 +42,54 @@ class SourceIntegrityError(RuntimeError):
 
 def _load_provenance(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _validated_sources(
+    provenance: dict[str, Any], *, require_checksums: bool
+) -> dict[str, dict[str, Any]]:
+    raw_sources = provenance.get("sources")
+    if not isinstance(raw_sources, dict) or set(raw_sources) != set(
+        SOURCE_DESTINATIONS
+    ):
+        raise SourceIntegrityError(
+            "Source provenance must contain exactly "
+            + ", ".join(SOURCE_DESTINATIONS)
+        )
+
+    sources: dict[str, dict[str, Any]] = {}
+    for name in SOURCE_DESTINATIONS:
+        source = raw_sources[name]
+        if not isinstance(source, dict):
+            raise SourceIntegrityError(f"Provenance source {name!r} must be an object")
+        url = source.get("url")
+        if not isinstance(url, str) or not url:
+            raise SourceIntegrityError(
+                f"Provenance source {name!r} requires a non-empty URL"
+            )
+        retrieved_on = source.get("retrievedOn")
+        try:
+            if not isinstance(retrieved_on, str):
+                raise ValueError
+            date.fromisoformat(retrieved_on)
+        except ValueError as error:
+            raise SourceIntegrityError(
+                f"Provenance source {name!r} requires an ISO retrieval date"
+            ) from error
+        if name == "population" and url != _POPULATION_URL:
+            raise SourceIntegrityError(
+                "Population provenance URL must retain the reviewed national "
+                "mid-year selection"
+            )
+        expected_sha256 = source.get("sha256")
+        if require_checksums and (
+            not isinstance(expected_sha256, str)
+            or _SHA256.fullmatch(expected_sha256) is None
+        ):
+            raise SourceIntegrityError(
+                f"Provenance source {name!r} requires a lowercase SHA-256"
+            )
+        sources[name] = source
+    return sources
 
 
 def _stage_provenance(path: Path, provenance: dict[str, Any]) -> Path:
@@ -109,7 +165,9 @@ def _download_sources(
     accept_new_checksums: bool,
 ) -> list[DownloadedSource]:
     provenance = _load_provenance(provenance_path)
-    sources = provenance["sources"]
+    sources = _validated_sources(
+        provenance, require_checksums=not accept_new_checksums
+    )
     destination.mkdir(parents=True, exist_ok=True)
     downloaded: list[DownloadedSource] = []
     staged_replacements: list[tuple[Path, Path]] = []

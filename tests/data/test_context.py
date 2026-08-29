@@ -20,12 +20,18 @@ def test_load_context_uses_national_total_rows_for_every_supported_year() -> Non
     assert first.graduates == 20_558
     assert first.internal_teachers == 9_535
     assert first.internal_professors == 938
+    assert first.population == 5_400_637
+    assert first.appointments_per_million_residents == 19.44
+    assert first.professors_per_100k_residents == 17.37
 
     last = context[-1]
     assert last.students == 148_189
     assert last.graduates == 37_627
     assert last.internal_teachers == 9_296
     assert last.internal_professors == 1_627
+    assert last.population == 5_413_600
+    assert last.appointments_per_million_residents == 10.16
+    assert last.professors_per_100k_residents == 30.05
 
 
 def test_student_total_includes_each_cvti_student_category_exactly_once() -> None:

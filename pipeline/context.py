@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import Counter
 from collections.abc import Iterable
+from decimal import Decimal, ROUND_HALF_UP
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -10,6 +11,7 @@ import xlrd
 
 from pipeline.models import Appointment
 from pipeline.professors import load_appointments
+from pipeline.population import load_population
 from pipeline.text import normalize_display
 
 
@@ -20,6 +22,7 @@ CONTEXT_YEARS = tuple(range(2000, 2026))
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_PROFESSORS_PATH = _PROJECT_ROOT / "public/data/source/professors.xls"
+DEFAULT_POPULATION_PATH = _PROJECT_ROOT / "public/data/source/population.json"
 
 _TEACHERS_HEADERS = (
     ("Vysoké školy", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""),
@@ -52,6 +55,9 @@ class ContextYear:
     internal_teachers: int
     internal_professors: int
     appointments: int
+    population: int
+    appointments_per_million_residents: float
+    professors_per_100k_residents: float
     appointments_per_1k_graduates: float
     graduates_per_appointment: float | None
     appointments_per_10k_students: float
@@ -164,9 +170,17 @@ def _read_total_rows(
         )
     return totals
 
+def _rounded_rate(numerator: int, scale: int, denominator: int) -> float:
+    value = Decimal(numerator * scale) / Decimal(denominator)
+    return float(value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+
+
 
 def load_context(
-    path: Path, *, appointments: Iterable[Appointment] | None = None
+    path: Path,
+    *,
+    population_path: Path = DEFAULT_POPULATION_PATH,
+    appointments: Iterable[Appointment] | None = None,
 ) -> tuple[ContextYear, ...]:
     """Load national CVTI stocks and annual graduate/appointment flows."""
     workbook = xlrd.open_workbook(str(path))
@@ -175,6 +189,7 @@ def load_context(
     student_and_graduate_components = _read_total_rows(
         students_sheet, _STUDENT_TOTAL_COLUMNS + _GRADUATE_TOTAL_COLUMNS
     )
+    population_by_year = load_population(population_path)
 
     if appointments is None:
         appointments = load_appointments(DEFAULT_PROFESSORS_PATH).appointments
@@ -187,6 +202,7 @@ def load_context(
         students = sum(components[: len(_STUDENT_TOTAL_COLUMNS)])
         graduates = sum(components[len(_STUDENT_TOTAL_COLUMNS) :])
         appointment_count = appointments_by_year[year]
+        population = population_by_year[year]
         context.append(
             ContextYear(
                 year=year,
@@ -196,6 +212,13 @@ def load_context(
                 internal_teachers=internal_teachers,
                 internal_professors=internal_professors,
                 appointments=appointment_count,
+                population=population,
+                appointments_per_million_residents=_rounded_rate(
+                    appointment_count, 1_000_000, population
+                ),
+                professors_per_100k_residents=_rounded_rate(
+                    internal_professors, 100_000, population
+                ),
                 appointments_per_1k_graduates=round(
                     appointment_count * 1_000 / graduates, 2
                 ),
