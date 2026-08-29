@@ -1,6 +1,5 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
-import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { ContextYear } from '../data/types'
@@ -121,7 +120,7 @@ describe('ContextSection', () => {
     }
   })
 
-  it('selects chart years through push history for pointer, touch-compatible click, and keyboard input', () => {
+  it('inspects exact values on hover and focus without selecting until activation', () => {
     const setSelectedYear = vi.fn()
     render(
       <ContextSection
@@ -131,20 +130,55 @@ describe('ContextSection', () => {
       />,
     )
 
-    const target2025 = screen.getByRole('button', { name: /^Rok 2025\./ })
-    fireEvent.click(target2025)
-    expect(setSelectedYear).toHaveBeenLastCalledWith(2025, 'push')
-
     const target2007 = screen.getByRole('button', { name: /^Rok 2007\./ })
+    const target2025 = screen.getByRole('button', { name: /^Rok 2025\./ })
+
+    fireEvent.pointerEnter(target2007)
+    let callout = screen.getByRole('group', {
+      name: 'Presné hodnoty indexovaného trendu pre rok 2007',
+    })
+    expect(callout).toHaveTextContent('Vymenovania46index 43,81')
+    expect(callout).toHaveTextContent('Absolventi43 457index 211,39')
+    expect(setSelectedYear).not.toHaveBeenCalled()
+    expect(screen.getByRole('heading', { name: '2000' })).toBeVisible()
+
+    target2025.focus()
+    expect(
+      screen.getByRole('group', {
+        name: 'Presné hodnoty indexovaného trendu pre rok 2007',
+      }),
+    ).toBeVisible()
+    fireEvent.pointerLeave(target2007)
+    callout = screen.getByRole('group', {
+      name: 'Presné hodnoty indexovaného trendu pre rok 2025',
+    })
+    expect(callout).toHaveTextContent('Vymenovania55index 52,38')
+    expect(callout).toHaveTextContent('Absolventi37 627index 183,03')
+    expect(callout).toHaveTextContent('Študenti148 189index 107,45')
+    expect(callout).toHaveTextContent('Interní učitelia9 296index 97,49')
+    expect(setSelectedYear).not.toHaveBeenCalled()
+
+    fireEvent.keyDown(target2025, { key: 'ArrowLeft' })
+    expect(target2007).toHaveFocus()
+    expect(
+      screen.getByRole('group', {
+        name: 'Presné hodnoty indexovaného trendu pre rok 2007',
+      }),
+    ).toBeVisible()
+    expect(setSelectedYear).not.toHaveBeenCalled()
+
     fireEvent.keyDown(target2007, { key: 'Enter' })
     expect(setSelectedYear).toHaveBeenLastCalledWith(2007, 'push')
     fireEvent.keyDown(target2007, { key: ' ' })
     expect(setSelectedYear).toHaveBeenLastCalledWith(2007, 'push')
-
-    target2007.focus()
-    fireEvent.keyDown(target2007, { key: 'ArrowRight' })
-    expect(target2025).toHaveFocus()
+    fireEvent.click(target2025)
     expect(setSelectedYear).toHaveBeenLastCalledWith(2025, 'push')
+    expect(screen.getByRole('heading', { name: '2000' })).toBeVisible()
+
+    fireEvent.blur(target2007, { relatedTarget: null })
+    expect(
+      screen.queryByRole('group', { name: /Presné hodnoty indexovaného trendu/ }),
+    ).not.toBeInTheDocument()
   })
 
   it('marks the 2007 teacher-definition break and names 2025/2026 as the latest official context', () => {
@@ -181,30 +215,45 @@ describe('ContextSection', () => {
     expect(screen.queryByRole('group', { name: /Presné národné hodnoty/ })).not.toBeInTheDocument()
   })
 
-  it('keeps national context numerators unchanged when unrelated city and institution filters change', () => {
-    function FilterHarness() {
-      const [localFilter, setLocalFilter] = useState('Bratislava · UK')
-      return (
-        <>
-          <button type="button" onClick={() => setLocalFilter('Košice · UPJŠ')}>
-            Zmeniť miestny filter
-          </button>
-          <output>{localFilter}</output>
-          <ContextSection
-            years={contextYears}
-            selectedYear={2000}
-            setSelectedYear={vi.fn()}
-          />
-        </>
+  it.each(['appointments', 'graduates', 'students', 'internalTeachers'] as const)(
+    'shows an unavailable trend instead of a non-finite index when the 2000 %s baseline is zero',
+    (field) => {
+      const yearsWithZeroBaseline = [
+        { ...contextYears[0], [field]: 0 },
+        ...contextYears.slice(1),
+      ]
+
+      render(
+        <ContextSection
+          years={yearsWithZeroBaseline}
+          selectedYear={2000}
+          setSelectedYear={vi.fn()}
+        />,
       )
-    }
 
-    render(<FilterHarness />)
-    const panel = screen.getByRole('group', { name: 'Presné národné hodnoty pre rok 2000' })
-    expect(metric(panel, 'Vymenovania v kalendárnom roku')).toHaveTextContent('105')
+      expect(screen.getByRole('status')).toHaveTextContent(
+        'Indexovaný trend nie je dostupný',
+      )
+      expect(screen.queryByRole('button', { name: /^Rok 2000\./ })).not.toBeInTheDocument()
+      expect(document.body).not.toHaveTextContent(/NaN|Infinity/)
+    },
+  )
 
-    fireEvent.click(screen.getByRole('button', { name: 'Zmeniť miestny filter' }))
-    expect(screen.getByText('Košice · UPJŠ')).toBeInTheDocument()
-    expect(metric(panel, 'Vymenovania v kalendárnom roku')).toHaveTextContent('105')
+  it('rejects a non-finite 2000 baseline before indexing', () => {
+    const yearsWithInfiniteBaseline = [
+      { ...contextYears[0], appointments: Number.POSITIVE_INFINITY },
+      ...contextYears.slice(1),
+    ]
+
+    render(
+      <ContextSection
+        years={yearsWithInfiniteBaseline}
+        selectedYear={2000}
+        setSelectedYear={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByRole('status')).toHaveTextContent('Indexovaný trend nie je dostupný')
+    expect(screen.queryByRole('button', { name: /^Rok 2000\./ })).not.toBeInTheDocument()
   })
 })

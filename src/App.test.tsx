@@ -6,6 +6,22 @@ import App from './App'
 
 const MINISTRY_SOURCE_URL = 'https://www.minedu.sk/data/att/41c/36688.d8c1fd.xls'
 
+const context2000 = {
+  year: 2000,
+  academicYear: '2000/2001',
+  students: 137_908,
+  graduates: 20_558,
+  internalTeachers: 9_535,
+  internalProfessors: 938,
+  appointments: 105,
+  appointmentsPer1kGraduates: 5.11,
+  graduatesPerAppointment: 195.79,
+  appointmentsPer10kStudents: 7.61,
+  appointmentsPer1kTeachers: 11.01,
+  appointmentsPer100Professors: 11.19,
+  professorShare: 9.8,
+}
+
 const validAtlas = {
   meta: {
     schemaVersion: 1,
@@ -89,6 +105,49 @@ const validAtlas = {
   },
 }
 
+const atlasWithActiveLocalFilters = {
+  ...validAtlas,
+  records: [
+    {
+      id: 'local-uniba-appointment',
+      name: 'Lokálny záznam',
+      titlesBefore: null,
+      titlesAfter: null,
+      faculty: 'Filozofická fakulta',
+      institutionId: 'uniba',
+      institutionSource: 'Univerzita Komenského v Bratislave',
+      field: 'história',
+      appointedOn: '2000-02-22',
+      presidentId: 'schuster',
+      sourceVariants: [
+        {
+          rowNumber: 2,
+          titlesBefore: null,
+          titlesAfter: null,
+          faculty: 'Filozofická fakulta',
+          institution: 'Univerzita Komenského v Bratislave',
+          field: 'história',
+        },
+      ],
+    },
+  ],
+  institutions: [
+    {
+      id: 'uniba',
+      shortName: 'UK',
+      fullName: 'Univerzita Komenského v Bratislave',
+      city: 'Bratislava',
+      latitude: 48.141,
+      longitude: 17.115,
+      sourceLabels: ['Univerzita Komenského v Bratislave'],
+      citationUrl: 'https://uniba.sk/',
+    },
+  ],
+  cities: [{ name: 'Bratislava', institutionIds: ['uniba'] }],
+  presidents: [{ id: 'schuster', name: 'Rudolf Schuster', from: '1999-06-15', to: '2004-06-15' }],
+  context: [context2000],
+}
+
 function successfulResponse(payload: unknown = validAtlas) {
   return new Response(JSON.stringify(payload), {
     status: 200,
@@ -98,6 +157,7 @@ function successfulResponse(payload: unknown = validAtlas) {
 
 beforeEach(() => {
   vi.stubEnv('BASE_URL', '/slovak-professors/')
+  window.history.replaceState({}, '', '/slovak-professors/')
 })
 
 afterEach(() => {
@@ -142,12 +202,17 @@ describe('archívny atlas', () => {
       ),
     ).toBeVisible()
 
-    const context = screen.getByRole('region', { name: 'Vymenovania v kontexte' })
-    expect(
-      within(context).getByText(
-        /Pre rok 2026 nie je k dispozícii kontextový menovateľ, pretože časové rady CVTI sa končia akademickým rokom 2025\/2026\./,
-      ),
-    ).toBeVisible()
+    const context = screen.getByRole('region', { name: 'Vymenovania v národnom kontexte' })
+    const unavailable = within(context)
+      .getByText('Kontext CVTI pre rok 2026 nie je k dispozícii')
+      .closest('[role="status"]')
+    expect(unavailable).toHaveTextContent('Kontext CVTI pre rok 2026 nie je k dispozícii')
+    expect(unavailable).toHaveTextContent(
+      'Oficiálny rad sa končí akademickým rokom 2025/2026.',
+    )
+    expect(unavailable).toHaveTextContent(
+      'Pre vymenovania v roku 2026 preto nezobrazujeme menovatele ani pomery.',
+    )
 
     const banner = screen.getByRole('banner')
     const navigation = screen.getByRole('navigation', { name: 'Navigácia atlasu' })
@@ -169,11 +234,44 @@ describe('archívny atlas', () => {
     )
   })
 
+  it('keeps national appointment values when valid city and institution URL filters are active', async () => {
+    window.history.replaceState(
+      {},
+      '',
+      '/slovak-professors/?city=Bratislava&institutionId=uniba&selectedYear=2000',
+    )
+    vi.stubGlobal('fetch', vi.fn(async () => successfulResponse(atlasWithActiveLocalFilters)))
+
+    render(<App />)
+
+    const context = await screen.findByRole('region', {
+      name: 'Vymenovania v národnom kontexte',
+    })
+    const panel = within(context).getByRole('group', {
+      name: 'Presné národné hodnoty pre rok 2000',
+    })
+    expect(within(panel).getByText('Vymenovania v kalendárnom roku').parentElement).toHaveTextContent(
+      '105',
+    )
+    expect(within(panel).getByText('Vymenovania na 1 000 absolventov').parentElement).toHaveTextContent(
+      '5,11',
+    )
+    expect(window.location.search).toBe(
+      '?city=Bratislava&institutionId=uniba&selectedYear=2000',
+    )
+  })
+
   it('keeps the Slovak shell and source link visible when the payload request fails', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(null, { status: 503 })))
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
 
     render(<App />)
+
+    const loadingContext = screen.getByRole('region', {
+      name: 'Vymenovania v národnom kontexte',
+    })
+    expect(loadingContext).toHaveAttribute('id', 'kontext')
+    expect(screen.getByRole('link', { name: 'Kontext' })).toHaveAttribute('href', '#kontext')
 
     expect(await screen.findByRole('heading', { name: 'Atlas sa nepodarilo načítať' })).toBeVisible()
     expect(screen.getByText('Dáta sa teraz nedajú bezpečne zobraziť. Skúste stránku načítať znova.')).toBeVisible()
@@ -183,6 +281,9 @@ describe('archívny atlas', () => {
     )
     expect(screen.getByRole('heading', { name: 'Kde vzniká slovenská profesúra?' })).toBeVisible()
     expect(consoleError).toHaveBeenCalledTimes(1)
+    expect(
+      screen.getByRole('region', { name: 'Vymenovania v národnom kontexte' }),
+    ).toHaveAttribute('id', 'kontext')
   })
 
   it.each([

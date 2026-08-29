@@ -1,6 +1,6 @@
 import { scaleLinear } from 'd3-scale'
 import { line } from 'd3-shape'
-import { useMemo, useRef, type KeyboardEvent } from 'react'
+import { useMemo, useRef, useState, type FocusEvent, type KeyboardEvent } from 'react'
 
 import type { ContextYear } from '../data/types'
 import { formatNumber } from '../utils/format'
@@ -78,16 +78,53 @@ function yearLabel(year: IndexedYear): string {
   ].join(' ')
 }
 
+
+function ExactValueCallout({ year }: { year: IndexedYear }) {
+  return (
+    <div
+      className="context-trend__callout"
+      role="group"
+      aria-label={`Presné hodnoty indexovaného trendu pre rok ${year.raw.year}`}
+    >
+      <p>
+        Kontrola roku <strong>{year.raw.year}</strong>
+      </p>
+      <dl>
+        {SERIES.map((series) => (
+          <div key={series.key}>
+            <dt>{series.label}</dt>
+            <dd>
+              {formatNumber(year.raw[series.key])}
+              <span>
+                index {formatNumber(year.indices[series.key], fixedTwoDecimals)}
+              </span>
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  )
+}
+
 export default function ContextTrend({
   years,
   selectedYear,
   setSelectedYear,
 }: ContextTrendProps) {
   const targetRefs = useRef<Array<SVGRectElement | null>>([])
+  const [hoveredYear, setHoveredYear] = useState<number | null>(null)
+  const [focusedYear, setFocusedYear] = useState<number | null>(null)
   const chart = useMemo(() => {
     const ordered = [...years].sort((a, b) => a.year - b.year)
     const baseline = ordered.find(({ year }) => year === 2000)
     if (baseline === undefined || ordered.length === 0) {
+      return null
+    }
+    const hasValidBaseline = SERIES.every(({ key }) => {
+      const value = baseline[key]
+      return Number.isFinite(value) && value > 0
+    })
+    if (!hasValidBaseline) {
       return null
     }
 
@@ -129,7 +166,8 @@ export default function ContextTrend({
   if (chart === null) {
     return (
       <p className="context-trend__unavailable" role="status">
-        Indexovaný trend nemožno zostaviť bez národného východiska za rok 2000.
+        <strong>Indexovaný trend nie je dostupný.</strong> Na výpočet indexu musia byť všetky
+        štyri národné hodnoty za rok 2000 konečné a väčšie ako nula.
       </p>
     )
   }
@@ -137,8 +175,18 @@ export default function ContextTrend({
   const { indexed, x, y, xTicks, yTicks, plotWidth, plotHeight } = chart
   const selected = indexed.find(({ raw }) => raw.year === selectedYear)
   const teacherBreakX = x(2007)
+  const inspected =
+    indexed.find(({ raw }) => raw.year === (hoveredYear ?? focusedYear)) ?? null
 
   const select = (year: number) => setSelectedYear(year, 'push')
+  const handleBlur = (event: FocusEvent<SVGRectElement>) => {
+    const nextYear = (event.relatedTarget as Partial<Element> | null)?.getAttribute?.('data-year')
+    if (nextYear !== null && nextYear !== undefined) {
+      setFocusedYear(Number(nextYear))
+      return
+    }
+    setFocusedYear(null)
+  }
   const handleKeyDown = (event: KeyboardEvent<SVGRectElement>, index: number) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault()
@@ -160,7 +208,6 @@ export default function ContextTrend({
     if (nextIndex !== null) {
       event.preventDefault()
       targetRefs.current[nextIndex]?.focus()
-      select(indexed[nextIndex].raw.year)
     }
   }
 
@@ -176,6 +223,13 @@ export default function ContextTrend({
           spôsobili zmenu stavu profesorov alebo učiteľov.
         </p>
       </figcaption>
+      <div className="context-trend__inspection" aria-live="polite">
+        {inspected === null ? (
+          <p>Ukážte na rok alebo naň presuňte klávesový fokus pre presné hodnoty.</p>
+        ) : (
+          <ExactValueCallout year={inspected} />
+        )}
+      </div>
       <div
         className="context-trend__scroll"
         role="region"
@@ -325,6 +379,12 @@ export default function ContextTrend({
                   aria-label={yearLabel(year)}
                   aria-pressed={year.raw.year === selectedYear}
                   data-year={year.raw.year}
+                  onPointerEnter={() => setHoveredYear(year.raw.year)}
+                  onPointerLeave={() =>
+                    setHoveredYear((current) => (current === year.raw.year ? null : current))
+                  }
+                  onFocus={() => setFocusedYear(year.raw.year)}
+                  onBlur={handleBlur}
                   onClick={() => select(year.raw.year)}
                   onKeyDown={(event) => handleKeyDown(event, index)}
                 />

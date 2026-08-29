@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-import ContextSection from './components/ContextSection'
+import { ContextSectionBody, ContextSectionShell } from './components/ContextSection'
 import ErrorPanel from './components/ErrorPanel'
 import Findings from './components/Findings'
 import Hero from './components/Hero'
@@ -15,18 +15,15 @@ type LoadState =
 
 const slovakInteger = new Intl.NumberFormat('sk-SK')
 
-function LoadedStory({ data }: { data: AtlasData }) {
+function LoadedContext({ data }: { data: AtlasData }) {
   const { filters, setSelectedYear } = useAtlasState(data)
 
   return (
-    <>
-      <Findings facts={data.editorialFacts} />
-      <ContextSection
-        years={data.context}
-        selectedYear={filters.selectedYear}
-        setSelectedYear={setSelectedYear}
-      />
-    </>
+    <ContextSectionBody
+      years={data.context}
+      selectedYear={filters.selectedYear}
+      setSelectedYear={setSelectedYear}
+    />
   )
 }
 
@@ -90,7 +87,7 @@ export default function App() {
       </nav>
 
       <main id="obsah">
-        {state.status === 'ready' && <LoadedStory data={state.data} />}
+        {state.status === 'ready' && <Findings facts={state.data.editorialFacts} />}
         {state.status === 'loading' && (
           <section
             id="zistenia"
@@ -112,6 +109,9 @@ export default function App() {
             <ErrorPanel />
           </section>
         )}
+        <ContextSectionShell status={state.status === 'ready' ? undefined : state.status}>
+          {state.status === 'ready' && <LoadedContext data={state.data} />}
+        </ContextSectionShell>
 
 
         <section id="atlas" className="section section--atlas" aria-labelledby="atlas-title">
