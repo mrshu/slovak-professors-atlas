@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 
+import ContextSection from './components/ContextSection'
 import ErrorPanel from './components/ErrorPanel'
 import Findings from './components/Findings'
 import Hero from './components/Hero'
 import { loadAtlas } from './data/load'
 import type { AtlasData } from './data/types'
+import { useAtlasState } from './state/useAtlasState'
 
 type LoadState =
   | { status: 'loading'; data: null }
@@ -12,6 +14,21 @@ type LoadState =
   | { status: 'error'; data: null }
 
 const slovakInteger = new Intl.NumberFormat('sk-SK')
+
+function LoadedStory({ data }: { data: AtlasData }) {
+  const { filters, setSelectedYear } = useAtlasState(data)
+
+  return (
+    <>
+      <Findings facts={data.editorialFacts} />
+      <ContextSection
+        years={data.context}
+        selectedYear={filters.selectedYear}
+        setSelectedYear={setSelectedYear}
+      />
+    </>
+  )
+}
 
 export default function App() {
   const [state, setState] = useState<LoadState>({ status: 'loading', data: null })
@@ -73,7 +90,7 @@ export default function App() {
       </nav>
 
       <main id="obsah">
-        {state.status === 'ready' && <Findings facts={state.data.editorialFacts} />}
+        {state.status === 'ready' && <LoadedStory data={state.data} />}
         {state.status === 'loading' && (
           <section
             id="zistenia"
@@ -96,37 +113,6 @@ export default function App() {
           </section>
         )}
 
-        <section id="kontext" className="section section--context" aria-labelledby="context-title">
-          <div className="section__heading section__heading--split">
-            <div>
-              <p className="eyebrow">Vysoké školstvo v čase</p>
-              <h2 id="context-title">Vymenovania v kontexte</h2>
-            </div>
-            <p>
-              Národné časové rady CVTI dávajú vymenovaniam mierku bez toho, aby z porovnania
-              robili príčinný vzťah. Pre rok 2026 nie je k dispozícii kontextový menovateľ,
-              pretože časové rady CVTI sa končia akademickým rokom 2025/2026.
-            </p>
-          </div>
-          <dl className="measurement-key" aria-label="Jednotky kontextového porovnania">
-            <div>
-              <dt>Vymenovania</dt>
-              <dd>ročný tok</dd>
-            </div>
-            <div>
-              <dt>Absolventi</dt>
-              <dd>ročný tok I., II. a III. stupňa</dd>
-            </div>
-            <div>
-              <dt>Študenti</dt>
-              <dd>stav k 31. októbru</dd>
-            </div>
-            <div>
-              <dt>Interní učitelia</dt>
-              <dd>stav s metodickou zmenou od roku 2007</dd>
-            </div>
-          </dl>
-        </section>
 
         <section id="atlas" className="section section--atlas" aria-labelledby="atlas-title">
           <svg className="atlas-contours" viewBox="0 0 1200 520" aria-hidden="true">
