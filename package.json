@@ -4,10 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "data:build": "uv run python -m pipeline.build",
+    "data:build": "uv run python -m pipeline.build --output public/data/atlas.json",
     "data:update": "uv run python scripts/update_data.py",
+    "test:data": "uv run pytest tests/data -q",
     "test": "vitest",
-    "build": "npm run data:build && tsc -b && vite build",
+    "build": "npm run data:build && npm run test:data && tsc -b && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
