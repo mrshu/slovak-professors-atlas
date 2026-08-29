@@ -142,7 +142,21 @@ describe('archívny atlas', () => {
       ),
     ).toBeVisible()
 
-    const mainSections = Array.from(screen.getByRole('main').children).map((section) => section.id)
+    const context = screen.getByRole('region', { name: 'Vymenovania v kontexte' })
+    expect(
+      within(context).getByText(
+        /Pre rok 2026 nie je k dispozícii kontextový menovateľ, pretože časové rady CVTI sa končia akademickým rokom 2025\/2026\./,
+      ),
+    ).toBeVisible()
+
+    const banner = screen.getByRole('banner')
+    const navigation = screen.getByRole('navigation', { name: 'Navigácia atlasu' })
+    const main = screen.getByRole('main')
+    expect(banner.nextElementSibling).toBe(navigation)
+    expect(navigation.nextElementSibling).toBe(main)
+    expect(banner).not.toContainElement(navigation)
+
+    const mainSections = Array.from(main.children).map((section) => section.id)
     expect(mainSections).toEqual(['zistenia', 'kontext', 'atlas', 'zaznamy', 'metodika'])
 
     expect(screen.getByRole('link', { name: 'Zdrojový zoznam ministerstva' })).toHaveAttribute(

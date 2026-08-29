@@ -46,31 +46,31 @@ export default function App() {
 
       <header aria-labelledby="hero-title">
         <Hero data={state.data} status={state.status} />
-        <nav className="anchor-nav" aria-label="Navigácia atlasu">
-          <div className="anchor-nav__inner">
-            <a className="anchor-nav__brand" href="#hero-title" aria-label="Na začiatok atlasu">
-              AP
-            </a>
-            <ol>
-              <li>
-                <a href="#zistenia">Zistenia</a>
-              </li>
-              <li>
-                <a href="#kontext">Kontext</a>
-              </li>
-              <li>
-                <a href="#atlas">Atlas</a>
-              </li>
-              <li>
-                <a href="#zaznamy">Záznamy</a>
-              </li>
-              <li>
-                <a href="#metodika">Metodika</a>
-              </li>
-            </ol>
-          </div>
-        </nav>
       </header>
+      <nav className="anchor-nav" aria-label="Navigácia atlasu">
+        <div className="anchor-nav__inner">
+          <a className="anchor-nav__brand" href="#hero-title" aria-label="Na začiatok atlasu">
+            AP
+          </a>
+          <ol>
+            <li>
+              <a href="#zistenia">Zistenia</a>
+            </li>
+            <li>
+              <a href="#kontext">Kontext</a>
+            </li>
+            <li>
+              <a href="#atlas">Atlas</a>
+            </li>
+            <li>
+              <a href="#zaznamy">Záznamy</a>
+            </li>
+            <li>
+              <a href="#metodika">Metodika</a>
+            </li>
+          </ol>
+        </div>
+      </nav>
 
       <main id="obsah">
         {state.status === 'ready' && <Findings facts={state.data.editorialFacts} />}
@@ -104,7 +104,8 @@ export default function App() {
             </div>
             <p>
               Národné časové rady CVTI dávajú vymenovaniam mierku bez toho, aby z porovnania
-              robili príčinný vzťah. Rok 2026 zostáva bez chýbajúceho kontextového menovateľa.
+              robili príčinný vzťah. Pre rok 2026 nie je k dispozícii kontextový menovateľ,
+              pretože časové rady CVTI sa končia akademickým rokom 2025/2026.
             </p>
           </div>
           <dl className="measurement-key" aria-label="Jednotky kontextového porovnania">

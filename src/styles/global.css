@@ -47,6 +47,12 @@ a:hover {
   outline-offset: 0.25rem;
 }
 
+.hero,
+.section--atlas,
+.site-footer {
+  --focus-ring: 3px solid var(--color-focus-on-dark);
+}
+
 ::selection {
   background: var(--color-terracotta);
   color: var(--color-paper-light);
