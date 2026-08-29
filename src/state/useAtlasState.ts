@@ -5,6 +5,7 @@ import type { Appointment, AtlasData } from '../data/types'
 import {
   createFilterOptions,
   type FilterState,
+  type FilterOptions,
   type FilterValueKey,
   type HistoryMode,
 } from './filters'
@@ -12,6 +13,8 @@ import { parseFilters, serializeFilters } from './url'
 
 export interface AtlasState {
   filters: FilterState
+  options: FilterOptions
+  defaults: FilterState
   filteredRecords: Appointment[]
   setFilter: (key: FilterValueKey, value: string | null, mode?: HistoryMode) => void
   setExclusiveFilter: (key: FilterValueKey, value: string, mode?: HistoryMode) => void
@@ -35,14 +38,14 @@ const OPTION_KEY_BY_FILTER: Record<
   | 'cities'
   | 'institutionIds'
   | 'faculties'
-  | 'fields'
+  | 'fieldKeys'
   | 'appointmentDates'
 > = {
   presidentId: 'presidentIds',
   city: 'cities',
   institutionId: 'institutionIds',
   faculty: 'faculties',
-  field: 'fields',
+  field: 'fieldKeys',
   appointedOn: 'appointmentDates',
 }
 
@@ -245,6 +248,8 @@ export function useAtlasState(data: AtlasData): AtlasState {
 
   return {
     filters,
+    options,
+    defaults,
     filteredRecords,
     setFilter,
     setExclusiveFilter,

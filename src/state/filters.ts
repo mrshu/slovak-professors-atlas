@@ -1,4 +1,5 @@
 import type { AtlasData } from '../data/types'
+import { fieldAppointmentRanking } from '../analysis/selectors'
 import { normalizeForSearch } from '../utils/search'
 
 export interface FilterState {
@@ -23,6 +24,11 @@ export type FilterValueKey =
   | 'appointedOn'
 
 export type HistoryMode = 'push' | 'replace'
+export interface FieldFilterOption {
+  key: string
+  canonicalLabel: string
+}
+
 
 export interface FilterOptions {
   defaults: FilterState
@@ -30,7 +36,8 @@ export interface FilterOptions {
   cities: readonly string[]
   institutionIds: readonly string[]
   faculties: readonly string[]
-  fields: readonly string[]
+  fieldKeys: readonly string[]
+  fields: readonly FieldFilterOption[]
   appointmentDates: readonly string[]
 }
 
@@ -69,13 +76,22 @@ export function createFilterDefaults(data: AtlasData): FilterState {
 }
 
 export function createFilterOptions(data: AtlasData): FilterOptions {
+  const fields = fieldAppointmentRanking(data.records)
+    .map(({ fieldKey, field }) => ({ key: fieldKey, canonicalLabel: field }))
+    .sort(
+      (left, right) =>
+        slovakCollator.compare(left.canonicalLabel, right.canonicalLabel) ||
+        left.key.localeCompare(right.key),
+    )
+
   return {
     defaults: createFilterDefaults(data),
     presidentIds: uniqueSorted(data.presidents.map(({ id }) => id)),
     cities: uniqueSorted(data.cities.map(({ name }) => name)),
     institutionIds: uniqueSorted(data.institutions.map(({ id }) => id)),
     faculties: uniqueSorted(data.records.map(({ faculty }) => faculty)),
-    fields: uniqueSorted(data.records.map(({ field }) => normalizeForSearch(field))),
+    fieldKeys: fields.map(({ key }) => key),
+    fields,
     appointmentDates: uniqueSorted(data.records.map(({ appointedOn }) => appointedOn)),
   }
 }

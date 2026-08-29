@@ -15,14 +15,14 @@ const OPTION_KEY_BY_FILTER: Record<
   | 'cities'
   | 'institutionIds'
   | 'faculties'
-  | 'fields'
+  | 'fieldKeys'
   | 'appointmentDates'
 > = {
   presidentId: 'presidentIds',
   city: 'cities',
   institutionId: 'institutionIds',
   faculty: 'faculties',
-  field: 'fields',
+  field: 'fieldKeys',
   appointedOn: 'appointmentDates',
 }
 

@@ -295,7 +295,12 @@ describe('úplný register', () => {
     expect(screen.getByTestId('linked-count')).toHaveTextContent('1')
     reset()
 
-    fireEvent.change(within(explorer).getByLabelText('Odbor'), { target: { value: 'historia' } })
+    const field = within(explorer).getByLabelText('Odbor')
+    expect(within(field).getByRole('option', { name: 'história' })).toHaveValue('historia')
+    fireEvent.change(field, { target: { value: 'historia' } })
+    expect(
+      within(explorer).getByRole('button', { name: 'Odstrániť filter Odbor: história' }),
+    ).toBeVisible()
     expect(screen.getByTestId('linked-count')).toHaveTextContent('1')
     reset()
 

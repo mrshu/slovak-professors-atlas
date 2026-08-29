@@ -1,7 +1,6 @@
 import { useMemo, type ReactNode } from 'react'
 
 import type { AtlasData } from '../data/types'
-import { createFilterDefaults } from '../state/filters'
 import type { AtlasState } from '../state/useAtlasState'
 import { formatAppointmentCount, formatDate } from '../utils/format'
 import AnalysisLenses from './AnalysisLenses'
@@ -89,6 +88,8 @@ function AtlasShell({ children, status }: AtlasShellProps) {
 function LoadedAtlasSection({ data, atlasState }: LoadedAtlasSectionProps) {
   const {
     filters,
+    options,
+    defaults,
     filteredRecords,
     setFilter,
     setDateRange,
@@ -97,7 +98,6 @@ function LoadedAtlasSection({ data, atlasState }: LoadedAtlasSectionProps) {
     setQuery,
     resetFilters,
   } = atlasState
-  const defaults = useMemo(() => createFilterDefaults(data), [data])
   const presidentById = useMemo(
     () => new Map(data.presidents.map((president) => [president.id, president])),
     [data.presidents],
@@ -105,6 +105,10 @@ function LoadedAtlasSection({ data, atlasState }: LoadedAtlasSectionProps) {
   const institutionById = useMemo(
     () => new Map(data.institutions.map((institution) => [institution.id, institution])),
     [data.institutions],
+  )
+  const fieldLabelByKey = useMemo(
+    () => new Map(options.fields.map(({ key, canonicalLabel }) => [key, canonicalLabel] as const)),
+    [options.fields],
   )
   const availableYears = useMemo(
     () =>
@@ -166,7 +170,7 @@ function LoadedAtlasSection({ data, atlasState }: LoadedAtlasSectionProps) {
   if (filters.field !== null) {
     activeChips.push({
       key: 'field',
-      label: `Odbor: ${filters.field}`,
+      label: `Odbor: ${fieldLabelByKey.get(filters.field) ?? filters.field}`,
       remove: () => setFilter('field', null, 'push'),
     })
   }

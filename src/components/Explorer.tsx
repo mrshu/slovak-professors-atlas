@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 
 import type { AtlasData } from '../data/types'
-import { createFilterDefaults, createFilterOptions } from '../state/filters'
 import type { AtlasState } from '../state/useAtlasState'
 import { recordsToCsv } from '../utils/csv'
 import { formatAppointmentCount, formatDate } from '../utils/format'
@@ -79,6 +78,8 @@ function ExplorerShell({ children, status }: ExplorerShellProps) {
 function LoadedExplorer({ data, atlasState }: LoadedExplorerProps) {
   const {
     filters,
+    options,
+    defaults,
     filteredRecords,
     setFilter,
     setDateRange,
@@ -87,8 +88,6 @@ function LoadedExplorer({ data, atlasState }: LoadedExplorerProps) {
     setQuery,
     resetFilters,
   } = atlasState
-  const options = useMemo(() => createFilterOptions(data), [data])
-  const defaults = useMemo(() => createFilterDefaults(data), [data])
   const [announcedCount, setAnnouncedCount] = useState(filteredRecords.length)
   const [exportError, setExportError] = useState<string | null>(null)
   const presidentById = useMemo(
@@ -98,6 +97,10 @@ function LoadedExplorer({ data, atlasState }: LoadedExplorerProps) {
   const institutionById = useMemo(
     () => new Map(data.institutions.map((institution) => [institution.id, institution] as const)),
     [data.institutions],
+  )
+  const fieldLabelByKey = useMemo(
+    () => new Map(options.fields.map(({ key, canonicalLabel }) => [key, canonicalLabel] as const)),
+    [options.fields],
   )
   const availableYears = useMemo(
     () =>
@@ -166,7 +169,7 @@ function LoadedExplorer({ data, atlasState }: LoadedExplorerProps) {
   if (filters.field !== null) {
     activeChips.push({
       key: 'field',
-      label: `Odbor: ${filters.field}`,
+      label: `Odbor: ${fieldLabelByKey.get(filters.field) ?? filters.field}`,
       remove: () => setFilter('field', null, 'push'),
     })
   }
@@ -299,9 +302,9 @@ function LoadedExplorer({ data, atlasState }: LoadedExplorerProps) {
               onChange={(event) => setFilter('field', event.currentTarget.value || null, 'push')}
             >
               <option value="">Všetky zdrojové odbory</option>
-              {options.fields.map((field) => (
-                <option value={field} key={field}>
-                  {field}
+              {options.fields.map(({ key, canonicalLabel }) => (
+                <option value={key} key={key}>
+                  {canonicalLabel}
                 </option>
               ))}
             </select>

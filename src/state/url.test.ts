@@ -22,7 +22,11 @@ const options: FilterOptions = {
   cities: ['Bratislava', 'Košice'],
   institutionIds: ['tuke', 'uniba'],
   faculties: ['Lekárska fakulta', 'Strojnícka fakulta'],
-  fields: ['hudobné umenie', 'vnútorné lekárstvo'],
+  fieldKeys: ['hudobne umenie', 'vnutorne lekarstvo'],
+  fields: [
+    { key: 'hudobne umenie', canonicalLabel: 'hudobné umenie' },
+    { key: 'vnutorne lekarstvo', canonicalLabel: 'Vnútorné lekárstvo' },
+  ],
   appointmentDates: ['2011-01-24', '2023-05-12'],
 }
 
@@ -35,7 +39,7 @@ describe('atlas URL filters', () => {
       city: 'Bratislava',
       institutionId: 'uniba',
       faculty: 'Lekárska fakulta',
-      field: 'vnútorné lekárstvo',
+      field: 'vnutorne lekarstvo',
       appointedOn: '2011-01-24',
       query: '  Caputova  ',
       selectedYear: 2023,
@@ -50,7 +54,7 @@ describe('atlas URL filters', () => {
       ['city', 'Bratislava'],
       ['institutionId', 'uniba'],
       ['faculty', 'Lekárska fakulta'],
-      ['field', 'vnútorné lekárstvo'],
+      ['field', 'vnutorne lekarstvo'],
       ['appointedOn', '2011-01-24'],
       ['query', '  Caputova  '],
       ['selectedYear', '2023'],

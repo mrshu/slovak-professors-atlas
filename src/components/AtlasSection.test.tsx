@@ -90,18 +90,21 @@ const records: Appointment[] = [
     institutionId: 'uniba',
     faculty: 'Lekárska fakulta',
     appointedOn: '2023-01-01',
+    field: 'Vnútorné lekárstvo',
   }),
   appointment({
     id: 'u2',
     institutionId: 'uniba',
     faculty: null,
     appointedOn: '2023-01-01',
+    field: 'Vnútorné lekárstvo',
   }),
   appointment({
     id: 't1',
     institutionId: 'tuke',
     faculty: 'Strojnícka fakulta',
     appointedOn: '2023-01-11',
+    field: 'vnútorNÉ lekárstvo',
   }),
   appointment({
     id: 'a1',
@@ -294,6 +297,21 @@ describe('AtlasSection linked selection', () => {
     expect(screen.getByText('Lekárska fakulta')).toBeInTheDocument()
     expect(screen.getByText('neuvedené')).toBeInTheDocument()
     expect(screen.getAllByText('1', { selector: '.institution-ranking__faculty-count' })).toHaveLength(2)
+  })
+
+  it('renders the canonical Slovak field label while preserving the normalized URL key', () => {
+    window.history.replaceState(
+      null,
+      '',
+      '/slovak-professors/index.html?field=vnutorne+lekarstvo',
+    )
+
+    render(<AtlasHarness />)
+
+    expect(
+      screen.getByRole('button', { name: 'Odstrániť filter Odbor: Vnútorné lekárstvo' }),
+    ).toBeVisible()
+    expect(window.location.search).toBe('?field=vnutorne+lekarstvo')
   })
 
   it('applies and clears timeline years atomically while context-year history stays independent', () => {

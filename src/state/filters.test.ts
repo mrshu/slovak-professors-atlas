@@ -18,6 +18,8 @@ const data = {
     { faculty: '', field: 'HUDOBNÉ   UMENIE', appointedOn: '2025-01-01' },
     { faculty: '   ', field: ' hudobne umenie ', appointedOn: '2025-02-01' },
     { faculty: 'Lekárska fakulta', field: 'vnútorNÉ lekárstvo', appointedOn: '2011-01-24' },
+    { faculty: null, field: 'hudobné umenie', appointedOn: '2025-01-01' },
+    { faculty: null, field: 'Vnútorné lekárstvo', appointedOn: '2011-01-24' },
   ],
 } as AtlasData
 
@@ -44,7 +46,11 @@ describe('filter state metadata', () => {
       cities: ['Bratislava', 'Košice'],
       institutionIds: ['tuke', 'uniba'],
       faculties: ['Lekárska fakulta'],
-      fields: ['hudobne umenie', 'vnutorne lekarstvo'],
+      fieldKeys: ['hudobne umenie', 'vnutorne lekarstvo'],
+      fields: [
+        { key: 'hudobne umenie', canonicalLabel: 'hudobné umenie' },
+        { key: 'vnutorne lekarstvo', canonicalLabel: 'Vnútorné lekárstvo' },
+      ],
       appointmentDates: ['2011-01-24', '2025-01-01', '2025-02-01'],
     })
   })
