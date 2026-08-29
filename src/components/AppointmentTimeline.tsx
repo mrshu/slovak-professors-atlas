@@ -150,7 +150,12 @@ export default function AppointmentTimeline({
             const selected = selectedStartYear === year && selectedEndYear === year
 
             return (
-              <g className="appointment-timeline__year" key={year}>
+              <g
+                className={`appointment-timeline__year${
+                  selected ? ' appointment-timeline__year--selected' : ''
+                }`}
+                key={year}
+              >
                 <rect
                   className={`appointment-timeline__bar${selected ? ' appointment-timeline__bar--selected' : ''}`}
                   x={yearStart + 4}
@@ -166,6 +171,16 @@ export default function AppointmentTimeline({
                     y={BAR_TOP - 13}
                     width={Math.max(4, nextYear - yearStart - 4)}
                     height={BASELINE - BAR_TOP + 13}
+                    aria-hidden="true"
+                  />
+                )}
+                {selected && (
+                  <rect
+                    className="appointment-timeline__selection-outline"
+                    x={yearStart + 2}
+                    y={BAR_TOP}
+                    width={Math.max(4, nextYear - yearStart - 4)}
+                    height={BASELINE - BAR_TOP}
                     aria-hidden="true"
                   />
                 )}

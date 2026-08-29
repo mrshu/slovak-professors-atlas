@@ -1234,6 +1234,23 @@
   fill: var(--color-terracotta);
 }
 
+.appointment-timeline__selection-outline {
+  fill: none;
+  stroke: var(--color-paper-light);
+  stroke-dasharray: 4 3;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .appointment-timeline__selection-outline {
+    stroke: Highlight;
+    stroke-dasharray: none;
+    stroke-width: 3;
+  }
+}
+
 .appointment-timeline__ceremony {
   fill: var(--color-terracotta);
   stroke: var(--color-paper-light);

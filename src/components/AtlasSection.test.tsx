@@ -1,10 +1,45 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import type * as D3Geo from 'd3-geo'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Appointment, AtlasData, Institution } from '../data/types'
 import { useAtlasState } from '../state/useAtlasState'
 import AtlasSection from './AtlasSection'
+
+const { projectPointSpy } = vi.hoisted(() => ({
+  projectPointSpy: vi.fn(),
+}))
+
+vi.mock('d3-geo', async (importOriginal) => {
+  const actual = await importOriginal<typeof D3Geo>()
+
+  return {
+    ...actual,
+    geoMercator: () => {
+      const projection = actual.geoMercator()
+
+      return new Proxy(projection, {
+        apply(target, thisArg, args) {
+          projectPointSpy(...args)
+          return Reflect.apply(target, thisArg, args)
+        },
+        get(target, property, receiver) {
+          const value = Reflect.get(target, property, target)
+          if (typeof value !== 'function') {
+            return value
+          }
+
+          return (...args: unknown[]) => {
+            const result = Reflect.apply(value, target, args)
+            return result === target ? receiver : result
+          }
+        },
+      })
+    },
+  }
+})
+
 
 const institutions: Institution[] = [
   {
@@ -225,6 +260,17 @@ describe('AtlasSection linked selection', () => {
     expect(
       screen.getByRole('button', { name: 'Rok 2023: 4 vymenovania, vybrané' }),
     ).toHaveAttribute('aria-pressed', 'true')
+    const selectedYear = screen.getByRole('button', {
+      name: 'Rok 2023: 4 vymenovania, vybrané',
+    }).closest('.appointment-timeline__year')
+    expect(selectedYear).toHaveClass('appointment-timeline__year--selected')
+    expect(selectedYear?.querySelector('.appointment-timeline__selection-outline')).toBeInTheDocument()
+    expect(
+      screen
+        .getByRole('button', { name: 'Rok 2024: 0 vymenovaní, nevybrané' })
+        .closest('.appointment-timeline__year')
+        ?.querySelector('.appointment-timeline__selection-outline'),
+    ).not.toBeInTheDocument()
     expect(Array.from(new URLSearchParams(window.location.search).entries())).toEqual([
       ['startYear', '2023'],
       ['endYear', '2023'],
@@ -292,11 +338,17 @@ describe('AtlasSection visual and analytical contracts', () => {
 
     expect(screen.getByTestId('slovakia-outline')).toHaveAttribute('d')
     const mark = screen.getByTestId('city-mark-Bratislava')
-    expect(Number(mark.getAttribute('r'))).toBeGreaterThanOrEqual(5)
-    expect(
-      screen.getByRole('button', { name: 'Bratislava: 2 vymenovania, nevybrané' }).parentElement,
-    ).toHaveAttribute('width', '44')
-
+    const radius = Number(mark.getAttribute('r'))
+    const target = screen.getByRole('button', {
+      name: 'Bratislava: 2 vymenovania, nevybrané',
+    }).parentElement
+    const targetWidth = Number(target?.getAttribute('width'))
+    const targetHeight = Number(target?.getAttribute('height'))
+    expect(radius).toBe(29)
+    expect(targetWidth).toBe(Math.max(44, 2 * radius))
+    expect(targetHeight).toBe(Math.max(44, 2 * radius))
+    expect(Number(target?.getAttribute('x')) + targetWidth / 2).toBe(Number(mark.getAttribute('cx')))
+    expect(Number(target?.getAttribute('y')) + targetHeight / 2).toBe(Number(mark.getAttribute('cy')))
     expect(screen.getAllByRole('button', { name: /^Rok / })).toHaveLength(27)
     expect(
       screen.getByRole('button', {
@@ -311,6 +363,17 @@ describe('AtlasSection visual and analytical contracts', () => {
         name: 'Prezidentské obdobie Zuzana Čaputová: od 15. júna 2019 do 15. júna 2024, koniec sa nezapočítava',
       }),
     ).toBeInTheDocument()
+  })
+
+  it('does not project fixed city coordinates again when record filters change', () => {
+    render(<AtlasHarness />)
+    projectPointSpy.mockClear()
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Bratislava: 2 vymenovania, nevybrané' }),
+    )
+
+    expect(projectPointSpy).not.toHaveBeenCalled()
   })
 
   it('derives cadence, breadth, concentration, and leader from the same year-filtered cohort', () => {

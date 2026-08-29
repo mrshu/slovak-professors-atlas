@@ -20,9 +20,8 @@ interface SlovakiaMapProps {
   onToggleCity: (city: string) => void
 }
 
-interface ProjectedCity {
+interface ProjectedCityLocation {
   city: string
-  count: number
   x: number
   y: number
 }
@@ -80,11 +79,10 @@ export default function SlovakiaMap({
     () => geoPath(projection)(geography as unknown as GeoPermissibleObjects) ?? '',
     [geography, projection],
   )
-  const projectedCities = useMemo(() => {
-    const counts = new Map(cityCounts(records, institutions).map(({ city, count }) => [city, count]))
+  const projectedCityLocations = useMemo(() => {
     const institutionById = new Map(institutions.map((institution) => [institution.id, institution]))
 
-    return cities.flatMap<ProjectedCity>((city) => {
+    return cities.flatMap<ProjectedCityLocation>((city) => {
       const locations = city.institutionIds.flatMap((institutionId) => {
         const institution = institutionById.get(institutionId)
         return institution === undefined ? [] : [institution]
@@ -104,9 +102,21 @@ export default function SlovakiaMap({
         return []
       }
 
-      return [{ city: city.name, count: counts.get(city.name) ?? 0, x: position[0], y: position[1] }]
+      return [{ city: city.name, x: position[0], y: position[1] }]
     })
-  }, [cities, institutions, projection, records])
+  }, [cities, institutions, projection])
+  const countsByCity = useMemo(
+    () => new Map(cityCounts(records, institutions).map(({ city, count }) => [city, count])),
+    [institutions, records],
+  )
+  const projectedCities = useMemo(
+    () =>
+      projectedCityLocations.map((city) => ({
+        ...city,
+        count: countsByCity.get(city.city) ?? 0,
+      })),
+    [countsByCity, projectedCityLocations],
+  )
   const maxCount = Math.max(0, ...projectedCities.map(({ count }) => count))
   const radius = useMemo(
     () => scaleSqrt().domain([0, Math.max(1, maxCount)]).range([5, 29]),
@@ -134,6 +144,7 @@ export default function SlovakiaMap({
         {projectedCities.map((city) => {
           const selected = city.city === selectedCity
           const cityRadius = city.count > 0 ? radius(city.count) : 5
+          const targetSize = Math.max(TARGET_SIZE, cityRadius * 2)
           const labelOnLeft = city.x > width * 0.72
           const accessibleLabel = `${city.city}: ${formatAppointmentCount(city.count)}, ${
             selected ? 'vybrané' : 'nevybrané'
@@ -172,10 +183,10 @@ export default function SlovakiaMap({
                 </text>
               )}
               <foreignObject
-                x={city.x - TARGET_SIZE / 2}
-                y={city.y - TARGET_SIZE / 2}
-                width={TARGET_SIZE}
-                height={TARGET_SIZE}
+                x={city.x - targetSize / 2}
+                y={city.y - targetSize / 2}
+                width={targetSize}
+                height={targetSize}
               >
                 <button
                   className="slovakia-map__target"
