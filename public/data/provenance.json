@@ -1,0 +1,14 @@
+{
+  "sources": {
+    "professors": {
+      "url": "https://www.minedu.sk/data/att/41c/36688.d8c1fd.xls",
+      "sha256": "0730645dfe3310e25665f5daef3126fbe5fe21469c773cd4a6e16b2bdaa69b5d",
+      "retrievedOn": "2026-08-29"
+    },
+    "higher_education": {
+      "url": "https://www.cvtisr.sk/buxus/docs//JC/rady/radtab10.xls",
+      "sha256": "def7a52f5fe139dfcd01d88a141d3d65fafc33581a19082bf07fa62b1d06f59e",
+      "retrievedOn": "2026-08-29"
+    }
+  }
+}
