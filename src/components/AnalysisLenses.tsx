@@ -6,12 +6,13 @@ import {
   institutionConcentration,
   presidentialEraProfiles,
 } from '../analysis/selectors'
-import type { Appointment, Institution, President } from '../data/types'
+import type { Affiliation, Appointment, Institution, President } from '../data/types'
 import { formatDate, formatNumber } from '../utils/format'
 
 interface AnalysisLensesProps {
   records: readonly Appointment[]
   institutions: readonly Institution[]
+  affiliations: readonly Affiliation[]
   presidents: readonly President[]
 }
 
@@ -25,17 +26,21 @@ function formatMedian(value: number | null, suffix = ''): string {
 export default function AnalysisLenses({
   records,
   institutions,
+  affiliations,
   presidents,
 }: AnalysisLensesProps) {
   const cadence = useMemo(() => ceremonyCadence(records), [records])
-  const breadth = useMemo(() => academicBreadth(records, institutions), [institutions, records])
+  const breadth = useMemo(
+    () => academicBreadth(records, affiliations),
+    [affiliations, records],
+  )
   const concentration = useMemo(
     () => institutionConcentration(records, institutions),
     [institutions, records],
   )
   const eraProfiles = useMemo(
-    () => presidentialEraProfiles(records, institutions, presidents),
-    [institutions, presidents, records],
+    () => presidentialEraProfiles(records, institutions, affiliations, presidents),
+    [affiliations, institutions, presidents, records],
   )
 
   let cadenceNote = 'Rozostup je počet kalendárnych dní medzi po sebe idúcimi slávnosťami.'

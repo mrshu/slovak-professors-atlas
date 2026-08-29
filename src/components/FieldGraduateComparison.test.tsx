@@ -57,6 +57,7 @@ function appointment(id: string, field: string, appointedOn: string): Appointmen
     titlesAfter: null,
     faculty: null,
     institutionId: 'uniba',
+    affiliationId: 'uniba-default',
     institutionSource: 'UK',
     field,
     appointedOn,

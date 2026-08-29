@@ -3,19 +3,14 @@ import { scaleSqrt } from 'd3-scale'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { cityCounts } from '../analysis/selectors'
-import type {
-  Appointment,
-  AtlasGeography,
-  City,
-  Institution,
-} from '../data/types'
+import type { Affiliation, Appointment, AtlasGeography, City } from '../data/types'
 import { formatAppointmentCount } from '../utils/format'
 
 interface SlovakiaMapProps {
   records: readonly Appointment[]
   geography: AtlasGeography
   cities: readonly City[]
-  institutions: readonly Institution[]
+  affiliations: readonly Affiliation[]
   selectedCity: string | null
   onToggleCity: (city: string) => void
 }
@@ -30,6 +25,7 @@ const DEFAULT_WIDTH = 720
 const MINIMUM_TARGET_SIZE = 44
 const CITY_MARK_MIN_RADIUS = 5
 const CITY_MARK_MAX_RADIUS = 29
+const CITY_LABEL_MIN_COUNT = 50
 const SELECTED_RING_RADIUS_OFFSET = 6
 const SELECTED_RING_STROKE_WIDTH = 3
 const MAP_PADDING = 24
@@ -38,7 +34,7 @@ export default function SlovakiaMap({
   records,
   geography,
   cities,
-  institutions,
+  affiliations,
   selectedCity,
   onToggleCity,
 }: SlovakiaMapProps) {
@@ -83,35 +79,35 @@ export default function SlovakiaMap({
     () => geoPath(projection)(geography as unknown as GeoPermissibleObjects) ?? '',
     [geography, projection],
   )
-  const projectedCityLocations = useMemo(() => {
-    const institutionById = new Map(institutions.map((institution) => [institution.id, institution]))
-
-    return cities.flatMap<ProjectedCityLocation>((city) => {
-      const locations = city.institutionIds.flatMap((institutionId) => {
-        const institution = institutionById.get(institutionId)
-        return institution === undefined ? [] : [institution]
-      })
-      if (locations.length === 0) {
-        return []
-      }
-
-      const longitude =
-        locations.reduce((total, institution) => total + institution.longitude, 0) /
-        locations.length
-      const latitude =
-        locations.reduce((total, institution) => total + institution.latitude, 0) /
-        locations.length
-      const position = projection([longitude, latitude])
-      if (position === null) {
-        return []
-      }
-
-      return [{ city: city.name, x: position[0], y: position[1] }]
-    })
-  }, [cities, institutions, projection])
+  const projectedCityLocations = useMemo(
+    () =>
+      cities.flatMap<ProjectedCityLocation>((city) => {
+        if (!Number.isFinite(city.longitude) || !Number.isFinite(city.latitude)) {
+          return []
+        }
+        const position = projection([city.longitude, city.latitude])
+        if (
+          position === null ||
+          !Number.isFinite(position[0]) ||
+          !Number.isFinite(position[1])
+        ) {
+          return []
+        }
+        return [{ city: city.name, x: position[0], y: position[1] }]
+      }),
+    [cities, projection],
+  )
   const countsByCity = useMemo(
-    () => new Map(cityCounts(records, institutions).map(({ city, count }) => [city, count])),
-    [institutions, records],
+    () => new Map(cityCounts(records, affiliations).map(({ city, count }) => [city, count])),
+    [affiliations, records],
+  )
+  const mappedAffiliationIds = useMemo(
+    () => new Set(cities.flatMap(({ affiliationIds }) => affiliationIds)),
+    [cities],
+  )
+  const unresolvedRecordCount = useMemo(
+    () => records.filter(({ affiliationId }) => !mappedAffiliationIds.has(affiliationId)).length,
+    [mappedAffiliationIds, records],
   )
   const projectedCities = useMemo(
     () =>
@@ -138,8 +134,10 @@ export default function SlovakiaMap({
           <h3 id="slovakia-map-title">Mestá navrhujúcich pracovísk</h3>
         </div>
         <p id="map-note">
-          Plocha značky rastie s počtom vymenovaní. Poloha označuje mesto inštitúcie, nie
+          Plocha značky rastie s počtom vymenovaní. Poloha označuje mesto pracoviska, nie
           bydlisko profesora.
+          {unresolvedRecordCount > 0 &&
+            ` ${formatAppointmentCount(unresolvedRecordCount)} bez vyriešenej polohy sa na mape nezobrazuje.`}
         </p>
       </figcaption>
       <svg
@@ -183,7 +181,7 @@ export default function SlovakiaMap({
                   aria-hidden="true"
                 />
               )}
-              {city.count > 0 && (
+              {(city.count >= CITY_LABEL_MIN_COUNT || selected) && (
                 <text
                   className="slovakia-map__label"
                   x={city.x + (labelOnLeft ? -cityRadius - 7 : cityRadius + 7)}
@@ -236,7 +234,7 @@ export default function SlovakiaMap({
           })}
       </ul>
       <p className="slovakia-map__source">
-        Obrys: Natural Earth, verejná doména. Súradnice sídiel: Wikidata.
+        Obrys: Natural Earth, verejná doména. Poloha pracovísk: zdroje sú uvedené v metodike.
       </p>
     </figure>
   )

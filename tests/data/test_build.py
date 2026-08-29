@@ -27,6 +27,7 @@ def test_build_is_byte_deterministic_and_serializes_public_contract(tmp_path: Pa
     assert first_payload == second_payload == json.loads(first_bytes)
 
     assert set(first_payload) == {
+        "affiliations",
         "cities",
         "context",
         "editorialFacts",
@@ -75,6 +76,37 @@ def test_build_is_byte_deterministic_and_serializes_public_contract(tmp_path: Pa
         "ne_10m_admin_0_countries.geojson"
     )
     assert first_payload["geography"]["properties"]["license"] == "Public domain"
+
+def test_build_resolves_workplace_locations_without_inheriting_ambiguous_seats(
+    tmp_path: Path,
+) -> None:
+    payload = build_atlas(tmp_path / "atlas.json")
+    records = payload["records"]
+    affiliations = {item["id"]: item for item in payload["affiliations"]}
+    counts = Counter(record["affiliationId"] for record in records)
+
+    assert all(
+        set(institution).isdisjoint({"city", "latitude", "longitude"})
+        for institution in payload["institutions"]
+    )
+    assert counts["uniba-jlf-martin"] == 45
+    assert counts["tuke-fvt-presov"] == 15
+    assert counts["stuba-mtf-trnava"] == 35
+    assert counts["stuba-fchpt-humenne"] == 1
+    assert counts["euba-phf-kosice"] == 4
+    assert counts["ku-tf-kosice"] == 25
+    assert counts["ku-spisska-kapitula"] == 1
+    assert counts["vszsp-unresolved"] == 76
+    assert affiliations["vszsp-unresolved"]["status"] == "unresolved"
+    assert affiliations["vszsp-unresolved"]["city"] is None
+    assert affiliations["vszsp-unresolved"]["sourceUrl"].startswith("https://")
+
+    cities = {city["name"]: city for city in payload["cities"]}
+    assert "uniba-jlf-martin" in cities["Martin"]["affiliationIds"]
+    assert "tuke-fvt-presov" in cities["Prešov"]["affiliationIds"]
+    assert "stuba-mtf-trnava" in cities["Trnava"]["affiliationIds"]
+    assert "stuba-fchpt-humenne" in cities["Humenné"]["affiliationIds"]
+    assert "ku-spisska-kapitula" in cities["Spišské Podhradie"]["affiliationIds"]
 
 
 def test_build_publishes_versioned_exact_field_graduate_comparison(

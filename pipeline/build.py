@@ -13,12 +13,24 @@ from typing import Any
 
 import xlrd
 
+from pipeline.affiliations import (
+    DEFAULT_AFFILIATION_LOCATIONS_PATH,
+    resolve_affiliations,
+)
 from pipeline.context import ContextYear, load_context
 from pipeline.graduates import (
     build_field_graduate_comparison,
     load_graduates_by_field,
 )
-from pipeline.models import Appointment, Institution, President, ProfessorDataset, SourceVariant
+from pipeline.models import (
+    Affiliation,
+    Appointment,
+    City,
+    Institution,
+    President,
+    ProfessorDataset,
+    SourceVariant,
+)
 from pipeline.professors import APPOINTMENT_SHEET, load_appointments
 from pipeline.text import normalize_display
 
@@ -182,7 +194,9 @@ def _source_variant_payload(variant: SourceVariant) -> dict[str, object]:
     }
 
 
-def _appointment_payload(appointment: Appointment) -> dict[str, object]:
+def _appointment_payload(
+    appointment: Appointment, affiliation_id: str
+) -> dict[str, object]:
     return {
         "id": appointment.id,
         "name": appointment.name,
@@ -190,6 +204,7 @@ def _appointment_payload(appointment: Appointment) -> dict[str, object]:
         "titlesAfter": appointment.titles_after,
         "faculty": appointment.faculty,
         "institutionId": appointment.institution_id,
+        "affiliationId": affiliation_id,
         "institutionSource": appointment.institution_source,
         "field": appointment.field,
         "appointedOn": appointment.appointed_on.isoformat(),
@@ -206,9 +221,6 @@ def _institution_payload(institution: Institution) -> dict[str, object]:
         "id": institution.id,
         "shortName": institution.short_name,
         "fullName": institution.full_name,
-        "city": institution.city,
-        "latitude": institution.latitude,
-        "longitude": institution.longitude,
         "sourceLabels": list(institution.source_labels),
         "citationUrl": institution.citation_url,
     }
@@ -245,16 +257,34 @@ def _context_payload(item: ContextYear) -> dict[str, object]:
     }
 
 
-def _city_payload(institutions: Sequence[Institution]) -> list[dict[str, object]]:
-    institution_ids: defaultdict[str, list[str]] = defaultdict(list)
-    for institution in institutions:
-        institution_ids[institution.city].append(institution.id)
+def _affiliation_payload(affiliation: Affiliation) -> dict[str, object]:
+    return {
+        "id": affiliation.id,
+        "institutionId": affiliation.institution_id,
+        "facultyKeys": list(affiliation.faculty_keys),
+        "status": affiliation.status,
+        "city": affiliation.city,
+        "sourceUrl": affiliation.source_url,
+        "sourceLabel": affiliation.source_label,
+        "note": affiliation.note,
+    }
+
+
+def _city_payload(
+    cities: Sequence[City], affiliations: Sequence[Affiliation]
+) -> list[dict[str, object]]:
+    affiliation_ids: defaultdict[str, list[str]] = defaultdict(list)
+    for affiliation in affiliations:
+        if affiliation.status == "resolved" and affiliation.city is not None:
+            affiliation_ids[affiliation.city].append(affiliation.id)
     return [
         {
-            "name": city,
-            "institutionIds": sorted(ids),
+            "name": city.name,
+            "latitude": city.latitude,
+            "longitude": city.longitude,
+            "affiliationIds": sorted(affiliation_ids[city.name]),
         }
-        for city, ids in sorted(institution_ids.items())
+        for city in cities
     ]
 
 
@@ -368,6 +398,9 @@ def build_payload(
     geography: Mapping[str, object],
     sources: Mapping[str, object],
     field_graduate_comparison: Mapping[str, object],
+    affiliation_by_appointment: Mapping[str, str],
+    affiliations: Sequence[Affiliation],
+    cities: Sequence[City],
     *,
     surnames_by_source_row: Mapping[int, str],
 ) -> dict[str, object]:
@@ -411,9 +444,13 @@ def build_payload(
             "appointmentDateMax": dataset.date_max.isoformat(),
         },
         "sources": dict(sources),
-        "records": [_appointment_payload(item) for item in sorted_appointments],
+        "records": [
+            _appointment_payload(item, affiliation_by_appointment[item.id])
+            for item in sorted_appointments
+        ],
         "institutions": [_institution_payload(item) for item in institutions],
-        "cities": _city_payload(institutions),
+        "affiliations": [_affiliation_payload(item) for item in affiliations],
+        "cities": _city_payload(cities, affiliations),
         "presidents": [_president_payload(item) for item in presidents],
         "fieldGraduateComparison": dict(field_graduate_comparison),
         "context": [_context_payload(item) for item in context],
@@ -431,6 +468,7 @@ def build_atlas(
     population_path: Path = DEFAULT_POPULATION_PATH,
     geography_path: Path = DEFAULT_GEOMETRY_PATH,
     provenance_path: Path = DEFAULT_PROVENANCE_PATH,
+    affiliation_locations_path: Path = DEFAULT_AFFILIATION_LOCATIONS_PATH,
 ) -> dict[str, object]:
     """Validate all committed inputs and write deterministic atlas JSON."""
     sources = _validated_provenance(
@@ -441,6 +479,11 @@ def build_atlas(
         population_path,
     )
     dataset = load_appointments(professors_path)
+    affiliation_by_appointment, affiliations, cities = resolve_affiliations(
+        dataset.appointments,
+        dataset.institutions,
+        affiliation_locations_path,
+    )
     context = load_context(
         context_path,
         population_path=population_path,
@@ -461,6 +504,9 @@ def build_atlas(
         geography,
         sources,
         field_graduate_comparison,
+        affiliation_by_appointment,
+        affiliations,
+        cities,
         surnames_by_source_row=_source_surnames(professors_path),
     )
     serialized = json.dumps(
@@ -489,6 +535,11 @@ def main(argv: list[str] | None = None) -> int:
         default=DEFAULT_GRADUATES_BY_FIELD_PATH,
     )
     parser.add_argument("--provenance", type=Path, default=DEFAULT_PROVENANCE_PATH)
+    parser.add_argument(
+        "--affiliation-locations",
+        type=Path,
+        default=DEFAULT_AFFILIATION_LOCATIONS_PATH,
+    )
     args = parser.parse_args(argv)
     payload = build_atlas(
         args.output,
@@ -498,6 +549,7 @@ def main(argv: list[str] | None = None) -> int:
         graduates_by_field_path=args.graduates_by_field,
         population_path=args.population,
         provenance_path=args.provenance,
+        affiliation_locations_path=args.affiliation_locations,
     )
     meta = payload["meta"]
     assert isinstance(meta, dict)

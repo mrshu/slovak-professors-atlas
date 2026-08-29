@@ -17,11 +17,27 @@ class Institution:
     id: str
     short_name: str
     full_name: str
-    city: str
-    latitude: float
-    longitude: float
     source_labels: tuple[str, ...]
     citation_url: str
+
+
+@dataclass(frozen=True, slots=True)
+class Affiliation:
+    id: str
+    institution_id: str
+    faculty_keys: tuple[str, ...]
+    status: str
+    city: str | None
+    source_url: str | None
+    source_label: str
+    note: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class City:
+    name: str
+    latitude: float
+    longitude: float
 
 
 @dataclass(frozen=True, slots=True)

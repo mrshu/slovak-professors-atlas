@@ -46,9 +46,6 @@ const institutions: Institution[] = [
     id: 'uniba',
     shortName: 'UK v Bratislave',
     fullName: 'Univerzita Komenského v Bratislave',
-    city: 'Bratislava',
-    latitude: 48.1412,
-    longitude: 17.1159,
     sourceLabels: ['UK v Bratislave'],
     citationUrl: 'https://example.test/uniba',
   },
@@ -56,9 +53,6 @@ const institutions: Institution[] = [
     id: 'tuke',
     shortName: 'TU v Košiciach',
     fullName: 'Technická univerzita v Košiciach',
-    city: 'Košice',
-    latitude: 48.7314,
-    longitude: 21.2447,
     sourceLabels: ['TU v Košiciach'],
     citationUrl: 'https://example.test/tuke',
   },
@@ -66,9 +60,6 @@ const institutions: Institution[] = [
     id: 'au',
     shortName: 'AU v Banskej Bystrici',
     fullName: 'Akadémia umení v Banskej Bystrici',
-    city: 'Banská Bystrica',
-    latitude: 48.7361,
-    longitude: 19.1461,
     sourceLabels: ['AU v Banskej Bystrici'],
     citationUrl: 'https://example.test/au',
   },
@@ -88,6 +79,8 @@ function appointment(
     presidentId: 'caputova',
     sourceVariants: [],
     ...overrides,
+    affiliationId:
+      overrides.affiliationId ?? `${overrides.institutionId}-default`,
   }
 }
 
@@ -137,10 +130,35 @@ const data = {
   },
   records,
   institutions,
+  affiliations: institutions.map(({ id }) => ({
+    id: `${id}-default`,
+    institutionId: id,
+    facultyKeys: [],
+    status: 'resolved' as const,
+    city: id === 'uniba' ? 'Bratislava' : id === 'tuke' ? 'Košice' : 'Banská Bystrica',
+    sourceUrl: `https://example.test/${id}`,
+    sourceLabel: id,
+    note: null,
+  })),
   cities: [
-    { name: 'Banská Bystrica', institutionIds: ['au'] },
-    { name: 'Bratislava', institutionIds: ['uniba'] },
-    { name: 'Košice', institutionIds: ['tuke'] },
+    {
+      name: 'Banská Bystrica',
+      latitude: 48.7361,
+      longitude: 19.1461,
+      affiliationIds: ['au-default'],
+    },
+    {
+      name: 'Bratislava',
+      latitude: 48.1486,
+      longitude: 17.1077,
+      affiliationIds: ['uniba-default'],
+    },
+    {
+      name: 'Košice',
+      latitude: 48.7164,
+      longitude: 21.2611,
+      affiliationIds: ['tuke-default'],
+    },
   ],
   presidents: [
     {

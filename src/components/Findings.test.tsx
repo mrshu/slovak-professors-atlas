@@ -2,29 +2,29 @@ import '@testing-library/jest-dom/vitest'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-import type { Appointment, Institution, President } from '../data/types'
+import type { Affiliation, Appointment, President } from '../data/types'
 import Findings, { deriveHeadlineFindings } from './Findings'
 
-const institutions: Institution[] = [
+const affiliations: Affiliation[] = [
   {
-    id: 'bratislava',
-    shortName: 'BA',
-    fullName: 'Bratislavská škola',
+    id: 'bratislava-aff',
+    institutionId: 'bratislava',
+    facultyKeys: [],
+    status: 'resolved',
     city: 'Bratislava',
-    latitude: 48.15,
-    longitude: 17.11,
-    sourceLabels: [],
-    citationUrl: 'https://example.test/ba',
+    sourceUrl: 'https://example.test/ba',
+    sourceLabel: 'Bratislavské pracovisko',
+    note: null,
   },
   {
-    id: 'kosice',
-    shortName: 'KE',
-    fullName: 'Košická škola',
+    id: 'kosice-aff',
+    institutionId: 'kosice',
+    facultyKeys: [],
+    status: 'resolved',
     city: 'Košice',
-    latitude: 48.72,
-    longitude: 21.26,
-    sourceLabels: [],
-    citationUrl: 'https://example.test/ke',
+    sourceUrl: 'https://example.test/ke',
+    sourceLabel: 'Košické pracovisko',
+    note: null,
   },
 ]
 const presidents: President[] = [
@@ -51,6 +51,7 @@ function appointment(
     titlesAfter: null,
     faculty: null,
     institutionId,
+    affiliationId: `${institutionId}-aff`,
     institutionSource: institutionId,
     field,
     appointedOn,
@@ -68,7 +69,7 @@ describe('headline findings', () => {
         appointment('c', '2024-01-01', 'Fyzika', 'kosice'),
         appointment('d', '2024-02-01', 'História', 'bratislava'),
       ],
-      institutions,
+      affiliations,
     )
 
     expect(facts.ceremony).toEqual({
@@ -83,7 +84,7 @@ describe('headline findings', () => {
   })
 
   it('fails safely for an empty analytical dataset', () => {
-    expect(deriveHeadlineFindings([], institutions)).toEqual({
+    expect(deriveHeadlineFindings([], affiliations)).toEqual({
       ceremony: {
         appointedOn: '',
         appointments: 0,
@@ -105,7 +106,7 @@ describe('headline findings', () => {
           appointment('a', '2011-01-24', 'História', 'bratislava'),
           appointment('b', '2011-01-24', 'Fyzika', 'bratislava'),
         ]}
-        institutions={institutions}
+        affiliations={affiliations}
         presidents={presidents}
         onCeremonySelect={onCeremonySelect}
         onCitySelect={onCitySelect}

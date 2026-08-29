@@ -3,7 +3,7 @@ import { useMemo, type ReactNode } from 'react'
 import type { AtlasData } from '../data/types'
 import { createFilterDefaults } from '../state/filters'
 import type { AtlasState } from '../state/useAtlasState'
-import { formatAppointmentCount } from '../utils/format'
+import { formatAppointmentCount, formatDate } from '../utils/format'
 import AnalysisLenses from './AnalysisLenses'
 import AppointmentTimeline from './AppointmentTimeline'
 import InstitutionRanking from './InstitutionRanking'
@@ -50,14 +50,14 @@ function AtlasShell({ children, status }: AtlasShellProps) {
           <h2 id="atlas-title">Atlas pracovísk a období</h2>
         </div>
         <p>
-          Mesto označuje sídlo navrhujúcej inštitúcie, nie bydlisko profesora. Mapa,
+          Mesto označuje polohu navrhujúceho pracoviska, nie bydlisko profesora. Mapa,
           pracoviská, časová os aj analytické pohľady čítajú ten istý aktívny výber.
         </p>
       </div>
       <dl className="atlas-register" aria-label="Čítanie akademického atlasu">
         <div>
           <dt>Poloha</dt>
-          <dd>Mestá a kanonické inštitúcie</dd>
+          <dd>Mestá pracovísk a kanonické inštitúcie</dd>
         </div>
         <div>
           <dt>Štruktúra</dt>
@@ -93,6 +93,7 @@ function LoadedAtlasSection({ data, atlasState }: LoadedAtlasSectionProps) {
     setFilter,
     setDateRange,
     setTimelineYear,
+    setAppointmentDate,
     setQuery,
     resetFilters,
   } = atlasState
@@ -123,6 +124,13 @@ function LoadedAtlasSection({ data, atlasState }: LoadedAtlasSectionProps) {
           ? `Rok: ${filters.startYear}`
           : `Obdobie: ${filters.startYear}—${filters.endYear}`,
       remove: () => setTimelineYear(null, 'push'),
+    })
+  }
+  if (filters.appointedOn !== null) {
+    activeChips.push({
+      key: 'appointment-date',
+      label: `Ceremoniál: ${formatDate(filters.appointedOn)}`,
+      remove: () => setAppointmentDate(null, 'push'),
     })
   }
   if (filters.presidentId !== null) {
@@ -174,6 +182,7 @@ function LoadedAtlasSection({ data, atlasState }: LoadedAtlasSectionProps) {
     filters.startYear !== defaults.startYear ||
     filters.endYear !== defaults.endYear ||
     filters.presidentId !== null ||
+    filters.appointedOn !== null ||
     filters.city !== null ||
     filters.institutionId !== null ||
     filters.faculty !== null ||
@@ -272,7 +281,7 @@ function LoadedAtlasSection({ data, atlasState }: LoadedAtlasSectionProps) {
           records={filteredRecords}
           geography={data.geography}
           cities={data.cities}
-          institutions={data.institutions}
+          affiliations={data.affiliations}
           selectedCity={filters.city}
           onToggleCity={(city) => setFilter('city', filters.city === city ? null : city, 'push')}
         />
@@ -293,6 +302,7 @@ function LoadedAtlasSection({ data, atlasState }: LoadedAtlasSectionProps) {
       <AnalysisLenses
         records={filteredRecords}
         institutions={data.institutions}
+        affiliations={data.affiliations}
         presidents={data.presidents}
       />
 

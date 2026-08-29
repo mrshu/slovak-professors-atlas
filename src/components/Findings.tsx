@@ -1,11 +1,11 @@
 import { ceremonyCadence, ceremonyCounts } from '../analysis/selectors'
-import type { Appointment, Institution, President } from '../data/types'
+import type { Affiliation, Appointment, President } from '../data/types'
 import { formatDate, formatNumber } from '../utils/format'
 import { normalizeForSearch } from '../utils/search'
 
 interface FindingsProps {
   records: readonly Appointment[]
-  institutions: readonly Institution[]
+  affiliations: readonly Affiliation[]
   presidents: readonly President[]
   onCeremonySelect: (appointedOn: string) => void
   onCitySelect: (city: string) => void
@@ -33,7 +33,7 @@ export interface HeadlineFindings {
 
 export function deriveHeadlineFindings(
   records: readonly Appointment[],
-  institutions: readonly Institution[],
+  affiliations: readonly Affiliation[],
 ): HeadlineFindings {
   const ceremonies = ceremonyCounts(records)
   const cadence = ceremonyCadence(records)
@@ -42,12 +42,16 @@ export function deriveHeadlineFindings(
       right.count - left.count || left.appointedOn.localeCompare(right.appointedOn),
   )[0]
   const median = cadence.medianBatchSize ?? 0
-  const cityByInstitution = new Map(
-    institutions.map(({ id, city }) => [id, city] as const),
+  const cityByAffiliation = new Map(
+    affiliations.flatMap((affiliation) =>
+      affiliation.status === 'resolved' && affiliation.city !== null
+        ? [[affiliation.id, affiliation.city] as const]
+        : [],
+    ),
   )
   const bratislavaAppointments = records.reduce(
     (count, record) =>
-      count + (cityByInstitution.get(record.institutionId) === 'Bratislava' ? 1 : 0),
+      count + (cityByAffiliation.get(record.affiliationId) === 'Bratislava' ? 1 : 0),
     0,
   )
   const fieldCounts = new Map<string, number>()
@@ -98,12 +102,12 @@ function percent(value: number): string {
 
 export default function Findings({
   records,
-  institutions,
+  affiliations,
   presidents,
   onCeremonySelect,
   onCitySelect,
 }: FindingsProps) {
-  const facts = deriveHeadlineFindings(records, institutions)
+  const facts = deriveHeadlineFindings(records, affiliations)
   const presidentName =
     presidents.find(({ id }) => id === facts.ceremony.presidentId)?.name ?? null
   const ceremonyScale =

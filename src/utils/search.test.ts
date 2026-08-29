@@ -10,6 +10,7 @@ const appointment: Appointment = {
   titlesAfter: 'PhD.',
   faculty: 'Lekárska fakulta',
   institutionId: 'uniba',
+  affiliationId: 'uniba-default',
   institutionSource: 'Univerzita Komenského v Bratislave',
   field: 'vnútorné lekárstvo',
   appointedOn: '2023-01-01',

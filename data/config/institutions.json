@@ -3,199 +3,182 @@
     "id": "au",
     "shortName": "AU v Banskej Bystrici",
     "fullName": "Akadémia umení v Banskej Bystrici",
-    "city": "Banská Bystrica",
-    "latitude": 48.7361,
-    "longitude": 19.1461,
-    "sourceLabels": ["AU v Banskej Bystrici", "Akadémia umení v Banskej Bystrici"],
+    "sourceLabels": [
+      "AU v Banskej Bystrici",
+      "Akadémia umení v Banskej Bystrici"
+    ],
     "citationUrl": "https://www.wikidata.org/wiki/Q2822368"
   },
   {
     "id": "euba",
     "shortName": "EU v Bratislave",
     "fullName": "Ekonomická univerzita v Bratislave",
-    "city": "Bratislava",
-    "latitude": 48.126494,
-    "longitude": 17.133136,
-    "sourceLabels": ["EU v Bratislave"],
+    "sourceLabels": [
+      "EU v Bratislave"
+    ],
     "citationUrl": "https://www.wikidata.org/wiki/Q1466108"
   },
   {
     "id": "ku",
     "shortName": "KU v Ružomberku",
     "fullName": "Katolícka univerzita v Ružomberku",
-    "city": "Ružomberok",
-    "latitude": 49.083030555,
-    "longitude": 19.280927777,
-    "sourceLabels": ["KU v Ružomberku"],
+    "sourceLabels": [
+      "KU v Ružomberku"
+    ],
     "citationUrl": "https://www.wikidata.org/wiki/Q1736408"
   },
   {
     "id": "pevs",
     "shortName": "PEVŠ v Bratislave",
     "fullName": "Paneurópska vysoká škola v Bratislave",
-    "city": "Bratislava",
-    "latitude": 48.158986,
-    "longitude": 17.164636,
-    "sourceLabels": ["PEVŠ", "PEVŠ v Bratislave"],
+    "sourceLabels": [
+      "PEVŠ",
+      "PEVŠ v Bratislave"
+    ],
     "citationUrl": "https://www.wikidata.org/wiki/Q547138"
   },
   {
     "id": "unipo",
     "shortName": "PU v Prešove",
     "fullName": "Prešovská univerzita v Prešove",
-    "city": "Prešov",
-    "latitude": 49.0017,
-    "longitude": 21.2394,
-    "sourceLabels": ["PU v Prešove"],
+    "sourceLabels": [
+      "PU v Prešove"
+    ],
     "citationUrl": "https://www.wikidata.org/wiki/Q963904"
   },
   {
     "id": "spu",
     "shortName": "SPU v Nitre",
     "fullName": "Slovenská poľnohospodárska univerzita v Nitre",
-    "city": "Nitra",
-    "latitude": 48.305841,
-    "longitude": 18.094139,
-    "sourceLabels": ["SPU v Nitre"],
+    "sourceLabels": [
+      "SPU v Nitre"
+    ],
     "citationUrl": "https://www.wikidata.org/wiki/Q1668416"
   },
   {
     "id": "stuba",
     "shortName": "STU v Bratislave",
     "fullName": "Slovenská technická univerzita v Bratislave",
-    "city": "Bratislava",
-    "latitude": 48.15467057,
-    "longitude": 17.11743951,
-    "sourceLabels": ["STU v Bratislave"],
+    "sourceLabels": [
+      "STU v Bratislave"
+    ],
     "citationUrl": "https://www.wikidata.org/wiki/Q1778355"
   },
   {
     "id": "tnuni",
     "shortName": "TNUAD v Trenčíne",
     "fullName": "Trenčianska univerzita Alexandra Dubčeka v Trenčíne",
-    "city": "Trenčín",
-    "latitude": 48.898611,
-    "longitude": 18.047442,
-    "sourceLabels": ["TNUAD v Trenčíne", "TUAD v Trenčíne"],
+    "sourceLabels": [
+      "TNUAD v Trenčíne",
+      "TUAD v Trenčíne"
+    ],
     "citationUrl": "https://www.wikidata.org/wiki/Q9366826"
   },
   {
     "id": "tuke",
     "shortName": "TU v Košiciach",
     "fullName": "Technická univerzita v Košiciach",
-    "city": "Košice",
-    "latitude": 48.7314,
-    "longitude": 21.2447,
-    "sourceLabels": ["TU v Košiciach"],
+    "sourceLabels": [
+      "TU v Košiciach"
+    ],
     "citationUrl": "https://www.wikidata.org/wiki/Q1719038"
   },
   {
     "id": "truni",
     "shortName": "TU v Trnave",
     "fullName": "Trnavská univerzita v Trnave",
-    "city": "Trnava",
-    "latitude": 48.379718055,
-    "longitude": 17.586766944,
-    "sourceLabels": ["TU v Trnave", "TVU Trnava"],
+    "sourceLabels": [
+      "TU v Trnave",
+      "TVU Trnava"
+    ],
     "citationUrl": "https://www.wikidata.org/wiki/Q2585282"
   },
   {
     "id": "tuzvo",
     "shortName": "TU vo Zvolene",
     "fullName": "Technická univerzita vo Zvolene",
-    "city": "Zvolen",
-    "latitude": 48.573,
-    "longitude": 19.1165,
-    "sourceLabels": ["TU vo Zvolene"],
+    "sourceLabels": [
+      "TU vo Zvolene"
+    ],
     "citationUrl": "https://www.wikidata.org/wiki/Q637084"
   },
   {
     "id": "ucm",
     "shortName": "UCM v Trnave",
     "fullName": "Univerzita sv. Cyrila a Metoda v Trnave",
-    "city": "Trnava",
-    "latitude": 48.383333333,
-    "longitude": 17.589166666,
-    "sourceLabels": ["UCM v Trnave"],
+    "sourceLabels": [
+      "UCM v Trnave"
+    ],
     "citationUrl": "https://www.wikidata.org/wiki/Q3072182"
   },
   {
     "id": "uniba",
     "shortName": "UK v Bratislave",
     "fullName": "Univerzita Komenského v Bratislave",
-    "city": "Bratislava",
-    "latitude": 48.141222222,
-    "longitude": 17.115944444,
-    "sourceLabels": ["UK v Bratislave"],
+    "sourceLabels": [
+      "UK v Bratislave"
+    ],
     "citationUrl": "https://www.wikidata.org/wiki/Q31392"
   },
   {
     "id": "ukf",
     "shortName": "UKF v Nitre",
     "fullName": "Univerzita Konštantína Filozofa v Nitre",
-    "city": "Nitra",
-    "latitude": 48.3085,
-    "longitude": 18.091,
-    "sourceLabels": ["UKF v Nitre"],
+    "sourceLabels": [
+      "UKF v Nitre"
+    ],
     "citationUrl": "https://www.wikidata.org/wiki/Q9366812"
   },
   {
     "id": "umb",
     "shortName": "UMB v Banskej Bystrici",
     "fullName": "Univerzita Mateja Bela v Banskej Bystrici",
-    "city": "Banská Bystrica",
-    "latitude": 48.7331,
-    "longitude": 19.1455,
-    "sourceLabels": ["UMB v Banskej Bystrici"],
+    "sourceLabels": [
+      "UMB v Banskej Bystrici"
+    ],
     "citationUrl": "https://www.wikidata.org/wiki/Q1908174"
   },
   {
     "id": "upjs",
     "shortName": "UPJŠ v Košiciach",
     "fullName": "Univerzita Pavla Jozefa Šafárika v Košiciach",
-    "city": "Košice",
-    "latitude": 48.719444444,
-    "longitude": 21.251111111,
-    "sourceLabels": ["UPJŠ v Košiciach"],
+    "sourceLabels": [
+      "UPJŠ v Košiciach"
+    ],
     "citationUrl": "https://www.wikidata.org/wiki/Q178333"
   },
   {
     "id": "uvlf",
     "shortName": "UVLF v Košiciach",
     "fullName": "Univerzita veterinárskeho lekárstva a farmácie v Košiciach",
-    "city": "Košice",
-    "latitude": 48.7389,
-    "longitude": 21.2461,
-    "sourceLabels": ["UVLF v Košiciach"],
+    "sourceLabels": [
+      "UVLF v Košiciach"
+    ],
     "citationUrl": "https://www.wikidata.org/wiki/Q1421868"
   },
   {
     "id": "vsmu",
     "shortName": "VŠMU v Bratislave",
     "fullName": "Vysoká škola múzických umení v Bratislave",
-    "city": "Bratislava",
-    "latitude": 48.14388889,
-    "longitude": 17.10972222,
-    "sourceLabels": ["VŠMU", "VŠMU v Bratislave"],
+    "sourceLabels": [
+      "VŠMU",
+      "VŠMU v Bratislave"
+    ],
     "citationUrl": "https://www.wikidata.org/wiki/Q3087473"
   },
   {
     "id": "vsvu",
     "shortName": "VŠVU v Bratislave",
     "fullName": "Vysoká škola výtvarných umení v Bratislave",
-    "city": "Bratislava",
-    "latitude": 48.1416,
-    "longitude": 17.1072,
-    "sourceLabels": ["VŠVU v Bratislave"],
+    "sourceLabels": [
+      "VŠVU v Bratislave"
+    ],
     "citationUrl": "https://www.wikidata.org/wiki/Q2822379"
   },
   {
     "id": "vszsp",
     "shortName": "VŠZaSP sv. Alžbety v Bratislave",
     "fullName": "Vysoká škola zdravotníctva a sociálnej práce sv. Alžbety v Bratislave",
-    "city": "Bratislava",
-    "latitude": 48.149273,
-    "longitude": 17.109778,
     "sourceLabels": [
       "VŠZSP sv. Alžbety",
       "VŠZSP sv. Alžbety v Bratislave",
@@ -209,20 +192,19 @@
     "id": "uniza",
     "shortName": "ŽU v Žiline",
     "fullName": "Žilinská univerzita v Žiline",
-    "city": "Žilina",
-    "latitude": 49.2228,
-    "longitude": 18.74,
-    "sourceLabels": ["ŽU v Žiline"],
+    "sourceLabels": [
+      "ŽU v Žiline"
+    ],
     "citationUrl": "https://www.wikidata.org/wiki/Q2003858"
   },
   {
     "id": "dti",
     "shortName": "VŠ DTI",
     "fullName": "Vysoká škola DTI",
-    "city": "Dubnica nad Váhom",
-    "latitude": 48.960481,
-    "longitude": 18.160315,
-    "sourceLabels": ["Vysoká škola DTI", "VŠ DTI"],
+    "sourceLabels": [
+      "Vysoká škola DTI",
+      "VŠ DTI"
+    ],
     "citationUrl": "https://www.wikidata.org/wiki/Q28806358"
   }
 ]

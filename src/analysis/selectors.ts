@@ -1,4 +1,4 @@
-import type { Appointment, AtlasData, Institution, President } from '../data/types'
+import type { Affiliation, Appointment, AtlasData, Institution, President } from '../data/types'
 import type { FilterState } from '../state/filters'
 import { createSearchMatcher, normalizeForSearch } from '../utils/search'
 
@@ -124,6 +124,16 @@ function institutionSearchText(institution: Institution): string {
   institutionSearchIndex.set(institution, indexed)
   return indexed
 }
+function cityByAffiliationId(affiliations: readonly Affiliation[]): Map<string, string> {
+  return new Map(
+    affiliations.flatMap((affiliation) =>
+      affiliation.status === 'resolved' && affiliation.city !== null
+        ? [[affiliation.id, affiliation.city] as const]
+        : [],
+    ),
+  )
+}
+
 
 function incrementCount<Key>(counts: Map<Key, number>, key: Key): void {
   counts.set(key, (counts.get(key) ?? 0) + 1)
@@ -147,6 +157,7 @@ export function filterAppointments(data: AtlasData, filters: FilterState): Appoi
   const institutionById = new Map(
     data.institutions.map((institution) => [institution.id, institution] as const),
   )
+  const affiliationCities = cityByAffiliationId(data.affiliations)
   const normalizedQuery = normalizeForSearch(filters.query)
   const matchesAppointment = createSearchMatcher(filters.query)
 
@@ -160,7 +171,10 @@ export function filterAppointments(data: AtlasData, filters: FilterState): Appoi
     }
 
     const institution = institutionById.get(appointment.institutionId)
-    if (filters.city !== null && institution?.city !== filters.city) {
+    if (
+      filters.city !== null &&
+      affiliationCities.get(appointment.affiliationId) !== filters.city
+    ) {
       return false
     }
     if (
@@ -231,15 +245,13 @@ export function institutionRanking(
 
 export function cityCounts(
   records: readonly Appointment[],
-  institutions: readonly Institution[],
+  affiliations: readonly Affiliation[],
 ): CityCount[] {
   const counts = new Map<string, number>()
-  const cityByInstitutionId = new Map(
-    institutions.map(({ id, city }) => [id, city] as const),
-  )
+  const affiliationCities = cityByAffiliationId(affiliations)
 
   for (const appointment of records) {
-    const city = cityByInstitutionId.get(appointment.institutionId)
+    const city = affiliationCities.get(appointment.affiliationId)
     if (city !== undefined) {
       incrementCount(counts, city)
     }
@@ -451,18 +463,16 @@ export function ceremonyCadence(records: readonly Appointment[]): CeremonyCadenc
 
 export function academicBreadth(
   records: readonly Appointment[],
-  institutions: readonly Institution[],
+  affiliations: readonly Affiliation[],
 ): AcademicBreadth {
-  const cityByInstitutionId = new Map(
-    institutions.map(({ id, city }) => [id, city] as const),
-  )
+  const affiliationCities = cityByAffiliationId(affiliations)
   const institutionIds = new Set<string>()
   const cities = new Set<string>()
   const faculties = new Set<string>()
 
   for (const appointment of records) {
     institutionIds.add(appointment.institutionId)
-    const city = cityByInstitutionId.get(appointment.institutionId)
+    const city = affiliationCities.get(appointment.affiliationId)
     if (city !== undefined) {
       cities.add(city)
     }
@@ -501,6 +511,7 @@ export function institutionConcentration(
 export function presidentialEraProfiles(
   records: readonly Appointment[],
   institutions: readonly Institution[],
+  affiliations: readonly Affiliation[],
   presidents: readonly President[],
 ): PresidentialEraProfile[] {
   const recordsByPresident = new Map<string, Appointment[]>()
@@ -524,7 +535,7 @@ export function presidentialEraProfiles(
         return []
       }
 
-      const breadth = academicBreadth(eraRecords, institutions)
+      const breadth = academicBreadth(eraRecords, affiliations)
       const concentration = institutionConcentration(eraRecords, institutions)
       if (
         concentration.leadingInstitutionId === null ||

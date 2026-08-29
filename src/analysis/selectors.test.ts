@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import type { Appointment, AtlasData, Institution, President } from '../data/types'
+import type { Affiliation, Appointment, AtlasData, Institution, President } from '../data/types'
 import type { FilterState } from '../state/filters'
 import {
   academicBreadth,
@@ -23,9 +23,6 @@ const institutions: Institution[] = [
     id: 'uniba',
     shortName: 'UK v Bratislave',
     fullName: 'Univerzita Komenského v Bratislave',
-    city: 'Bratislava',
-    latitude: 48.15,
-    longitude: 17.11,
     sourceLabels: ['UK v Bratislave'],
     citationUrl: 'https://example.test/uniba',
   },
@@ -33,9 +30,6 @@ const institutions: Institution[] = [
     id: 'tuke',
     shortName: 'TU v Košiciach',
     fullName: 'Technická univerzita v Košiciach',
-    city: 'Košice',
-    latitude: 48.72,
-    longitude: 21.25,
     sourceLabels: ['TU v Košiciach'],
     citationUrl: 'https://example.test/tuke',
   },
@@ -43,11 +37,77 @@ const institutions: Institution[] = [
     id: 'aku',
     shortName: 'Akadémia umení',
     fullName: 'Akadémia umení v Banskej Bystrici',
-    city: 'Banská Bystrica',
-    latitude: 48.74,
-    longitude: 19.15,
     sourceLabels: ['Akadémia umení'],
     citationUrl: 'https://example.test/aku',
+  },
+  {
+    id: 'vszasp',
+    shortName: 'VŠZaSP',
+    fullName: 'Vysoká škola zdravotníctva a sociálnej práce sv. Alžbety',
+    sourceLabels: ['VŠZaSP'],
+    citationUrl: 'https://www.vssvalzbety.sk/',
+  },
+]
+const affiliations: Affiliation[] = [
+  {
+    id: 'uniba-default',
+    institutionId: 'uniba',
+    facultyKeys: [],
+    status: 'resolved',
+    city: 'Bratislava',
+    sourceUrl: 'https://uniba.sk/',
+    sourceLabel: 'UK',
+    note: null,
+  },
+  {
+    id: 'uniba-jlf',
+    institutionId: 'uniba',
+    facultyKeys: ['jesseniova lekarska fakulta'],
+    status: 'resolved',
+    city: 'Martin',
+    sourceUrl: 'https://www.jfmed.uniba.sk/',
+    sourceLabel: 'JLF UK',
+    note: null,
+  },
+  {
+    id: 'tuke-default',
+    institutionId: 'tuke',
+    facultyKeys: [],
+    status: 'resolved',
+    city: 'Košice',
+    sourceUrl: 'https://www.tuke.sk/',
+    sourceLabel: 'TUKE',
+    note: null,
+  },
+  {
+    id: 'tuke-fvt',
+    institutionId: 'tuke',
+    facultyKeys: ['fakulta vyrobnych technologii'],
+    status: 'resolved',
+    city: 'Prešov',
+    sourceUrl: 'https://fvt.tuke.sk/',
+    sourceLabel: 'FVT TUKE',
+    note: null,
+  },
+  {
+    id: 'aku-default',
+    institutionId: 'aku',
+    facultyKeys: [],
+    status: 'resolved',
+    city: 'Banská Bystrica',
+    sourceUrl: 'https://aku.sk/',
+    sourceLabel: 'Akadémia umení',
+    note: null,
+  },
+  {
+    id: 'vszasp-unresolved',
+    institutionId: 'vszasp',
+    facultyKeys: [],
+    status: 'unresolved',
+    city: null,
+    sourceUrl: null,
+    sourceLabel: 'VŠZaSP',
+    note: 'Viac pracovísk',
   },
 ]
 
@@ -81,6 +141,8 @@ function record(overrides: Partial<Appointment> & Pick<Appointment, 'id'>): Appo
     presidentId: 'caputova',
     sourceVariants: [],
     ...overrides,
+    affiliationId:
+      overrides.affiliationId ?? `${overrides.institutionId ?? 'uniba'}-default`,
   }
 }
 
@@ -97,6 +159,7 @@ const records: Appointment[] = [
     name: 'Mária Šimková',
     faculty: 'Strojnícka fakulta',
     institutionId: 'tuke',
+    affiliationId: 'tuke-default',
     institutionSource: 'TU v Košiciach',
     field: 'strojárstvo',
   }),
@@ -105,6 +168,7 @@ const records: Appointment[] = [
     name: 'Ábel Žitný',
     presidentId: 'kiska',
     institutionId: 'aku',
+    affiliationId: 'aku-default',
     institutionSource: 'Akadémia umení',
     faculty: 'Fakulta múzických umení',
     field: 'hudobné umenie',
@@ -114,6 +178,7 @@ const records: Appointment[] = [
 const data = {
   records,
   institutions,
+  affiliations,
 } as AtlasData
 
 const allFilters: FilterState = {
@@ -141,7 +206,7 @@ describe('filterAppointments', () => {
       ['match', 'other-city', 'other-president'],
     ],
     ['president', { presidentId: 'kiska' }, ['other-president']],
-    ['city resolved from the canonical institution', { city: 'Košice' }, ['other-city']],
+    ['city resolved from the record affiliation', { city: 'Košice' }, ['other-city']],
     ['canonical institution', { institutionId: 'aku' }, ['other-president']],
     ['source faculty', { faculty: 'Strojnícka fakulta' }, ['other-city']],
     ['normalized field key', { field: 'chirurgia' }, ['other-year']],
@@ -242,12 +307,13 @@ describe('deterministic aggregate selectors', () => {
       record({
         id: 't1',
         institutionId: 'tuke',
+        affiliationId: 'tuke-default',
         faculty: null,
         appointedOn: '2022-02-20',
       }),
     ]
 
-    expect(cityCounts(cohort, institutions)).toEqual([
+    expect(cityCounts(cohort, affiliations)).toEqual([
       { city: 'Bratislava', count: 2 },
       { city: 'Košice', count: 1 },
     ])
@@ -260,6 +326,38 @@ describe('deterministic aggregate selectors', () => {
       { appointedOn: '2022-02-20', count: 1 },
       { appointedOn: '2023-01-10', count: 2 },
     ])
+  })
+
+  it('uses faculty affiliations and excludes unresolved locations without dropping records', () => {
+    const cohort = [
+      record({
+        id: 'jlf',
+        faculty: 'Jesseniova lekárska fakulta',
+        affiliationId: 'uniba-jlf',
+      }),
+      record({
+        id: 'fvt',
+        institutionId: 'tuke',
+        faculty: 'Fakulta výrobných technológií',
+        affiliationId: 'tuke-fvt',
+      }),
+      record({
+        id: 'vszasp',
+        institutionId: 'vszasp',
+        institutionSource: 'VŠZaSP',
+        affiliationId: 'vszasp-unresolved',
+      }),
+    ]
+
+    expect(cityCounts(cohort, affiliations)).toEqual([
+      { city: 'Martin', count: 1 },
+      { city: 'Prešov', count: 1 },
+    ])
+    expect(academicBreadth(cohort, affiliations)).toMatchObject({
+      cityCount: 2,
+      institutionCount: 3,
+    })
+    expect(cohort).toHaveLength(3)
   })
 
   it('derives Task 7 cadence, breadth, and top-three concentration from one cohort', () => {
@@ -276,7 +374,7 @@ describe('deterministic aggregate selectors', () => {
       largestBatchSize: 2,
       medianElapsedDays: 15,
     })
-    expect(academicBreadth(cohort, institutions)).toEqual({
+    expect(academicBreadth(cohort, affiliations)).toEqual({
       cityCount: 3,
       institutionCount: 3,
       facultyCount: 2,
@@ -300,7 +398,7 @@ describe('deterministic aggregate selectors', () => {
     ]
 
     expect(facultyCounts(cohort)).toEqual([{ faculty: 'Lekárska fakulta', count: 1 }])
-    expect(academicBreadth(cohort, institutions).facultyCount).toBe(1)
+    expect(academicBreadth(cohort, affiliations).facultyCount).toBe(1)
   })
 
   it('orders represented presidential eras by official start and resolves leader ties by Slovak label', () => {
@@ -310,7 +408,7 @@ describe('deterministic aggregate selectors', () => {
       record({ id: 'earlier-u', presidentId: 'earlier', institutionId: 'uniba' }),
     ]
 
-    expect(presidentialEraProfiles(cohort, institutions, presidents)).toEqual([
+    expect(presidentialEraProfiles(cohort, institutions, affiliations, presidents)).toEqual([
       {
         presidentId: 'earlier',
         presidentName: 'Skoršie obdobie',
@@ -363,11 +461,26 @@ describe('deterministic aggregate selectors', () => {
         id: 'stvrta',
         shortName: 'Žilinská univerzita',
         fullName: 'Žilinská univerzita v Žiline',
-        city: 'Žilina',
+        citationUrl: 'https://example.test/stvrta',
       },
     ]
 
-    expect(presidentialEraProfiles(cohort, expandedInstitutions, presidents)[0]).toMatchObject({
+    const expandedAffiliations: Affiliation[] = [
+      ...affiliations,
+      {
+        id: 'stvrta-default',
+        institutionId: 'stvrta',
+        facultyKeys: [],
+        status: 'resolved',
+        city: 'Žilina',
+        sourceUrl: 'https://www.uniza.sk/',
+        sourceLabel: 'Žilinská univerzita',
+        note: null,
+      },
+    ]
+    expect(
+      presidentialEraProfiles(cohort, expandedInstitutions, expandedAffiliations, presidents)[0],
+    ).toMatchObject({
       facultyCount: 1,
       cityCount: 4,
       institutionCount: 4,
@@ -382,6 +495,7 @@ describe('deterministic aggregate selectors', () => {
         record({ id: 'later', presidentId: 'later', appointedOn: '2025-05-12' }),
       ],
       institutions,
+      affiliations,
     } as AtlasData
     const laterOnly = filterAppointments(eraData, {
       ...allFilters,
@@ -398,11 +512,11 @@ describe('deterministic aggregate selectors', () => {
     })
 
     expect(
-      presidentialEraProfiles(laterOnly, institutions, presidents).map(
+      presidentialEraProfiles(laterOnly, institutions, affiliations, presidents).map(
         ({ presidentId }) => presidentId,
       ),
     ).toEqual(['later'])
-    expect(presidentialEraProfiles([], institutions, presidents)).toEqual([])
+    expect(presidentialEraProfiles([], institutions, affiliations, presidents)).toEqual([])
   })
 
   it('groups all-time fields only across accent, case, and whitespace variants', () => {
@@ -596,10 +710,10 @@ describe('deterministic aggregate selectors', () => {
 
     filterAppointments(data, allFilters)
     institutionRanking(records, institutions)
-    cityCounts(records, institutions)
+    cityCounts(records, affiliations)
     yearCounts(records)
     ceremonyCadence(records)
-    academicBreadth(records, institutions)
+    academicBreadth(records, affiliations)
     institutionConcentration(records, institutions)
     fieldAppointmentRanking(records)
 

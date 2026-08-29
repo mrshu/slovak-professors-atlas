@@ -16,6 +16,7 @@ export interface Appointment {
   titlesAfter: NullableText
   faculty: NullableText
   institutionId: string
+  affiliationId: string
   institutionSource: string
   field: string
   appointedOn: string
@@ -27,9 +28,6 @@ export interface Institution {
   id: string
   shortName: string
   fullName: string
-  city: string
-  latitude: number
-  longitude: number
   sourceLabels: string[]
   citationUrl: string
 }
@@ -61,9 +59,22 @@ export interface ContextYear {
   professorShare: number
 }
 
+export interface Affiliation {
+  id: string
+  institutionId: string
+  facultyKeys: string[]
+  status: 'resolved' | 'unresolved'
+  city: string | null
+  sourceUrl: string | null
+  sourceLabel: string
+  note: string | null
+}
+
 export interface City {
   name: string
-  institutionIds: string[]
+  latitude: number
+  longitude: number
+  affiliationIds: string[]
 }
 
 export interface SourceMetadata {
@@ -197,6 +208,7 @@ export interface AtlasData {
   sources: AtlasSources
   records: Appointment[]
   institutions: Institution[]
+  affiliations: Affiliation[]
   cities: City[]
   presidents: President[]
   context: ContextYear[]

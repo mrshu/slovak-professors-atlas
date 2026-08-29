@@ -12,6 +12,7 @@ function record(id: string, institutionId: string, field = 'Vnútorné lekárstv
     titlesAfter: null,
     faculty: 'Lekárska fakulta',
     institutionId,
+    affiliationId: `${institutionId}-default`,
     institutionSource: institutionId === 'uniba' ? 'UK v Bratislave' : 'TU v Košiciach',
     field,
     appointedOn: id === 'one' ? '2011-01-24' : '2023-05-12',
@@ -28,19 +29,48 @@ const data = {
   context: [{ year: 2000 }, { year: 2025 }],
   presidents: [{ id: 'caputova' }],
   cities: [
-    { name: 'Bratislava', institutionIds: ['uniba'] },
-    { name: 'Košice', institutionIds: ['tuke'] },
+    {
+      name: 'Bratislava',
+      latitude: 48.1486,
+      longitude: 17.1077,
+      affiliationIds: ['uniba-default'],
+    },
+    {
+      name: 'Košice',
+      latitude: 48.7164,
+      longitude: 21.2611,
+      affiliationIds: ['tuke-default'],
+    },
   ],
-  institutions: [
-    { id: 'uniba', city: 'Bratislava' },
-    { id: 'tuke', city: 'Košice' },
+  institutions: [{ id: 'uniba' }, { id: 'tuke' }],
+  affiliations: [
+    {
+      id: 'uniba-default',
+      institutionId: 'uniba',
+      facultyKeys: [],
+      status: 'resolved',
+      city: 'Bratislava',
+      sourceUrl: 'https://example.test/uniba',
+      sourceLabel: 'UK',
+      note: null,
+    },
+    {
+      id: 'tuke-default',
+      institutionId: 'tuke',
+      facultyKeys: [],
+      status: 'resolved',
+      city: 'Košice',
+      sourceUrl: 'https://example.test/tuke',
+      sourceLabel: 'TUKE',
+      note: null,
+    },
   ],
   records: [
     record('one', 'uniba'),
     record('two', 'tuke', 'vnútorNÉ   lekárstvo'),
     record('three', 'tuke', 'história'),
   ],
-} as AtlasData
+} as unknown as AtlasData
 
 const basePath = '/slovak-professors/index.html'
 

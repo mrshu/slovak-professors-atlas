@@ -12,9 +12,6 @@ const institutions: AtlasData['institutions'] = [
     id: 'uniba',
     shortName: 'UK v Bratislave',
     fullName: 'Univerzita Komenského v Bratislave',
-    city: 'Bratislava',
-    latitude: 48.1412,
-    longitude: 17.1159,
     sourceLabels: ['UK v Bratislave'],
     citationUrl: 'https://www.wikidata.org/wiki/Q159241',
   },
@@ -22,9 +19,6 @@ const institutions: AtlasData['institutions'] = [
     id: 'tuke',
     shortName: 'TU v Košiciach',
     fullName: 'Technická univerzita v Košiciach',
-    city: 'Košice',
-    latitude: 48.7314,
-    longitude: 21.2447,
     sourceLabels: ['TU v Košiciach'],
     citationUrl: 'https://www.wikidata.org/wiki/Q1366024',
   },
@@ -56,6 +50,8 @@ function appointment(
       },
     ],
     ...overrides,
+    affiliationId:
+      overrides.affiliationId ?? `${overrides.institutionId ?? 'tuke'}-default`,
   }
 }
 
@@ -66,6 +62,7 @@ const lookupRecord = appointment(0, {
   titlesAfter: 'CSc.',
   faculty: null,
   institutionId: 'uniba',
+  affiliationId: 'uniba-default',
   institutionSource: 'UK v Bratislave',
   field: 'história',
   appointedOn: '2010-01-25',
@@ -136,9 +133,41 @@ const data: AtlasData = {
   },
   records,
   institutions,
+  affiliations: [
+    {
+      id: 'uniba-default',
+      institutionId: 'uniba',
+      facultyKeys: [],
+      status: 'resolved',
+      city: 'Bratislava',
+      sourceUrl: 'https://example.test/uniba',
+      sourceLabel: 'UK',
+      note: null,
+    },
+    {
+      id: 'tuke-default',
+      institutionId: 'tuke',
+      facultyKeys: [],
+      status: 'resolved',
+      city: 'Košice',
+      sourceUrl: 'https://example.test/tuke',
+      sourceLabel: 'TUKE',
+      note: null,
+    },
+  ],
   cities: [
-    { name: 'Bratislava', institutionIds: ['uniba'] },
-    { name: 'Košice', institutionIds: ['tuke'] },
+    {
+      name: 'Bratislava',
+      latitude: 48.1486,
+      longitude: 17.1077,
+      affiliationIds: ['uniba-default'],
+    },
+    {
+      name: 'Košice',
+      latitude: 48.7164,
+      longitude: 21.2611,
+      affiliationIds: ['tuke-default'],
+    },
   ],
   presidents: [
     {
@@ -506,6 +535,26 @@ describe('metodika a pramene', () => {
             ? 'https://www.prezident.sk/zivotopis-petra-pellegriniho'
             : `https://example.test/presidential-terms/${president.id}`,
       })),
+      records: [
+        ...data.records,
+        appointment(99, {
+          id: 'unresolved-location',
+          affiliationId: 'unresolved-location',
+        }),
+      ],
+      affiliations: [
+        ...data.affiliations,
+        {
+          id: 'unresolved-location',
+          institutionId: 'tuke',
+          facultyKeys: [],
+          status: 'unresolved' as const,
+          city: null,
+          sourceUrl: 'https://example.test/unresolved-location',
+          sourceLabel: 'Nevyriešené pracovisko',
+          note: 'Zdroj neurčuje pracovisko.',
+        },
+      ],
     }
     render(<Methodology data={methodologyData} />)
     const methodology = screen.getByRole('region', { name: 'Metodika a pramene' })
@@ -554,9 +603,15 @@ describe('metodika a pramene', () => {
       'href',
       'https://www.prezident.sk/zivotopis-petra-pellegriniho',
     )
-    expect(within(methodology).getByRole('link', { name: /Wikidata: Univerzita Komenského/ })).toHaveAttribute(
+    expect(
+      within(methodology).getByRole('link', {
+        name: 'Kanonická inštitúcia: Univerzita Komenského v Bratislave',
+      }),
+    ).toHaveAttribute('href', institutions[0]?.citationUrl)
+    expect(methodology).toHaveTextContent(/bez polohy 1 vymenovanie/i)
+    expect(within(methodology).getByRole('link', { name: 'Nevyriešené pracovisko' })).toHaveAttribute(
       'href',
-      institutions[0]?.citationUrl,
+      'https://example.test/unresolved-location',
     )
     expect(within(methodology).getByRole('link', { name: 'Geometria Natural Earth' })).toHaveAttribute(
       'href',

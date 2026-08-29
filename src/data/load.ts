@@ -25,6 +25,7 @@ interface AtlasCandidate {
   }
   records?: unknown
   institutions?: unknown
+  affiliations?: unknown
   cities?: unknown
   presidents?: unknown
   context?: unknown
@@ -69,9 +70,141 @@ function assertAtlasData(value: unknown): asserts value is AtlasData {
     }
   }
 
-  for (const key of ['records', 'institutions', 'cities', 'presidents', 'context'] as const) {
+  for (const key of [
+    'records',
+    'institutions',
+    'affiliations',
+    'cities',
+    'presidents',
+    'context',
+  ] as const) {
     if (!Array.isArray(candidate[key])) {
       throw new TypeError(`Atlas field ${key} is not an array`)
+    }
+  }
+
+  const institutionIds = new Set<string>()
+  for (const value of candidate.institutions as unknown[]) {
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+      throw new TypeError('Atlas institution is invalid')
+    }
+    const institution = value as Record<string, unknown>
+    if (
+      typeof institution.id !== 'string' ||
+      institution.id.length === 0 ||
+      institutionIds.has(institution.id)
+    ) {
+      throw new TypeError('Atlas institution id is invalid')
+    }
+    institutionIds.add(institution.id)
+  }
+
+  const affiliationsById = new Map<string, Record<string, unknown>>()
+  for (const value of candidate.affiliations as unknown[]) {
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+      throw new TypeError('Atlas affiliation is invalid')
+    }
+    const affiliation = value as Record<string, unknown>
+    const resolved = affiliation.status === 'resolved'
+    const unresolved = affiliation.status === 'unresolved'
+    if (
+      typeof affiliation.id !== 'string' ||
+      affiliation.id.length === 0 ||
+      affiliationsById.has(affiliation.id) ||
+      typeof affiliation.institutionId !== 'string' ||
+      !institutionIds.has(affiliation.institutionId) ||
+      !Array.isArray(affiliation.facultyKeys) ||
+      !affiliation.facultyKeys.every(
+        (facultyKey) => typeof facultyKey === 'string' && facultyKey.length > 0,
+      ) ||
+      (!resolved && !unresolved) ||
+      typeof affiliation.sourceLabel !== 'string' ||
+      affiliation.sourceLabel.length === 0 ||
+      !(
+        affiliation.note === null ||
+        (typeof affiliation.note === 'string' && affiliation.note.length > 0)
+      ) ||
+      (resolved &&
+        (typeof affiliation.city !== 'string' ||
+          affiliation.city.length === 0 ||
+          typeof affiliation.sourceUrl !== 'string' ||
+          !/^https?:\/\//u.test(affiliation.sourceUrl))) ||
+      (unresolved &&
+        (affiliation.city !== null ||
+          !(
+            affiliation.sourceUrl === null ||
+            (typeof affiliation.sourceUrl === 'string' &&
+              /^https?:\/\//u.test(affiliation.sourceUrl))
+          )))
+    ) {
+      throw new TypeError('Atlas affiliation fields are inconsistent')
+    }
+    affiliationsById.set(affiliation.id, affiliation)
+  }
+
+  const cityByAffiliationId = new Map<string, string>()
+  const cityNames = new Set<string>()
+  for (const value of candidate.cities as unknown[]) {
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+      throw new TypeError('Atlas city is invalid')
+    }
+    const city = value as Record<string, unknown>
+    if (
+      typeof city.name !== 'string' ||
+      city.name.length === 0 ||
+      cityNames.has(city.name) ||
+      typeof city.latitude !== 'number' ||
+      !Number.isFinite(city.latitude) ||
+      city.latitude < -90 ||
+      city.latitude > 90 ||
+      typeof city.longitude !== 'number' ||
+      !Number.isFinite(city.longitude) ||
+      city.longitude < -180 ||
+      city.longitude > 180 ||
+      !Array.isArray(city.affiliationIds)
+    ) {
+      throw new TypeError('Atlas city fields are invalid')
+    }
+    cityNames.add(city.name)
+    for (const affiliationId of city.affiliationIds) {
+      const affiliation =
+        typeof affiliationId === 'string' ? affiliationsById.get(affiliationId) : undefined
+      if (
+        affiliation === undefined ||
+        affiliation.status !== 'resolved' ||
+        affiliation.city !== city.name ||
+        cityByAffiliationId.has(affiliationId)
+      ) {
+        throw new TypeError('Atlas city affiliation reference is invalid')
+      }
+      cityByAffiliationId.set(affiliationId, city.name)
+    }
+  }
+  for (const [affiliationId, affiliation] of affiliationsById) {
+    if (
+      affiliation.status === 'resolved' &&
+      cityByAffiliationId.get(affiliationId) !== affiliation.city
+    ) {
+      throw new TypeError('Atlas resolved affiliation is missing from its city')
+    }
+  }
+
+  for (const value of candidate.records as unknown[]) {
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+      throw new TypeError('Atlas record is invalid')
+    }
+    const record = value as Record<string, unknown>
+    const affiliation =
+      typeof record.affiliationId === 'string'
+        ? affiliationsById.get(record.affiliationId)
+        : undefined
+    if (
+      typeof record.institutionId !== 'string' ||
+      !institutionIds.has(record.institutionId) ||
+      affiliation === undefined ||
+      affiliation.institutionId !== record.institutionId
+    ) {
+      throw new TypeError('Atlas record affiliation reference is invalid')
     }
   }
 

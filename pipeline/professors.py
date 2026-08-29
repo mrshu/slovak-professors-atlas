@@ -115,9 +115,6 @@ _INSTITUTION_KEYS = {
     "id",
     "shortName",
     "fullName",
-    "city",
-    "latitude",
-    "longitude",
     "sourceLabels",
     "citationUrl",
 }
@@ -188,28 +185,9 @@ def _load_institutions(path: Path) -> tuple[Institution, ...]:
         full_name = _nonempty_string(
             item["fullName"], f"institution {institution_id} fullName"
         )
-        city = _nonempty_string(item["city"], f"institution {institution_id} city")
         citation_url = _nonempty_string(
             item["citationUrl"], f"institution {institution_id} citationUrl"
         )
-        latitude = item["latitude"]
-        longitude = item["longitude"]
-        if (
-            isinstance(latitude, bool)
-            or not isinstance(latitude, (int, float))
-            or not -90 <= latitude <= 90
-        ):
-            raise ConfigurationError(
-                f"institution {institution_id} latitude must be between -90 and 90"
-            )
-        if (
-            isinstance(longitude, bool)
-            or not isinstance(longitude, (int, float))
-            or not -180 <= longitude <= 180
-        ):
-            raise ConfigurationError(
-                f"institution {institution_id} longitude must be between -180 and 180"
-            )
         raw_labels = item["sourceLabels"]
         if not isinstance(raw_labels, list) or not raw_labels:
             raise ConfigurationError(
@@ -245,9 +223,6 @@ def _load_institutions(path: Path) -> tuple[Institution, ...]:
                 id=institution_id,
                 short_name=short_name,
                 full_name=full_name,
-                city=city,
-                latitude=float(latitude),
-                longitude=float(longitude),
                 source_labels=tuple(labels),
                 citation_url=citation_url,
             )

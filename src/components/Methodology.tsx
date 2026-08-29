@@ -1,5 +1,5 @@
 import type { AtlasData } from '../data/types'
-import { formatDate, formatNumber } from '../utils/format'
+import { formatAppointmentCount, formatDate, formatNumber } from '../utils/format'
 
 interface MethodologyProps {
   data?: AtlasData
@@ -32,6 +32,15 @@ function SourceAudit({ data }: { data: AtlasData }) {
 
 export default function Methodology({ data, status }: MethodologyProps) {
   const baseUrl = import.meta.env.BASE_URL
+  const unresolvedAffiliationIds = new Set(
+    data?.affiliations
+      .filter(({ status }) => status === 'unresolved')
+      .map(({ id }) => id) ?? [],
+  )
+  const unresolvedLocationCount =
+    data?.records.filter(({ affiliationId }) => unresolvedAffiliationIds.has(affiliationId))
+      .length ?? 0
+
   return (
     <section id="metodika" className="section section--method" aria-labelledby="method-title">
       <div className="method-grid">
@@ -271,9 +280,11 @@ export default function Methodology({ data, status }: MethodologyProps) {
             <section aria-labelledby="geography-sources-title">
               <h3 id="geography-sources-title">Geografia a súradnice</h3>
               <p>
-                Mesto patrí navrhujúcej inštitúcii, nie bydlisku profesora. Súradnice pracovísk
-                pochádzajú z Wikidata; obrys Slovenska je z verejnej geometrie Natural Earth a
-                počas používania stránky sa nič z týchto služieb nesťahuje.
+                Mesto patrí navrhujúcemu pracovisku, nie bydlisku profesora. Overené fakultné
+                pravidlo má prednosť pred kanonickým sídlom školy. Ak zdroj neurčuje konkrétne
+                pracovisko, záznam zostáva vo všetkých súhrnoch, ale mapa ho nezobrazuje; takto
+                zostáva bez polohy {formatAppointmentCount(unresolvedLocationCount)}. Obrys
+                Slovenska pochádza z verejnej geometrie Natural Earth.
               </p>
               <ul>
                 <li>
@@ -286,12 +297,24 @@ export default function Methodology({ data, status }: MethodologyProps) {
                   <li key={institution.id}>
                     <a
                       href={institution.citationUrl}
-                      aria-label={`Wikidata: ${institution.fullName}`}
+                      aria-label={`Kanonická inštitúcia: ${institution.fullName}`}
                     >
-                      {institution.fullName} — súradnice vo Wikidata
+                      {institution.fullName} — identita inštitúcie
                     </a>
                   </li>
                 ))}
+                {data.affiliations
+                  .filter(
+                    ({ facultyKeys, sourceUrl, status }) =>
+                      sourceUrl !== null && (facultyKeys.length > 0 || status === 'unresolved'),
+                  )
+                  .map((affiliation) => (
+                    <li key={affiliation.id}>
+                      <a href={affiliation.sourceUrl ?? undefined}>
+                        {affiliation.sourceLabel}
+                      </a>
+                    </li>
+                  ))}
               </ul>
             </section>
           </div>

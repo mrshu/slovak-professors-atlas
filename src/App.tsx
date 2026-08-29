@@ -27,7 +27,6 @@ function focusSection(id: string): void {
   )
 }
 
-
 function LoadedInteractiveSections({ data }: { data: AtlasData }) {
   const atlasState = useAtlasState(data)
   const fieldComparisonRecords = useMemo(
@@ -39,7 +38,7 @@ function LoadedInteractiveSections({ data }: { data: AtlasData }) {
     <>
       <Findings
         records={data.records}
-        institutions={data.institutions}
+        affiliations={data.affiliations}
         presidents={data.presidents}
         onCeremonySelect={(appointedOn) => {
           atlasState.setAppointmentDate(appointedOn, 'push')
