@@ -1,0 +1,15 @@
+import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vitest/config'
+
+export default defineConfig({
+  base: '/slovak-professors/',
+  plugins: [react()],
+  test: {
+    environment: 'jsdom',
+    environmentOptions: {
+      jsdom: {
+        url: 'https://example.test/slovak-professors/index.html',
+      },
+    },
+  },
+})

@@ -1,0 +1,37 @@
+:root {
+  --color-paper: #f3ecdf;
+  --color-paper-deep: #e4d7c2;
+  --color-paper-light: #fbf7ef;
+  --color-forest: #16382f;
+  --color-forest-deep: #0d2922;
+  --color-terracotta: #a8442d;
+  --color-terracotta-dark: #85321f;
+  --color-brass: #b49a5c;
+  --color-sage: #9cad98;
+  --color-ink: #1b2924;
+  --color-ink-muted: #52615a;
+  --color-line: #b9ad98;
+  --color-focus: #087c92;
+  --color-error: #8f2f24;
+
+  --font-display: 'Newsreader Variable', Georgia, serif;
+  --font-interface: 'Instrument Sans Variable', Arial, sans-serif;
+
+  --text-xs: clamp(0.72rem, 0.7rem + 0.08vw, 0.79rem);
+  --text-sm: clamp(0.86rem, 0.82rem + 0.14vw, 0.96rem);
+  --text-base: clamp(1rem, 0.95rem + 0.2vw, 1.12rem);
+  --text-lg: clamp(1.2rem, 1.08rem + 0.48vw, 1.55rem);
+  --text-xl: clamp(1.8rem, 1.48rem + 1.2vw, 2.7rem);
+  --text-hero: clamp(3.1rem, 1.6rem + 6.2vw, 7.7rem);
+
+  --leading-tight: 0.94;
+  --leading-heading: 1.05;
+  --leading-copy: 1.62;
+  --tracking-label: 0.14em;
+
+  --content-width: 75rem;
+  --page-gutter: clamp(1.25rem, 4vw, 3.5rem);
+  --section-space: clamp(5rem, 10vw, 9.5rem);
+  --rule: 1px solid var(--color-line);
+  --focus-ring: 3px solid var(--color-focus);
+}
