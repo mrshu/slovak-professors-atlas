@@ -9,6 +9,7 @@ export interface FilterState {
   institutionId: string | null
   faculty: string | null
   field: string | null
+  appointedOn: string | null
   query: string
   selectedYear: number
 }
@@ -19,6 +20,7 @@ export type FilterValueKey =
   | 'institutionId'
   | 'faculty'
   | 'field'
+  | 'appointedOn'
 
 export type HistoryMode = 'push' | 'replace'
 
@@ -29,6 +31,7 @@ export interface FilterOptions {
   institutionIds: readonly string[]
   faculties: readonly string[]
   fields: readonly string[]
+  appointmentDates: readonly string[]
 }
 
 const slovakCollator = new Intl.Collator('sk-SK')
@@ -59,6 +62,7 @@ export function createFilterDefaults(data: AtlasData): FilterState {
     institutionId: null,
     faculty: null,
     field: null,
+    appointedOn: null,
     query: '',
     selectedYear,
   }
@@ -72,5 +76,6 @@ export function createFilterOptions(data: AtlasData): FilterOptions {
     institutionIds: uniqueSorted(data.institutions.map(({ id }) => id)),
     faculties: uniqueSorted(data.records.map(({ faculty }) => faculty)),
     fields: uniqueSorted(data.records.map(({ field }) => normalizeForSearch(field))),
+    appointmentDates: uniqueSorted(data.records.map(({ appointedOn }) => appointedOn)),
   }
 }

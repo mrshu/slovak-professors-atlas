@@ -257,10 +257,10 @@ describe('archívny atlas', () => {
     expect(within(ledger).getByText(/2[\s ]378/)).toBeVisible()
     expect(within(ledger).getByText(/22\. februára 2000/)).toBeVisible()
 
-    const findings = screen.getByRole('region', { name: 'Čo z archívu vystupuje' })
+    const findings = screen.getByRole('region', { name: 'Čísla, ktoré menia mierku' })
     expect(within(findings).getAllByRole('article')).toHaveLength(3)
     expect(
-      within(findings).getByRole('article', { name: 'Najväčšia slávnosť' }),
+      within(findings).getByRole('article', { name: 'Najväčší ceremoniál' }),
     ).toBeVisible()
     expect(
       within(findings).getByRole('article', { name: 'Podiel Bratislavy' }),

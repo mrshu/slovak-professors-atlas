@@ -18,6 +18,15 @@ type LoadState =
   | { status: 'ready'; data: AtlasData }
   | { status: 'error'; data: null }
 
+function focusSection(id: string): void {
+  const url = new URL(window.location.href)
+  url.hash = id
+  window.history.replaceState(window.history.state, '', url)
+  window.requestAnimationFrame(() =>
+    document.getElementById(id)?.scrollIntoView?.({ block: 'start' }),
+  )
+}
+
 
 function LoadedInteractiveSections({ data }: { data: AtlasData }) {
   const atlasState = useAtlasState(data)
@@ -28,6 +37,19 @@ function LoadedInteractiveSections({ data }: { data: AtlasData }) {
 
   return (
     <>
+      <Findings
+        records={data.records}
+        institutions={data.institutions}
+        presidents={data.presidents}
+        onCeremonySelect={(appointedOn) => {
+          atlasState.setAppointmentDate(appointedOn, 'push')
+          focusSection('atlas')
+        }}
+        onCitySelect={(city) => {
+          atlasState.setFilter('city', city, 'push')
+          focusSection('atlas')
+        }}
+      />
       <ContextSectionShell>
         <ContextSectionBody
           years={data.context}
@@ -111,9 +133,6 @@ export default function App() {
       </nav>
 
       <main id="obsah">
-        {state.status === 'ready' && (
-          <Findings records={state.data.records} institutions={state.data.institutions} />
-        )}
         {state.status === 'loading' && (
           <section
             id="zistenia"

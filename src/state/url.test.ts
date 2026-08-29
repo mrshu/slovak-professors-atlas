@@ -11,6 +11,7 @@ const defaults: FilterState = {
   institutionId: null,
   faculty: null,
   field: null,
+  appointedOn: null,
   query: '',
   selectedYear: 2025,
 }
@@ -22,6 +23,7 @@ const options: FilterOptions = {
   institutionIds: ['tuke', 'uniba'],
   faculties: ['Lekárska fakulta', 'Strojnícka fakulta'],
   fields: ['hudobné umenie', 'vnútorné lekárstvo'],
+  appointmentDates: ['2011-01-24', '2023-05-12'],
 }
 
 describe('atlas URL filters', () => {
@@ -34,6 +36,7 @@ describe('atlas URL filters', () => {
       institutionId: 'uniba',
       faculty: 'Lekárska fakulta',
       field: 'vnútorné lekárstvo',
+      appointedOn: '2011-01-24',
       query: '  Caputova  ',
       selectedYear: 2023,
     }
@@ -48,6 +51,7 @@ describe('atlas URL filters', () => {
       ['institutionId', 'uniba'],
       ['faculty', 'Lekárska fakulta'],
       ['field', 'vnútorné lekárstvo'],
+      ['appointedOn', '2011-01-24'],
       ['query', '  Caputova  '],
       ['selectedYear', '2023'],
     ])
@@ -61,7 +65,7 @@ describe('atlas URL filters', () => {
 
   it('ignores unknown IDs, labels, malformed years, and inverted date bounds', () => {
     const parsed = parseFilters(
-      '?startYear=2024&endYear=2004&presidentId=invalid&city=Žilina&institutionId=bad&faculty=bad&field=bad&selectedYear=1999&query=Novak&unknown=value',
+      '?startYear=2024&endYear=2004&presidentId=invalid&city=Žilina&institutionId=bad&faculty=bad&field=bad&appointedOn=bad&selectedYear=1999&query=Novak&unknown=value',
       options,
     )
 

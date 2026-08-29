@@ -6,17 +6,24 @@ const FILTER_VALUE_KEYS: readonly FilterValueKey[] = [
   'institutionId',
   'faculty',
   'field',
+  'appointedOn',
 ]
 
 const OPTION_KEY_BY_FILTER: Record<
   FilterValueKey,
-  'presidentIds' | 'cities' | 'institutionIds' | 'faculties' | 'fields'
+  | 'presidentIds'
+  | 'cities'
+  | 'institutionIds'
+  | 'faculties'
+  | 'fields'
+  | 'appointmentDates'
 > = {
   presidentId: 'presidentIds',
   city: 'cities',
   institutionId: 'institutionIds',
   faculty: 'faculties',
   field: 'fields',
+  appointedOn: 'appointmentDates',
 }
 
 function parseYear(value: string | null, minimum: number, maximum: number): number | null {

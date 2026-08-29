@@ -14,7 +14,7 @@ function record(id: string, institutionId: string, field = 'Vnútorné lekárstv
     institutionId,
     institutionSource: institutionId === 'uniba' ? 'UK v Bratislave' : 'TU v Košiciach',
     field,
-    appointedOn: '2023-05-12',
+    appointedOn: id === 'one' ? '2011-01-24' : '2023-05-12',
     presidentId: 'caputova',
     sourceVariants: [],
   }
@@ -80,6 +80,19 @@ describe('useAtlasState', () => {
     expect(result.current.filters.field).toBe('vnutorne lekarstvo')
     expect(result.current.filteredRecords.map(({ id }) => id)).toEqual(['one', 'two'])
     expect(window.location.search).toBe('?field=vnutorne+lekarstvo')
+  })
+
+  it('pushes an exact ceremony date, updates context year, and restores it from the URL', () => {
+    const { result } = renderHook(() => useAtlasState(data))
+
+    act(() => result.current.setAppointmentDate('2011-01-24'))
+
+    expect(result.current.filters).toMatchObject({
+      appointedOn: '2011-01-24',
+      selectedYear: 2011,
+    })
+    expect(result.current.filteredRecords.map(({ id }) => id)).toEqual(['one'])
+    expect(window.location.search).toBe('?appointedOn=2011-01-24&selectedYear=2011')
   })
 
   it('keeps context highlighting independent and applies timeline years atomically', () => {

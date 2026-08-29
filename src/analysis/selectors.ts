@@ -179,6 +179,12 @@ export function filterAppointments(data: AtlasData, filters: FilterState): Appoi
       return false
     }
     if (
+      filters.appointedOn !== null &&
+      appointment.appointedOn !== filters.appointedOn
+    ) {
+      return false
+    }
+    if (
       normalizedQuery.length > 0 &&
       !matchesAppointment(appointment) &&
       (institution === undefined ||

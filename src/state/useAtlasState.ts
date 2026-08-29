@@ -17,6 +17,7 @@ export interface AtlasState {
   setDateRange: (startYear: number, endYear: number, mode?: HistoryMode) => void
   setSelectedYear: (year: number, mode?: HistoryMode) => void
   setTimelineYear: (year: number | null, mode?: HistoryMode) => void
+  setAppointmentDate: (appointedOn: string | null, mode?: HistoryMode) => void
   setQuery: (query: string) => void
   resetFilters: (mode?: HistoryMode) => void
 }
@@ -29,13 +30,19 @@ interface AtlasHistoryState {
 
 const OPTION_KEY_BY_FILTER: Record<
   FilterValueKey,
-  'presidentIds' | 'cities' | 'institutionIds' | 'faculties' | 'fields'
+  | 'presidentIds'
+  | 'cities'
+  | 'institutionIds'
+  | 'faculties'
+  | 'fields'
+  | 'appointmentDates'
 > = {
   presidentId: 'presidentIds',
   city: 'cities',
   institutionId: 'institutionIds',
   faculty: 'faculties',
   field: 'fields',
+  appointedOn: 'appointmentDates',
 }
 
 function historyStateWithContextYear(lastContextYear: number): AtlasHistoryState {
@@ -116,7 +123,7 @@ export function useAtlasState(data: AtlasData): AtlasState {
       ) {
         return
       }
-      commit({ ...filtersRef.current, startYear, endYear }, mode)
+      commit({ ...filtersRef.current, startYear, endYear, appointedOn: null }, mode)
     },
     [commit, defaults.endYear, defaults.startYear],
   )
@@ -144,6 +151,7 @@ export function useAtlasState(data: AtlasData): AtlasState {
             ...filtersRef.current,
             startYear: defaults.startYear,
             endYear: defaults.endYear,
+            appointedOn: null,
             selectedYear: lastContextYearRef.current,
           },
           mode,
@@ -158,7 +166,13 @@ export function useAtlasState(data: AtlasData): AtlasState {
         return
       }
       commit(
-        { ...filtersRef.current, startYear: year, endYear: year, selectedYear: year },
+        {
+          ...filtersRef.current,
+          startYear: year,
+          endYear: year,
+          appointedOn: null,
+          selectedYear: year,
+        },
         mode,
       )
     },
@@ -171,6 +185,31 @@ export function useAtlasState(data: AtlasData): AtlasState {
     },
     [commit],
   )
+  const setAppointmentDate = useCallback(
+    (appointedOn: string | null, mode: HistoryMode = 'push') => {
+      if (appointedOn === null) {
+        commit({ ...filtersRef.current, appointedOn: null }, mode)
+        return
+      }
+      if (!options.appointmentDates.includes(appointedOn)) {
+        return
+      }
+      const year = Number.parseInt(appointedOn.slice(0, 4), 10)
+      lastContextYearRef.current = year
+      commit(
+        {
+          ...filtersRef.current,
+          startYear: defaults.startYear,
+          endYear: defaults.endYear,
+          appointedOn,
+          selectedYear: year,
+        },
+        mode,
+      )
+    },
+    [commit, defaults.endYear, defaults.startYear, options.appointmentDates],
+  )
+
 
   const resetFilters = useCallback(
     (mode: HistoryMode = 'push') => {
@@ -192,6 +231,7 @@ export function useAtlasState(data: AtlasData): AtlasState {
     setDateRange,
     setSelectedYear,
     setTimelineYear,
+    setAppointmentDate,
     setQuery,
     resetFilters,
   }

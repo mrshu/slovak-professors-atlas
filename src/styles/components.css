@@ -299,19 +299,59 @@
   color: var(--color-brass);
 }
 
-.finding > p:last-child {
+
+.finding__copy {
   max-width: 38rem;
   margin: 1.25rem 0 0;
   color: var(--color-ink-muted);
   font-size: var(--text-sm);
 }
 
-.finding--ceremony > p:last-child {
+.finding--ceremony .finding__copy {
   color: var(--color-sage);
 }
 
-.finding > p:last-child strong {
+.finding__copy strong {
   color: inherit;
+}
+
+.finding__action {
+  align-self: flex-start;
+  width: fit-content;
+  margin-top: 1.35rem;
+  padding: 0 0 0.2rem;
+  border: 0;
+  border-bottom: 1px solid currentColor;
+  background: transparent;
+  color: var(--color-terracotta-dark);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 750;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.finding--ceremony .finding__action {
+  color: var(--color-brass);
+}
+
+.finding__action:hover {
+  color: var(--color-forest);
+}
+
+.finding--ceremony .finding__action:hover {
+  color: var(--color-paper-light);
+}
+
+.finding__action:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 0.3rem;
+}
+
+.finding__action:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .finding__bars {

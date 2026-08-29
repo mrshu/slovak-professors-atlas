@@ -124,6 +124,7 @@ const allFilters: FilterState = {
   institutionId: 'uniba',
   faculty: 'Lekárska fakulta',
   field: 'vnutorne lekarstvo',
+  appointedOn: null,
   query: 'Caputova',
   selectedYear: 2023,
 }
@@ -145,6 +146,7 @@ describe('filterAppointments', () => {
     ['source faculty', { faculty: 'Strojnícka fakulta' }, ['other-city']],
     ['normalized field key', { field: 'chirurgia' }, ['other-year']],
     ['normalized query', { query: 'Simkova' }, ['other-city']],
+    ['ceremony date', { appointedOn: '2022-05-12' }, ['other-year']],
   ] satisfies ReadonlyArray<[string, Partial<FilterState>, string[]]>)(
     'applies the %s dimension independently',
     (_dimension, activeFilter, expectedIds) => {
@@ -156,6 +158,7 @@ describe('filterAppointments', () => {
         institutionId: null,
         faculty: null,
         field: null,
+        appointedOn: null,
         query: '',
         selectedYear: 2025,
       }
@@ -175,6 +178,7 @@ describe('filterAppointments', () => {
       institutionId: 'uniba',
       faculty: null,
       field: 'vnutorne lekarstvo',
+      appointedOn: null,
       query: '',
       selectedYear: 2025,
     }
@@ -203,6 +207,7 @@ describe('filterAppointments', () => {
       institutionId: null,
       faculty: null,
       field: null,
+      appointedOn: null,
       query: '',
       selectedYear: 2025,
     }
@@ -387,6 +392,7 @@ describe('deterministic aggregate selectors', () => {
       institutionId: null,
       faculty: null,
       field: null,
+      appointedOn: null,
       query: '',
       selectedYear: 2025,
     })

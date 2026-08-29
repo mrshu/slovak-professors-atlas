@@ -4,7 +4,7 @@ import type { AtlasData } from '../data/types'
 import { createFilterDefaults, createFilterOptions } from '../state/filters'
 import type { AtlasState } from '../state/useAtlasState'
 import { recordsToCsv } from '../utils/csv'
-import { formatAppointmentCount } from '../utils/format'
+import { formatAppointmentCount, formatDate } from '../utils/format'
 import RecordList from './RecordList'
 
 interface LoadedExplorerProps {
@@ -83,6 +83,7 @@ function LoadedExplorer({ data, atlasState }: LoadedExplorerProps) {
     setFilter,
     setDateRange,
     setTimelineYear,
+    setAppointmentDate,
     setQuery,
     resetFilters,
   } = atlasState
@@ -123,6 +124,13 @@ function LoadedExplorer({ data, atlasState }: LoadedExplorerProps) {
           ? `Rok: ${filters.startYear}`
           : `Obdobie: ${filters.startYear}—${filters.endYear}`,
       remove: () => setTimelineYear(null, 'push'),
+    })
+  }
+  if (filters.appointedOn !== null) {
+    activeChips.push({
+      key: 'appointment-date',
+      label: `Ceremoniál: ${formatDate(filters.appointedOn)}`,
+      remove: () => setAppointmentDate(null, 'push'),
     })
   }
   if (filters.presidentId !== null) {

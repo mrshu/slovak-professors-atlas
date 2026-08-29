@@ -1,11 +1,14 @@
 import { ceremonyCadence, ceremonyCounts } from '../analysis/selectors'
-import type { Appointment, Institution } from '../data/types'
+import type { Appointment, Institution, President } from '../data/types'
 import { formatDate, formatNumber } from '../utils/format'
 import { normalizeForSearch } from '../utils/search'
 
 interface FindingsProps {
   records: readonly Appointment[]
   institutions: readonly Institution[]
+  presidents: readonly President[]
+  onCeremonySelect: (appointedOn: string) => void
+  onCitySelect: (city: string) => void
 }
 
 export interface HeadlineFindings {
@@ -14,6 +17,7 @@ export interface HeadlineFindings {
     appointments: number
     median: number
     multipleOfMedian: number
+    presidentId: string | null
   }
   bratislava: {
     appointments: number
@@ -56,12 +60,21 @@ export function deriveHeadlineFindings(
     .slice(0, 10)
     .reduce((total, count) => total + count, 0)
 
+  const ceremonyPresidentIds = new Set(
+    records
+      .filter(({ appointedOn }) => appointedOn === largestCeremony?.appointedOn)
+      .map(({ presidentId }) => presidentId),
+  )
   return {
     ceremony: {
       appointedOn: largestCeremony?.appointedOn ?? '',
       appointments: largestCeremony?.count ?? 0,
       median,
       multipleOfMedian: median === 0 ? 0 : (largestCeremony?.count ?? 0) / median,
+      presidentId:
+        ceremonyPresidentIds.size === 1
+          ? (ceremonyPresidentIds.values().next().value ?? null)
+          : null,
     },
     bratislava: {
       appointments: bratislavaAppointments,
@@ -83,8 +96,16 @@ function percent(value: number): string {
   })
 }
 
-export default function Findings({ records, institutions }: FindingsProps) {
+export default function Findings({
+  records,
+  institutions,
+  presidents,
+  onCeremonySelect,
+  onCitySelect,
+}: FindingsProps) {
   const facts = deriveHeadlineFindings(records, institutions)
+  const presidentName =
+    presidents.find(({ id }) => id === facts.ceremony.presidentId)?.name ?? null
   const ceremonyScale =
     facts.ceremony.appointments === 0
       ? 0
@@ -94,18 +115,18 @@ export default function Findings({ records, institutions }: FindingsProps) {
     <section id="zistenia" className="section section--findings" aria-labelledby="findings-title">
       <div className="section__heading section__heading--split">
         <div>
-          <p className="eyebrow">Čítanie archívu</p>
-          <h2 id="findings-title">Čo z archívu vystupuje</h2>
+          <p className="eyebrow">Tri stopy v dátach</p>
+          <h2 id="findings-title">Čísla, ktoré menia mierku</h2>
         </div>
         <p>
-          Tri mierky, ktoré sa v tabuľke strácajú: veľkosť jedného ceremoniálu,
-          geografická koncentrácia a dlhý chvost odborov.
+          Jeden výnimočný deň, koncentrácia pracovísk a stovky podôb odborov. Každá
+          stopa vedie jedným kliknutím k záznamom, z ktorých vznikla.
         </p>
       </div>
 
       <div className="findings__list">
-        <article className="finding finding--ceremony" aria-label="Najväčšia slávnosť">
-          <p className="finding__marker">Jeden podpisový deň</p>
+        <article className="finding finding--ceremony" aria-label="Najväčší ceremoniál">
+          <p className="finding__marker">Najväčší ceremoniál</p>
           <p className="finding__number">
             {formatNumber(facts.ceremony.appointments)}
             <span>vymenovaní</span>
@@ -113,14 +134,14 @@ export default function Findings({ records, institutions }: FindingsProps) {
           <h3>
             {facts.ceremony.appointedOn
               ? formatDate(facts.ceremony.appointedOn)
-              : 'Bez zaznamenanej slávnosti'}
+              : 'Bez zaznamenaného ceremoniálu'}
           </h3>
           <div
             className="finding__bars"
             role="img"
-            aria-label={`Najväčšia slávnosť ${formatNumber(
+            aria-label={`Najväčší ceremoniál ${formatNumber(
               facts.ceremony.appointments,
-            )} vymenovaní; medián slávnosti ${formatNumber(facts.ceremony.median)}`}
+            )} vymenovaní; medián ceremoniálu ${formatNumber(facts.ceremony.median)}`}
           >
             <span className="finding__bar finding__bar--maximum" />
             <span
@@ -128,21 +149,30 @@ export default function Findings({ records, institutions }: FindingsProps) {
               style={{ width: `${ceremonyScale}%` }}
             />
           </div>
-          <p>
-            Jediná slávnosť mala{' '}
+          <p className="finding__copy">
+            V ten deň prezident {presidentName ?? 'Slovenskej republiky'} vymenoval{' '}
+            {formatNumber(facts.ceremony.appointments)} profesorov —{' '}
             <strong>
               {formatNumber(facts.ceremony.multipleOfMedian, {
                 minimumFractionDigits: 1,
                 maximumFractionDigits: 1,
               })}
-              ×
+              -násobok
             </strong>{' '}
-            viac vymenovaní než medián slávnosti ({formatNumber(facts.ceremony.median)}).
+            mediánu jedného ceremoniálu ({formatNumber(facts.ceremony.median)}).
           </p>
+          <button
+            className="finding__action"
+            type="button"
+            onClick={() => onCeremonySelect(facts.ceremony.appointedOn)}
+            disabled={!facts.ceremony.appointedOn}
+          >
+            Otvoriť ceremoniál
+          </button>
         </article>
 
         <article className="finding finding--city" aria-label="Podiel Bratislavy">
-          <p className="finding__marker">Geografia pracovísk</p>
+          <p className="finding__marker">Bratislavská koncentrácia</p>
           <p className="finding__number">
             {percent(facts.bratislava.share)} %
             <span>Bratislava</span>
@@ -156,18 +186,26 @@ export default function Findings({ records, institutions }: FindingsProps) {
           >
             <span style={{ width: `${facts.bratislava.share * 100}%` }} />
           </div>
-          <p>
-            Bratislavské pracoviská navrhli <strong>{formatNumber(facts.bratislava.appointments)}</strong>{' '}
-            z {formatNumber(facts.bratislava.total)} vymenovaní. Mapa zachytáva pracovisko,
-            nie pôvod profesora.
+          <p className="finding__copy">
+            Na bratislavské pracoviská pripadá{' '}
+            <strong>{formatNumber(facts.bratislava.appointments)}</strong> z{' '}
+            {formatNumber(facts.bratislava.total)} vymenovaní. Ide o pracovisko, nie
+            bydlisko profesora.
           </p>
+          <button
+            className="finding__action"
+            type="button"
+            onClick={() => onCitySelect('Bratislava')}
+          >
+            Zobraziť Bratislavu
+          </button>
         </article>
 
         <article className="finding finding--fields" aria-label="Rozmanitosť odborov">
-          <p className="finding__marker">Dlhý chvost odborov</p>
+          <p className="finding__marker">Stovky podôb odboru</p>
           <p className="finding__number">
             {formatNumber(facts.fields.count)}
-            <span>názvov odborov</span>
+            <span>normalizovaných názvov</span>
           </p>
           <dl className="finding__split-stat">
             <div>
@@ -179,10 +217,14 @@ export default function Findings({ records, institutions }: FindingsProps) {
               <dd>{percent(facts.fields.topTenShare)} %</dd>
             </div>
           </dl>
-          <p>
-            Odbory sú rozptýlené: najčastejšia desiatka netvorí ani pätinu všetkých
-            analytických záznamov.
+          <p className="finding__copy">
+            Až <strong>{formatNumber(facts.fields.singletonCount)}</strong> odborov sa v
+            registri objaví jediný raz; desať najčastejších spolu tvorí len{' '}
+            {percent(facts.fields.topTenShare)} % vymenovaní.
           </p>
+          <a className="finding__action" href="#odbory-absolventi">
+            Preskúmať odbory
+          </a>
         </article>
       </div>
     </section>
