@@ -41,11 +41,11 @@ function LoadedInteractiveSections({ data }: { data: AtlasData }) {
         affiliations={data.affiliations}
         presidents={data.presidents}
         onCeremonySelect={(appointedOn) => {
-          atlasState.setAppointmentDate(appointedOn, 'push')
+          atlasState.setExclusiveFilter('appointedOn', appointedOn, 'push')
           focusSection('atlas')
         }}
         onCitySelect={(city) => {
-          atlasState.setFilter('city', city, 'push')
+          atlasState.setExclusiveFilter('city', city, 'push')
           focusSection('atlas')
         }}
       />

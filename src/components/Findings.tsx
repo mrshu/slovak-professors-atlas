@@ -21,7 +21,8 @@ export interface HeadlineFindings {
   }
   bratislava: {
     appointments: number
-    total: number
+    locatedAppointments: number
+    unresolvedAppointments: number
     share: number
   }
   fields: {
@@ -49,11 +50,17 @@ export function deriveHeadlineFindings(
         : [],
     ),
   )
-  const bratislavaAppointments = records.reduce(
-    (count, record) =>
-      count + (cityByAffiliation.get(record.affiliationId) === 'Bratislava' ? 1 : 0),
-    0,
-  )
+  let bratislavaAppointments = 0
+  let locatedAppointments = 0
+  for (const record of records) {
+    const city = cityByAffiliation.get(record.affiliationId)
+    if (city !== undefined) {
+      locatedAppointments += 1
+    }
+    if (city === 'Bratislava') {
+      bratislavaAppointments += 1
+    }
+  }
   const fieldCounts = new Map<string, number>()
   for (const record of records) {
     const field = normalizeForSearch(record.field)
@@ -82,8 +89,9 @@ export function deriveHeadlineFindings(
     },
     bratislava: {
       appointments: bratislavaAppointments,
-      total: records.length,
-      share: records.length === 0 ? 0 : bratislavaAppointments / records.length,
+      locatedAppointments,
+      unresolvedAppointments: records.length - locatedAppointments,
+      share: locatedAppointments === 0 ? 0 : bratislavaAppointments / locatedAppointments,
     },
     fields: {
       count: fieldCounts.size,
@@ -186,15 +194,23 @@ export default function Findings({
             role="img"
             aria-label={`Bratislava ${formatNumber(
               facts.bratislava.appointments,
-            )} z ${formatNumber(facts.bratislava.total)} vymenovaní`}
+            )} z ${formatNumber(
+              facts.bratislava.locatedAppointments,
+            )} vymenovaní s určenou polohou`}
           >
             <span style={{ width: `${facts.bratislava.share * 100}%` }} />
           </div>
           <p className="finding__copy">
-            Na bratislavské pracoviská pripadá{' '}
+            Z vymenovaní s určenou polohou pripadá na bratislavské pracoviská{' '}
             <strong>{formatNumber(facts.bratislava.appointments)}</strong> z{' '}
-            {formatNumber(facts.bratislava.total)} vymenovaní. Ide o pracovisko, nie
-            bydlisko profesora.
+            {formatNumber(facts.bratislava.locatedAppointments)}.{' '}
+            {facts.bratislava.unresolvedAppointments > 0 && (
+              <>
+                Pri ďalších {formatNumber(facts.bratislava.unresolvedAppointments)} vymenovaniach
+                sa poloha nedala spoľahlivo určiť.{' '}
+              </>
+            )}
+            Ide o pracovisko, nie bydlisko profesora.
           </p>
           <button
             className="finding__action"

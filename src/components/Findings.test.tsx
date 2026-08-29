@@ -26,6 +26,16 @@ const affiliations: Affiliation[] = [
     sourceLabel: 'Košické pracovisko',
     note: null,
   },
+  {
+    id: 'unresolved-aff',
+    institutionId: 'unresolved',
+    facultyKeys: [],
+    status: 'unresolved',
+    city: null,
+    sourceUrl: 'https://example.test/unresolved',
+    sourceLabel: 'Nevyriešené pracovisko',
+    note: 'Mesto nemožno spoľahlivo určiť.',
+  },
 ]
 const presidents: President[] = [
   {
@@ -79,9 +89,32 @@ describe('headline findings', () => {
       presidentId: 'president',
       multipleOfMedian: 1.5,
     })
-    expect(facts.bratislava).toEqual({ appointments: 3, total: 4, share: 0.75 })
+    expect(facts.bratislava).toEqual({
+      appointments: 3,
+      locatedAppointments: 4,
+      unresolvedAppointments: 0,
+      share: 0.75,
+    })
     expect(facts.fields).toEqual({ count: 3, singletonCount: 2, topTenShare: 1 })
   })
+  it('calculates the Bratislava share only from resolved workplace locations', () => {
+    const facts = deriveHeadlineFindings(
+      [
+        appointment('a', '2024-01-01', 'História', 'bratislava'),
+        appointment('b', '2024-01-01', 'Fyzika', 'kosice'),
+        appointment('c', '2024-02-01', 'Právo', 'unresolved'),
+      ],
+      affiliations,
+    )
+
+    expect(facts.bratislava).toEqual({
+      appointments: 1,
+      locatedAppointments: 2,
+      unresolvedAppointments: 1,
+      share: 0.5,
+    })
+  })
+
 
   it('fails safely for an empty analytical dataset', () => {
     expect(deriveHeadlineFindings([], affiliations)).toEqual({
@@ -92,7 +125,12 @@ describe('headline findings', () => {
         multipleOfMedian: 0,
         presidentId: null,
       },
-      bratislava: { appointments: 0, total: 0, share: 0 },
+      bratislava: {
+        appointments: 0,
+        locatedAppointments: 0,
+        unresolvedAppointments: 0,
+        share: 0,
+      },
       fields: { count: 0, singletonCount: 0, topTenShare: 0 },
     })
   })

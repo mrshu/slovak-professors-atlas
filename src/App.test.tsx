@@ -391,6 +391,43 @@ describe('archívny atlas', () => {
     ).toHaveTextContent('bez presnej zhody')
   })
 
+  it('opens a finding from defaults in one history entry instead of intersecting stale filters', async () => {
+    window.history.replaceState({}, '', '/slovak-professors/?field=psychologia')
+    const pushState = vi.spyOn(window.history, 'pushState')
+    vi.stubGlobal('fetch', vi.fn(async () => successfulResponse(atlasWithFieldVariants)))
+
+    render(<App />)
+
+    const findings = await screen.findByRole('region', { name: 'Čísla, ktoré menia mierku' })
+    fireEvent.click(within(findings).getByRole('button', { name: 'Zobraziť Bratislavu' }))
+
+    expect(pushState).toHaveBeenCalledTimes(1)
+    expect(window.location.search).toBe('?city=Bratislava')
+    expect(window.location.hash).toBe('#atlas')
+    const explorer = screen.getByRole('region', {
+      name: 'Úplný register profesorských vymenovaní',
+    })
+    await waitFor(() => expect(within(explorer).getByRole('status')).toHaveTextContent('3'))
+    expect(
+      within(explorer).queryByRole('button', { name: /Odstrániť filter Odbor:/ }),
+    ).not.toBeInTheDocument()
+  })
+  it('opens the ceremony finding without retaining an unrelated active field', async () => {
+    window.history.replaceState({}, '', '/slovak-professors/?field=psychologia')
+    const pushState = vi.spyOn(window.history, 'pushState')
+    vi.stubGlobal('fetch', vi.fn(async () => successfulResponse(atlasWithFieldVariants)))
+
+    render(<App />)
+
+    const findings = await screen.findByRole('region', { name: 'Čísla, ktoré menia mierku' })
+    fireEvent.click(within(findings).getByRole('button', { name: 'Otvoriť ceremoniál' }))
+
+    expect(pushState).toHaveBeenCalledTimes(1)
+    expect(window.location.search).toBe('?appointedOn=2000-02-22')
+    expect(window.location.hash).toBe('#atlas')
+  })
+
+
   it('keeps the Slovak shell and source link visible when the payload request fails', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(null, { status: 503 })))
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)

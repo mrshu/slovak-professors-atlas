@@ -14,6 +14,7 @@ export interface AtlasState {
   filters: FilterState
   filteredRecords: Appointment[]
   setFilter: (key: FilterValueKey, value: string | null, mode?: HistoryMode) => void
+  setExclusiveFilter: (key: FilterValueKey, value: string, mode?: HistoryMode) => void
   setDateRange: (startYear: number, endYear: number, mode?: HistoryMode) => void
   setSelectedYear: (year: number, mode?: HistoryMode) => void
   setTimelineYear: (year: number | null, mode?: HistoryMode) => void
@@ -111,6 +112,24 @@ export function useAtlasState(data: AtlasData): AtlasState {
     },
     [commit, options],
   )
+  const setExclusiveFilter = useCallback(
+    (key: FilterValueKey, value: string, mode: HistoryMode = 'push') => {
+      if (!options[OPTION_KEY_BY_FILTER[key]].includes(value)) {
+        return
+      }
+      const nextFilters: FilterState = { ...defaults, [key]: value }
+      if (key === 'appointedOn') {
+        const year = Number.parseInt(value.slice(0, 4), 10)
+        nextFilters.selectedYear = year
+        lastContextYearRef.current = year
+      } else {
+        lastContextYearRef.current = defaults.selectedYear
+      }
+      commit(nextFilters, mode)
+    },
+    [commit, defaults, options],
+  )
+
 
   const setDateRange = useCallback(
     (startYear: number, endYear: number, mode: HistoryMode = 'push') => {
@@ -228,6 +247,7 @@ export function useAtlasState(data: AtlasData): AtlasState {
     filters,
     filteredRecords,
     setFilter,
+    setExclusiveFilter,
     setDateRange,
     setSelectedYear,
     setTimelineYear,
