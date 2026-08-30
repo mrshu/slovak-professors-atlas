@@ -15,13 +15,70 @@ const WIDTH = 620
 const HEIGHT = 190
 const MARGIN = { top: 16, right: 12, bottom: 30, left: 42 }
 
+function AnnualYAxis({
+  ticks,
+  y,
+}: {
+  ticks: readonly number[]
+  y: (value: number) => number
+}) {
+  return (
+    <g data-axis="y" className="field-education-detail__y-axis" aria-hidden="true">
+      <line
+        x1={MARGIN.left}
+        x2={MARGIN.left}
+        y1={MARGIN.top}
+        y2={MARGIN.top + HEIGHT - MARGIN.top - MARGIN.bottom}
+      />
+      {ticks.map((tick) => (
+        <g key={tick} data-axis-tick="y">
+          <line
+            x1={MARGIN.left - 5}
+            x2={MARGIN.left}
+            y1={y(tick)}
+            y2={y(tick)}
+          />
+          <text x={MARGIN.left - 8} y={y(tick) + 3} textAnchor="end">
+            {formatNumber(tick, { maximumFractionDigits: 0 })}
+          </text>
+        </g>
+      ))}
+    </g>
+  )
+}
+
+function annualPeriod(annual: readonly FieldEducationAnnualValue[]): {
+  startYear: number | null
+  endYear: number | null
+  label: string
+} {
+  const startYear = annual[0]?.year ?? null
+  const endYear = annual.at(-1)?.year ?? null
+  return {
+    startYear,
+    endYear,
+    label:
+      startYear === null || endYear === null
+        ? 'bez dostupného obdobia'
+        : startYear === endYear
+          ? String(startYear)
+          : `${startYear} – ${endYear}`,
+  }
+}
+
+
 function AppointmentBars({ annual }: { annual: readonly FieldEducationAnnualValue[] }) {
   const innerWidth = WIDTH - MARGIN.left - MARGIN.right
   const innerHeight = HEIGHT - MARGIN.top - MARGIN.bottom
   const maximum = Math.max(1, ...annual.map(({ appointmentCount }) => appointmentCount))
-  const y = scaleLinear().domain([0, maximum]).range([MARGIN.top + innerHeight, MARGIN.top])
+  const y = scaleLinear()
+    .domain([0, maximum])
+    .nice(3)
+    .range([MARGIN.top + innerHeight, MARGIN.top])
+  const yTicks = y.ticks(3)
   const step = innerWidth / Math.max(annual.length, 1)
   const barWidth = Math.max(2, step * 0.62)
+  const { startYear, endYear } = annualPeriod(annual)
 
   return (
     <svg
@@ -30,6 +87,7 @@ function AppointmentBars({ annual }: { annual: readonly FieldEducationAnnualValu
       role="img"
       aria-label="Ročné profesorské vymenovania vo vybranom odbore"
     >
+      <AnnualYAxis ticks={yTicks} y={y} />
       <line
         className="field-education-detail__baseline"
         x1={MARGIN.left}
@@ -54,8 +112,10 @@ function AppointmentBars({ annual }: { annual: readonly FieldEducationAnnualValu
           </rect>
         )
       })}
-      <text x={MARGIN.left} y={HEIGHT - 8}>2009</text>
-      <text x={MARGIN.left + innerWidth} y={HEIGHT - 8} textAnchor="end">2025</text>
+      {startYear === null ? null : <text x={MARGIN.left} y={HEIGHT - 8}>{startYear}</text>}
+      {endYear === null || endYear === startYear ? null : (
+        <text x={MARGIN.left + innerWidth} y={HEIGHT - 8} textAnchor="end">{endYear}</text>
+      )}
     </svg>
   )
 }
@@ -72,11 +132,16 @@ function GraduateLine({ annual }: { annual: readonly FieldEducationAnnualValue[]
   const x = scaleLinear()
     .domain([0, Math.max(annual.length - 1, 1)])
     .range([MARGIN.left, MARGIN.left + innerWidth])
-  const y = scaleLinear().domain([0, maximum]).range([MARGIN.top + innerHeight, MARGIN.top])
+  const y = scaleLinear()
+    .domain([0, maximum])
+    .nice(3)
+    .range([MARGIN.top + innerHeight, MARGIN.top])
+  const yTicks = y.ticks(3)
   const path = line<FieldEducationAnnualValue>()
     .defined(({ graduateCount }) => graduateCount !== null)
     .x((_, index) => x(index))
     .y(({ graduateCount }) => y(graduateCount ?? 0))(annual)
+  const { startYear, endYear } = annualPeriod(annual)
 
   return (
     <svg
@@ -85,6 +150,7 @@ function GraduateLine({ annual }: { annual: readonly FieldEducationAnnualValue[]
       role="img"
       aria-label="Roční absolventi vo vybranom odbore; medzery znamenajú chýbajúce spárovanie"
     >
+      <AnnualYAxis ticks={yTicks} y={y} />
       <line
         className="field-education-detail__baseline"
         x1={MARGIN.left}
@@ -110,25 +176,28 @@ function GraduateLine({ annual }: { annual: readonly FieldEducationAnnualValue[]
           </circle>
         ),
       )}
-      <text x={MARGIN.left} y={HEIGHT - 8}>2009</text>
-      <text x={MARGIN.left + innerWidth} y={HEIGHT - 8} textAnchor="end">2025</text>
+      {startYear === null ? null : <text x={MARGIN.left} y={HEIGHT - 8}>{startYear}</text>}
+      {endYear === null || endYear === startYear ? null : (
+        <text x={MARGIN.left + innerWidth} y={HEIGHT - 8} textAnchor="end">{endYear}</text>
+      )}
     </svg>
   )
 }
 
 export default function FieldEducationDetail({ row }: FieldEducationDetailProps) {
   const hasGraduates = row.graduateCount !== null && row.graduatesPerAppointment !== null
+  const period = annualPeriod(row.annual)
   return (
     <article className="field-education-detail" aria-labelledby={`field-detail-${row.fieldKey}`}>
       <p className="eyebrow">Vybraný odbor</p>
       <h3 id={`field-detail-${row.fieldKey}`}>{row.canonicalLabel}</h3>
       <dl className="field-education-detail__totals">
         <div>
-          <dt>Vymenovania 2009 – 2025</dt>
+          <dt>Vymenovania {period.label}</dt>
           <dd>{formatNumber(row.appointmentCount)}</dd>
         </div>
         <div>
-          <dt>Absolventi 2009 – 2025</dt>
+          <dt>Absolventi {period.label}</dt>
           <dd>{row.graduateCount === null ? 'nedostupné' : formatNumber(row.graduateCount)}</dd>
         </div>
         <div>
@@ -141,7 +210,7 @@ export default function FieldEducationDetail({ row }: FieldEducationDetailProps)
                   maximumFractionDigits: 2,
                 })}
           </dd>
-          <p>Opisný pomer dvoch tokov za spoločné obdobie.</p>
+          <p>Opisný pomer dvoch tokov za vybrané obdobie.</p>
         </div>
         <div>
           <dt>Aktuálni študenti</dt>

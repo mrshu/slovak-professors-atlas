@@ -75,6 +75,10 @@ const data = {
       historia: 'história',
     },
   },
+  fieldEducationComparison: {
+    startYear: 2009,
+    endYear: 2025,
+  },
   records: [
     record('one', 'uniba'),
     record('two', 'tuke', 'vnútorNÉ   lekárstvo'),
@@ -111,6 +115,31 @@ describe('useAtlasState', () => {
     expect(replaceState).toHaveBeenCalledTimes(1)
     expect(window.location.search).toBe('?city=Bratislava&query=Caputova')
     expect(result.current.filters.query).toBe('Caputova')
+  })
+
+  it('persists an independent field-comparison range without filtering atlas records', () => {
+    const { result } = renderHook(() => useAtlasState(data))
+
+    act(() => result.current.setFieldEducationRange(2012, 2020))
+
+    expect(result.current.filters).toMatchObject({
+      startYear: 2000,
+      endYear: 2026,
+      fieldStartYear: 2012,
+      fieldEndYear: 2020,
+    })
+    expect(result.current.filteredRecords).toHaveLength(3)
+    expect(window.location.search).toBe('?fieldStartYear=2012&fieldEndYear=2020')
+
+    act(() => result.current.setExclusiveFilter('city', 'Bratislava'))
+    expect(result.current.filters).toMatchObject({
+      fieldStartYear: 2012,
+      fieldEndYear: 2020,
+      city: 'Bratislava',
+    })
+    expect(window.location.search).toBe(
+      '?fieldStartYear=2012&fieldEndYear=2020&city=Bratislava',
+    )
   })
 
   it('loads a normalized field deep link and applies it across raw-label variants', () => {

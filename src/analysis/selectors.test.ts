@@ -190,6 +190,8 @@ const data = {
 const allFilters: FilterState = {
   startYear: 2023,
   endYear: 2023,
+  fieldStartYear: 2009,
+  fieldEndYear: 2025,
   presidentId: 'caputova',
   city: 'Bratislava',
   institutionId: 'uniba',
@@ -224,6 +226,8 @@ describe('filterAppointments', () => {
       const neutralFilters: FilterState = {
         startYear: 2000,
         endYear: 2026,
+        fieldStartYear: 2009,
+        fieldEndYear: 2025,
         presidentId: null,
         city: null,
         institutionId: null,
@@ -253,6 +257,8 @@ describe('filterAppointments', () => {
     const filters: FilterState = {
       startYear: 2000,
       endYear: 2026,
+      fieldStartYear: 2009,
+      fieldEndYear: 2025,
       presidentId: null,
       city: null,
       institutionId: null,

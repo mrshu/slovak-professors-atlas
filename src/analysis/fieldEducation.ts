@@ -48,6 +48,11 @@ export interface FieldEducationLandscape {
   coverage: FieldEducationCoverage
 }
 
+export interface FieldEducationRange {
+  startYear: number
+  endYear: number
+}
+
 interface AppointmentGroup {
   appointmentCount: number
   exactAppointmentCount: number
@@ -136,21 +141,42 @@ export function buildFieldEducationLandscape(
   records: readonly Appointment[],
   catalog: FieldCatalog,
   comparison: FieldEducationComparison,
+  range: FieldEducationRange = {
+    startYear: comparison.startYear,
+    endYear: comparison.endYear,
+  },
 ): FieldEducationLandscape {
-  const groups = appointmentGroups(records, comparison.startYear, comparison.endYear)
+  if (
+    !Number.isInteger(range.startYear) ||
+    !Number.isInteger(range.endYear) ||
+    range.startYear < comparison.startYear ||
+    range.endYear > comparison.endYear ||
+    range.startYear > range.endYear
+  ) {
+    throw new RangeError(
+      `Field education range ${range.startYear}–${range.endYear} is outside ${comparison.startYear}–${comparison.endYear}`,
+    )
+  }
+  const selectedYears = comparison.years
+    .map((value, index) => ({ value, index }))
+    .filter(({ value }) => value.year >= range.startYear && value.year <= range.endYear)
+  const groups = appointmentGroups(records, range.startYear, range.endYear)
   const educationRows = indexedEducationRows(comparison)
   const allRows = Array.from(groups, ([fieldKey, group]) => {
     const education = educationRows.get(fieldKey)
-    const isMatched = education?.graduateCounts.some((count) => count !== null) ?? false
+    const selectedGraduateCounts = selectedYears.map(
+      ({ index }) => education?.graduateCounts[index] ?? null,
+    )
+    const isMatched = selectedGraduateCounts.some((count) => count !== null)
     const graduateCount = isMatched
-      ? education!.graduateCounts.reduce<number>(
+      ? selectedGraduateCounts.reduce<number>(
           (total, count) => total + (count ?? 0),
           0,
         )
       : null
-    const annual = comparison.years.map(({ year }, index) => ({
-      year,
-      appointmentCount: group.appointmentsByYear.get(year) ?? 0,
+    const annual = selectedYears.map(({ value, index }) => ({
+      year: value.year,
+      appointmentCount: group.appointmentsByYear.get(value.year) ?? 0,
       graduateCount: education?.graduateCounts[index] ?? null,
     }))
     const labelVariants = variants(group)
@@ -200,7 +226,7 @@ export function buildFieldEducationLandscape(
       ),
       matchedFieldCount: points.length,
       fieldCount: allRows.length,
-      yearCount: comparison.years.length,
+      yearCount: selectedYears.length,
     },
   }
 }

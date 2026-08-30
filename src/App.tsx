@@ -57,6 +57,13 @@ function LoadedInteractiveSections({ data }: { data: AtlasData }) {
         allRecords={data.records}
         selectedField={atlasState.filters.field}
         onFieldSelect={(field) => atlasState.setFilter('field', field, 'push')}
+        fieldRange={{
+          startYear: atlasState.filters.fieldStartYear,
+          endYear: atlasState.filters.fieldEndYear,
+        }}
+        onFieldRangeChange={(startYear, endYear) =>
+          atlasState.setFieldEducationRange(startYear, endYear, 'push')
+        }
       />
       <AtlasSection data={data} atlasState={atlasState} />
       <Explorer data={data} atlasState={atlasState} />

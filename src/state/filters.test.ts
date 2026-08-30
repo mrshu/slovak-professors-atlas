@@ -20,6 +20,10 @@ const data = {
       'hudobne umenie': 'hudobné umenie',
     },
   },
+  fieldEducationComparison: {
+    startYear: 2009,
+    endYear: 2025,
+  },
   records: [
     { faculty: 'Lekárska fakulta', field: 'Vnútorné lekárstvo', fieldKey: 'vnutorne lekarstvo', appointedOn: '2011-01-24', sourceVariants: [] },
     { faculty: null, field: 'hudobné umenie', fieldKey: 'hudobne umenie', appointedOn: '2025-01-01', sourceVariants: [] },
@@ -36,6 +40,8 @@ describe('filter state metadata', () => {
     expect(createFilterDefaults(data)).toEqual({
       startYear: 2000,
       endYear: 2026,
+      fieldStartYear: 2009,
+      fieldEndYear: 2025,
       presidentId: null,
       city: null,
       institutionId: null,

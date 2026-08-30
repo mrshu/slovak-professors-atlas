@@ -6,6 +6,8 @@ import { parseFilters, serializeFilters } from './url'
 const defaults: FilterState = {
   startYear: 2000,
   endYear: 2026,
+  fieldStartYear: 2009,
+  fieldEndYear: 2025,
   presidentId: null,
   city: null,
   institutionId: null,
@@ -35,6 +37,8 @@ describe('atlas URL filters', () => {
     const filters: FilterState = {
       startYear: 2004,
       endYear: 2024,
+      fieldStartYear: 2012,
+      fieldEndYear: 2020,
       presidentId: 'caputova',
       city: 'Bratislava',
       institutionId: 'uniba',
@@ -50,6 +54,8 @@ describe('atlas URL filters', () => {
     expect(Array.from(new URLSearchParams(search).entries())).toEqual([
       ['startYear', '2004'],
       ['endYear', '2024'],
+      ['fieldStartYear', '2012'],
+      ['fieldEndYear', '2020'],
       ['presidentId', 'caputova'],
       ['city', 'Bratislava'],
       ['institutionId', 'uniba'],
@@ -69,7 +75,7 @@ describe('atlas URL filters', () => {
 
   it('ignores unknown IDs, labels, malformed years, and inverted date bounds', () => {
     const parsed = parseFilters(
-      '?startYear=2024&endYear=2004&presidentId=invalid&city=Žilina&institutionId=bad&faculty=bad&field=bad&appointedOn=bad&selectedYear=1999&query=Novak&unknown=value',
+      '?startYear=2024&endYear=2004&fieldStartYear=2024&fieldEndYear=2010&presidentId=invalid&city=Žilina&institutionId=bad&faculty=bad&field=bad&appointedOn=bad&selectedYear=1999&query=Novak&unknown=value',
       options,
     )
 

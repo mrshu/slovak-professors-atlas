@@ -49,6 +49,21 @@ describe('FieldEducationRankings', () => {
     expect(within(unmatched).queryByText('0')).not.toBeInTheDocument()
   })
 
+  it('summarizes additive appointment and graduate shares with two donuts', () => {
+    render(<FieldEducationRankings rows={rows} selectedField={null} onFieldSelect={vi.fn()} />)
+
+    const appointments = screen.getByRole('img', {
+      name: 'Podiel vymenovaní podľa odboru',
+    })
+    const graduates = screen.getByRole('img', {
+      name: 'Podiel absolventov podľa odboru',
+    })
+
+    expect(appointments.querySelectorAll('[data-donut-slice]')).toHaveLength(3)
+    expect(graduates.querySelectorAll('[data-donut-slice]')).toHaveLength(2)
+    expect(screen.queryByRole('img', { name: /pomer/i })).not.toBeInTheDocument()
+  })
+
   it('searches accent-insensitive canonical labels and raw typo variants', () => {
     render(<FieldEducationRankings rows={rows} selectedField={null} onFieldSelect={vi.fn()} />)
     const search = screen.getByRole('searchbox', { name: /hľadať odbor/i })

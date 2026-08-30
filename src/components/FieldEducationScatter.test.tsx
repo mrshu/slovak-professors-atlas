@@ -79,6 +79,27 @@ describe('FieldEducationScatter', () => {
     expect(screen.getByTestId('field-point-center')).toHaveAttribute('data-selected', 'true')
   })
 
+  it('labels the scatter with the selected annual period', () => {
+    const rangedPoints = points.map((entry) => ({
+      ...entry,
+      annual: [
+        { year: 2018, appointmentCount: 1, graduateCount: 10 },
+        { year: 2019, appointmentCount: 1, graduateCount: 11 },
+        { year: 2020, appointmentCount: 1, graduateCount: 12 },
+      ],
+    }))
+
+    render(
+      <FieldEducationScatter
+        points={rangedPoints}
+        selectedField={null}
+        onFieldSelect={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByText('Vybrané obdobie 2018 – 2020')).toBeInTheDocument()
+  })
+
   it('previews and selects the nearest point through the transparent overlay', () => {
     const onFieldSelect = vi.fn()
     render(
@@ -88,9 +109,10 @@ describe('FieldEducationScatter', () => {
     const east = renderedPoint('east')
 
     fireEvent.pointerMove(target, { clientX: east.x, clientY: east.y })
-    expect(screen.getByRole('group', { name: 'Náhľad odboru EAST' })).toHaveTextContent(
-      'Presne priradené vymenovania 100',
-    )
+    const preview = screen.getByRole('group', { name: 'Náhľad odboru EAST' })
+    expect(preview).toHaveTextContent('Presne priradené vymenovania 100')
+    expect(preview.closest('.field-education-scatter__stage')).toBeNull()
+    expect(preview.closest('.field-education-scatter__inspection')).toBeInTheDocument()
 
     fireEvent.pointerUp(target, { clientX: east.x, clientY: east.y, pointerType: 'mouse' })
     expect(onFieldSelect).toHaveBeenCalledWith('east')
@@ -131,7 +153,7 @@ describe('FieldEducationScatter', () => {
     expect(screen.getAllByRole('button', { name: /Preskúmať mapu odborov/ })).toHaveLength(1)
   })
 
-  it('discloses alias recovery, exact collisions, and clamps edge previews', () => {
+  it('discloses alias recovery and exact collisions in the inspection strip', () => {
     const collisionPoints = [
       point('a', 1, 10, { exactAppointmentCount: 0, aliasAppointmentCount: 1 }),
       point('b', 1, 10),
@@ -146,7 +168,6 @@ describe('FieldEducationScatter', () => {
     const preview = screen.getByRole('group', { name: 'Náhľad odboru A' })
     expect(preview).toHaveTextContent('Aliasom obnovené vymenovania 1')
     expect(preview).toHaveTextContent('Rovnaké analytické súradnice: 2 odbory')
-    expect(Number(preview.getAttribute('data-preview-x'))).toBeGreaterThanOrEqual(8)
-    expect(Number(preview.getAttribute('data-preview-y'))).toBeGreaterThanOrEqual(8)
+    expect(preview.closest('.field-education-scatter__inspection')).toBeInTheDocument()
   })
 })

@@ -101,6 +101,11 @@ const comparison: FieldEducationComparisonData = {
   ],
 }
 
+const fullFieldRangeProps = {
+  fieldRange: { startYear: 2009, endYear: 2025 },
+  onFieldRangeChange: vi.fn(),
+}
+
 describe('FieldEducationComparison', () => {
   it('pins coverage and uses the leading matched field as a local-only default', () => {
     const onFieldSelect = vi.fn()
@@ -109,6 +114,7 @@ describe('FieldEducationComparison', () => {
         comparison={comparison}
         fieldCatalog={fieldCatalog}
         allRecords={allRecords}
+        {...fullFieldRangeProps}
         selectedField={null}
         onFieldSelect={onFieldSelect}
       />,
@@ -124,6 +130,44 @@ describe('FieldEducationComparison', () => {
     expect(onFieldSelect).not.toHaveBeenCalled()
   })
 
+  it('recomputes the complete field view for an independent selected range', () => {
+    render(
+      <FieldEducationComparison
+        comparison={comparison}
+        fieldCatalog={fieldCatalog}
+        allRecords={allRecords}
+        selectedField={null}
+        onFieldSelect={vi.fn()}
+        fieldRange={{ startYear: 2009, endYear: 2009 }}
+        onFieldRangeChange={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByText('1 rok')).toBeInTheDocument()
+    expect(screen.getAllByText(/Vybrané obdobie 2009/).length).toBeGreaterThanOrEqual(2)
+    expect(screen.getAllByText('2009').length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('requests valid field-only range changes from dedicated controls', () => {
+    const onFieldRangeChange = vi.fn()
+    render(
+      <FieldEducationComparison
+        comparison={comparison}
+        fieldCatalog={fieldCatalog}
+        allRecords={allRecords}
+        selectedField={null}
+        onFieldSelect={vi.fn()}
+        fieldRange={{ startYear: 2009, endYear: 2025 }}
+        onFieldRangeChange={onFieldRangeChange}
+      />,
+    )
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Odbory od roku' }), {
+      target: { value: '2015' },
+    })
+    expect(onFieldRangeChange).toHaveBeenCalledWith(2015, 2025)
+  })
+
   it('honors matched and unmatched URL selections without shrinking the cloud', () => {
     const onFieldSelect = vi.fn()
     const { rerender } = render(
@@ -131,6 +175,7 @@ describe('FieldEducationComparison', () => {
         comparison={comparison}
         fieldCatalog={fieldCatalog}
         allRecords={allRecords}
+        {...fullFieldRangeProps}
         selectedField="matched 1"
         onFieldSelect={onFieldSelect}
       />,
@@ -142,6 +187,7 @@ describe('FieldEducationComparison', () => {
         comparison={comparison}
         fieldCatalog={fieldCatalog}
         allRecords={allRecords}
+        {...fullFieldRangeProps}
         selectedField="unmatched 0"
         onFieldSelect={onFieldSelect}
       />,
@@ -158,6 +204,7 @@ describe('FieldEducationComparison', () => {
         comparison={comparison}
         fieldCatalog={fieldCatalog}
         allRecords={allRecords}
+        {...fullFieldRangeProps}
         selectedField={null}
         onFieldSelect={onFieldSelect}
       />,

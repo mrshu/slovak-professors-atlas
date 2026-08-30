@@ -5,6 +5,8 @@ import { normalizeForSearch } from '../utils/search'
 export interface FilterState {
   startYear: number
   endYear: number
+  fieldStartYear: number
+  fieldEndYear: number
   presidentId: string | null
   city: string | null
   institutionId: string | null
@@ -56,6 +58,8 @@ function uniqueSorted(values: Iterable<string | null>): string[] {
 export function createFilterDefaults(data: AtlasData): FilterState {
   const startYear = Number.parseInt(data.meta.appointmentDateMin.slice(0, 4), 10)
   const endYear = Number.parseInt(data.meta.appointmentDateMax.slice(0, 4), 10)
+  const fieldStartYear = data.fieldEducationComparison.startYear
+  const fieldEndYear = data.fieldEducationComparison.endYear
   const contextYears = data.context
     .map(({ year }) => year)
     .filter((year) => year >= startYear && year <= endYear)
@@ -64,6 +68,8 @@ export function createFilterDefaults(data: AtlasData): FilterState {
   return {
     startYear,
     endYear,
+    fieldStartYear,
+    fieldEndYear,
     presidentId: null,
     city: null,
     institutionId: null,

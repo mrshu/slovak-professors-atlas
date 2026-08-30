@@ -1,6 +1,9 @@
 import { useMemo } from 'react'
 
-import { buildFieldEducationLandscape } from '../analysis/fieldEducation'
+import {
+  buildFieldEducationLandscape,
+  type FieldEducationRange,
+} from '../analysis/fieldEducation'
 import type {
   Appointment,
   FieldCatalog,
@@ -17,6 +20,8 @@ interface FieldEducationComparisonProps {
   allRecords: readonly Appointment[]
   selectedField: string | null
   onFieldSelect: (fieldKey: string) => void
+  fieldRange: FieldEducationRange
+  onFieldRangeChange: (startYear: number, endYear: number) => void
 }
 
 export default function FieldEducationComparison({
@@ -25,10 +30,18 @@ export default function FieldEducationComparison({
   allRecords,
   selectedField,
   onFieldSelect,
+  fieldRange,
+  onFieldRangeChange,
 }: FieldEducationComparisonProps) {
   const landscape = useMemo(
-    () => buildFieldEducationLandscape(allRecords, fieldCatalog, comparison),
-    [allRecords, comparison, fieldCatalog],
+    () => buildFieldEducationLandscape(allRecords, fieldCatalog, comparison, fieldRange),
+    [
+      allRecords,
+      comparison,
+      fieldCatalog,
+      fieldRange.endYear,
+      fieldRange.startYear,
+    ],
   )
   const selectedRow = selectedField === null
     ? undefined
@@ -36,6 +49,10 @@ export default function FieldEducationComparison({
   const displayedRow = selectedRow ?? landscape.points[0] ?? landscape.unmatched[0]
   const coverage = landscape.coverage
   const baseUrl = import.meta.env.BASE_URL
+  const availableYears = comparison.years.map(({ year }) => year)
+  const periodLabel = fieldRange.startYear === fieldRange.endYear
+    ? String(fieldRange.startYear)
+    : `${fieldRange.startYear} – ${fieldRange.endYear}`
 
   return (
     <section
@@ -45,7 +62,7 @@ export default function FieldEducationComparison({
     >
       <div className="field-education__intro">
         <div>
-          <p className="eyebrow">Odborová krajina · spoločné obdobie 2009 – 2025</p>
+          <p className="eyebrow">Odborová krajina · Vybrané obdobie {periodLabel}</p>
           <h2 id="field-education-title">Profesorské vymenovania × absolventi</h2>
         </div>
         <p>
@@ -53,6 +70,45 @@ export default function FieldEducationComparison({
           vysokoškolského štúdia v rovnakom recenzovanom odbore. Aktuálni študenti
           zostávajú samostatným stavovým kontextom.
         </p>
+      </div>
+
+      <div className="field-education__range" role="group" aria-label="Obdobie odborového porovnania">
+        <p>
+          <strong>Vybrané obdobie</strong>
+          <span>{periodLabel}</span>
+        </p>
+        <label>
+          <span>Od roku</span>
+          <select
+            aria-label="Odbory od roku"
+            value={fieldRange.startYear}
+            onChange={(event) =>
+              onFieldRangeChange(Number(event.currentTarget.value), fieldRange.endYear)
+            }
+          >
+            {availableYears.map((year) => (
+              <option key={year} value={year} disabled={year > fieldRange.endYear}>
+                {year}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          <span>Do roku</span>
+          <select
+            aria-label="Odbory do roku"
+            value={fieldRange.endYear}
+            onChange={(event) =>
+              onFieldRangeChange(fieldRange.startYear, Number(event.currentTarget.value))
+            }
+          >
+            {availableYears.map((year) => (
+              <option key={year} value={year} disabled={year < fieldRange.startYear}>
+                {year}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
 
       {displayedRow === undefined ? (
@@ -92,8 +148,12 @@ export default function FieldEducationComparison({
           </dd>
         </div>
         <div>
-          <dt>Spoločné obdobie</dt>
-          <dd>{formatNumber(coverage.yearCount)} rokov</dd>
+          <dt>Vybrané obdobie</dt>
+          <dd>
+            {coverage.yearCount === 1
+              ? '1 rok'
+              : `${formatNumber(coverage.yearCount)} rokov`}
+          </dd>
         </div>
       </dl>
 

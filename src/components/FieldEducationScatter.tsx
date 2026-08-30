@@ -10,7 +10,6 @@ import {
 import type { FieldEducationPoint } from '../analysis/fieldEducation'
 import { formatNumber } from '../utils/format'
 import {
-  clampPreview,
   fieldScaleDomain,
   generatedLabelKeys,
   nearestProjectedPoint,
@@ -35,8 +34,6 @@ interface AxisTick {
 const WIDTH = 960
 const HEIGHT = 540
 const PLOT = { x: 76, y: 34, width: 836, height: 430 }
-const PREVIEW_WIDTH = 260
-const PREVIEW_HEIGHT = 150
 const AXIS_TICK_COUNT = 5
 
 function axisTicks(
@@ -70,26 +67,11 @@ function pointAtEvent(
 }
 
 function Preview({ point }: { point: ProjectedFieldPoint }) {
-  const clamped = clampPreview(
-    {
-      x: point.x + 14,
-      y: point.y - PREVIEW_HEIGHT / 2,
-      width: PREVIEW_WIDTH,
-      height: PREVIEW_HEIGHT,
-    },
-    { x: 0, y: 0, width: WIDTH, height: HEIGHT },
-  )
   return (
     <div
       className="field-education-scatter__preview"
       role="group"
       aria-label={`Náhľad odboru ${point.canonicalLabel}`}
-      data-preview-x={clamped.x}
-      data-preview-y={clamped.y}
-      style={{
-        left: `${(clamped.x / WIDTH) * 100}%`,
-        top: `${(clamped.y / HEIGHT) * 100}%`,
-      }}
     >
       <strong>{point.canonicalLabel}</strong>
       <dl>
@@ -166,6 +148,14 @@ export default function FieldEducationScatter({
   const inspectedKey = hoveredKey ?? (hasKeyboardFocus ? activeKey : null)
   const inspected = inspectedKey === null ? null : projectedByKey.get(inspectedKey) ?? null
   const selected = selectedField === null ? null : projectedByKey.get(selectedField) ?? null
+  const startYear = points[0]?.annual[0]?.year
+  const endYear = points[0]?.annual.at(-1)?.year
+  const periodLabel =
+    startYear === undefined || endYear === undefined
+      ? 'bez dostupného obdobia'
+      : startYear === endYear
+        ? String(startYear)
+        : `${startYear} – ${endYear}`
 
   const handlePointerMove = (event: PointerEvent<SVGRectElement>) => {
     setHoveredKey(pointAtEvent(event, projected)?.fieldKey ?? null)
@@ -206,7 +196,7 @@ export default function FieldEducationScatter({
     <figure className="field-education-scatter" aria-labelledby="field-education-scatter-title">
       <figcaption>
         <div>
-          <p className="eyebrow">Pevné obdobie 2009 – 2025</p>
+          <p className="eyebrow">Vybrané obdobie {periodLabel}</p>
           <h3 id="field-education-scatter-title">Mapa spoločného obdobia</h3>
         </div>
         <div className="field-education-scatter__modes" aria-label="Mierka mapy odborov">
@@ -214,6 +204,13 @@ export default function FieldEducationScatter({
           <button type="button" aria-pressed={mode === 'linear'} onClick={() => setMode('linear')}>Absolútna</button>
         </div>
       </figcaption>
+      <div className="field-education-scatter__inspection">
+        {inspected === null ? (
+          <p>Ukážte na bod alebo použite klávesnicu pre presné hodnoty odboru.</p>
+        ) : (
+          <Preview point={inspected} />
+        )}
+      </div>
       <div className="field-education-scatter__stage">
         <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} aria-label="Bodová mapa vymenovaní a absolventov podľa odboru">
           <g className="field-education-scatter__grid" aria-hidden="true">
@@ -286,7 +283,6 @@ export default function FieldEducationScatter({
             onBlur={() => setHasKeyboardFocus(false)}
           />
         </svg>
-        {inspected === null ? null : <Preview point={inspected} />}
       </div>
       <p className="field-education-scatter__live" aria-live="polite">Aktívny odbor: {activeKey === null ? 'žiadny' : projectedByKey.get(activeKey)?.canonicalLabel ?? activeKey}</p>
     </figure>

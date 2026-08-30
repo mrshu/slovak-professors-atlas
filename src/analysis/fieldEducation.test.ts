@@ -133,6 +133,36 @@ describe('buildFieldEducationLandscape', () => {
     expect(point.annual[16]).toEqual({ year: 2025, appointmentCount: 1, graduateCount: 0 })
   })
 
+  it('recomputes totals and annual values for a selected subrange', () => {
+    const landscape = buildFieldEducationLandscape(
+      records,
+      fieldCatalog,
+      comparison,
+      { startYear: 2009, endYear: 2010 },
+    )
+
+    expect(landscape.coverage).toEqual({
+      exactAppointmentCount: 1,
+      aliasAppointmentCount: 1,
+      matchedAppointmentCount: 2,
+      appointmentCount: 2,
+      matchedFieldCount: 1,
+      fieldCount: 1,
+      yearCount: 2,
+    })
+    expect(landscape.points[0]).toMatchObject({
+      fieldKey: 'matematika',
+      appointmentCount: 2,
+      graduateCount: 10,
+      graduatesPerAppointment: 5,
+      currentStudentCount: 99_999,
+      annual: [
+        { year: 2009, appointmentCount: 1, graduateCount: 10 },
+        { year: 2010, appointmentCount: 1, graduateCount: null },
+      ],
+    })
+  })
+
   it('retains unmatched keys and never uses student stock in the ratio', () => {
     const landscape = buildFieldEducationLandscape(records, fieldCatalog, comparison)
     const unmatched = landscape.unmatched[0]

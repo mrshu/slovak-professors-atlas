@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react'
 import type { FieldEducationLandscapeRow } from '../analysis/fieldEducation'
 import { formatNumber } from '../utils/format'
 import { normalizeForSearch } from '../utils/search'
+import FieldEducationRankingDonuts from './FieldEducationRankingDonuts'
 
 interface FieldEducationRankingsProps {
   rows: readonly FieldEducationLandscapeRow[]
@@ -153,12 +154,20 @@ export default function FieldEducationRankings({
     setSortKey(key)
     setSortDirection(key === 'label' ? 'ascending' : 'descending')
   }
+  const startYear = rows[0]?.annual[0]?.year
+  const endYear = rows[0]?.annual.at(-1)?.year
+  const periodLabel =
+    startYear === undefined || endYear === undefined
+      ? 'bez dostupného obdobia'
+      : startYear === endYear
+        ? String(startYear)
+        : `${startYear} – ${endYear}`
 
   return (
     <section className="field-education-rankings" aria-labelledby="field-education-rankings-title">
       <div className="field-education-rankings__heading">
         <div>
-          <p className="eyebrow">Úplný register spoločného obdobia</p>
+          <p className="eyebrow">Úplný register · vybrané obdobie {periodLabel}</p>
           <h3 id="field-education-rankings-title">Rebríčky odborov</h3>
         </div>
         <label>
@@ -174,6 +183,7 @@ export default function FieldEducationRankings({
       <p className="field-education-rankings__count">
         {formatNumber(rows.length)} odbory celkom · {formatNumber(visibleRows.length)} zobrazených
       </p>
+      <FieldEducationRankingDonuts rows={visibleRows} />
       <div className="field-education-rankings__tables">
         <RankingTable
           caption="Spárované odbory"

@@ -44,6 +44,16 @@ export function parseFilters(search: string | URLSearchParams, options: FilterOp
   const parsed: FilterState = { ...defaults }
   const startYear = parseYear(params.get('startYear'), defaults.startYear, defaults.endYear)
   const endYear = parseYear(params.get('endYear'), defaults.startYear, defaults.endYear)
+  const fieldStartYear = parseYear(
+    params.get('fieldStartYear'),
+    defaults.fieldStartYear,
+    defaults.fieldEndYear,
+  )
+  const fieldEndYear = parseYear(
+    params.get('fieldEndYear'),
+    defaults.fieldStartYear,
+    defaults.fieldEndYear,
+  )
 
   if (startYear !== null) {
     parsed.startYear = startYear
@@ -54,6 +64,16 @@ export function parseFilters(search: string | URLSearchParams, options: FilterOp
   if (parsed.startYear > parsed.endYear) {
     parsed.startYear = defaults.startYear
     parsed.endYear = defaults.endYear
+  }
+  if (fieldStartYear !== null) {
+    parsed.fieldStartYear = fieldStartYear
+  }
+  if (fieldEndYear !== null) {
+    parsed.fieldEndYear = fieldEndYear
+  }
+  if (parsed.fieldStartYear > parsed.fieldEndYear) {
+    parsed.fieldStartYear = defaults.fieldStartYear
+    parsed.fieldEndYear = defaults.fieldEndYear
   }
 
   for (const key of FILTER_VALUE_KEYS) {
@@ -92,6 +112,12 @@ export function serializeFilters(filters: FilterState, defaults: FilterState): s
   }
   if (filters.endYear !== defaults.endYear) {
     params.set('endYear', String(filters.endYear))
+  }
+  if (filters.fieldStartYear !== defaults.fieldStartYear) {
+    params.set('fieldStartYear', String(filters.fieldStartYear))
+  }
+  if (filters.fieldEndYear !== defaults.fieldEndYear) {
+    params.set('fieldEndYear', String(filters.fieldEndYear))
   }
   for (const key of FILTER_VALUE_KEYS) {
     const value = filters[key]

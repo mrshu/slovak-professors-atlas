@@ -211,6 +211,10 @@ const data = {
       'vnutorne lekarstvo': 'Vnútorné lekárstvo',
     },
   },
+  fieldEducationComparison: {
+    startYear: 2009,
+    endYear: 2025,
+  },
   context: [{ year: 2025 }],
   geography: {
     type: 'Feature',

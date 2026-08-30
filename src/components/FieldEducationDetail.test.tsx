@@ -33,12 +33,47 @@ describe('FieldEducationDetail', () => {
     expect(screen.getByText('62 122', { selector: 'dd' })).toBeInTheDocument()
     expect(screen.getByText('1 350,48', { selector: 'dd' })).toBeInTheDocument()
     expect(screen.getByText('4 505', { selector: 'dd' })).toBeInTheDocument()
-    expect(screen.getByText(/opisný pomer dvoch tokov za spoločné obdobie/i)).toBeInTheDocument()
+    expect(screen.getByText(/opisný pomer dvoch tokov za vybrané obdobie/i)).toBeInTheDocument()
     expect(screen.getByText(/stav k 31\. 10\. 2025 · kontext, nie súčasť osi/i)).toBeInTheDocument()
     expect(screen.getAllByTestId('annual-appointment-bar')).toHaveLength(17)
 
     const graduatePath = screen.getByTestId('annual-graduate-path').getAttribute('d') ?? ''
     expect(graduatePath.match(/M/g)).toHaveLength(2)
+  })
+
+  it('renders solid labeled Y axes for both annual charts', () => {
+    render(<FieldEducationDetail row={socialWork} />)
+
+    const appointments = screen.getByRole('img', {
+      name: 'Ročné profesorské vymenovania vo vybranom odbore',
+    })
+    const graduates = screen.getByRole('img', {
+      name: /Roční absolventi vo vybranom odbore/,
+    })
+
+    for (const chart of [appointments, graduates]) {
+      expect(chart.querySelector('[data-axis="y"]')).toBeInTheDocument()
+      expect(chart.querySelectorAll('[data-axis-tick="y"]').length).toBeGreaterThanOrEqual(3)
+      expect(chart).toHaveTextContent('0')
+    }
+  })
+
+  it('labels totals and annual charts with the selected row period', () => {
+    render(
+      <FieldEducationDetail
+        row={{
+          ...socialWork,
+          annual: socialWork.annual.slice(3, 6),
+        }}
+      />,
+    )
+
+    expect(screen.getByText('Vymenovania 2012 – 2014')).toBeInTheDocument()
+    expect(screen.getByText('Absolventi 2012 – 2014')).toBeInTheDocument()
+    expect(screen.getAllByText('2012')).toHaveLength(2)
+    expect(screen.getAllByText('2014')).toHaveLength(2)
+    expect(screen.queryByText('2009')).not.toBeInTheDocument()
+    expect(screen.queryByText('2025')).not.toBeInTheDocument()
   })
 
   it('states missing education explicitly instead of displaying a numeric zero', () => {

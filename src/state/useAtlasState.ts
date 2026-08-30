@@ -19,6 +19,7 @@ export interface AtlasState {
   setFilter: (key: FilterValueKey, value: string | null, mode?: HistoryMode) => void
   setExclusiveFilter: (key: FilterValueKey, value: string, mode?: HistoryMode) => void
   setDateRange: (startYear: number, endYear: number, mode?: HistoryMode) => void
+  setFieldEducationRange: (startYear: number, endYear: number, mode?: HistoryMode) => void
   setSelectedYear: (year: number, mode?: HistoryMode) => void
   setTimelineYear: (year: number | null, mode?: HistoryMode) => void
   setAppointmentDate: (appointedOn: string | null, mode?: HistoryMode) => void
@@ -120,7 +121,12 @@ export function useAtlasState(data: AtlasData): AtlasState {
       if (!options[OPTION_KEY_BY_FILTER[key]].includes(value)) {
         return
       }
-      const nextFilters: FilterState = { ...defaults, [key]: value }
+      const nextFilters: FilterState = {
+        ...defaults,
+        fieldStartYear: filtersRef.current.fieldStartYear,
+        fieldEndYear: filtersRef.current.fieldEndYear,
+        [key]: value,
+      }
       if (key === 'appointedOn') {
         const year = Number.parseInt(value.slice(0, 4), 10)
         nextFilters.selectedYear = year
@@ -149,6 +155,25 @@ export function useAtlasState(data: AtlasData): AtlasState {
     },
     [commit, defaults.endYear, defaults.startYear],
   )
+  const setFieldEducationRange = useCallback(
+    (startYear: number, endYear: number, mode: HistoryMode = 'push') => {
+      if (
+        !Number.isInteger(startYear) ||
+        !Number.isInteger(endYear) ||
+        startYear < defaults.fieldStartYear ||
+        endYear > defaults.fieldEndYear ||
+        startYear > endYear
+      ) {
+        return
+      }
+      commit(
+        { ...filtersRef.current, fieldStartYear: startYear, fieldEndYear: endYear },
+        mode,
+      )
+    },
+    [commit, defaults.fieldEndYear, defaults.fieldStartYear],
+  )
+
 
   const setSelectedYear = useCallback(
     (year: number, mode: HistoryMode = 'push') => {
@@ -255,6 +280,7 @@ export function useAtlasState(data: AtlasData): AtlasState {
     setExclusiveFilter,
     setDateRange,
     setSelectedYear,
+    setFieldEducationRange,
     setTimelineYear,
     setAppointmentDate,
     setQuery,
