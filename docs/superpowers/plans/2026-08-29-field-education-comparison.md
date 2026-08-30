@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Replace the 2025-only exact-name table with the approved fixed 2009–2025 appointment-event × graduate-event map, current-student context, reviewed field keys, and accessible interaction.
+**Goal:** Replace the 2025-only exact-name table with an appointment-event × graduate-event map over the 2009–2025 availability envelope, an inclusive user-selected range, fixed 2025 current-student context, reviewed field keys, and accessible interaction.
 
-**Architecture:** A deterministic Python pipeline owns reviewed field identity, official workbook parsing, national reconciliation, and the versioned `fieldEducationComparison` payload. React derives fixed-window appointment aggregates from all analytical records, joins education rows by `fieldKey`, and renders the scatter map, selected-field annual detail, search, and complete rankings without consulting non-field cohort filters. Pure geometry helpers keep projection, collision layout, nearest-point hit testing, preview clamping, and directional keyboard navigation independently testable.
+**Architecture:** A deterministic Python pipeline owns reviewed field identity, official workbook parsing, national reconciliation, and the versioned `fieldEducationComparison` payload. React derives appointment and education aggregates for an independent URL-persisted range inside 2009–2025, joins rows by `fieldKey`, and renders the scatter map, selected-field annual detail, search, complete rankings, and additive share summaries without consulting non-field cohort filters. Pure geometry helpers keep projection, collision layout, nearest-point hit-testing, and preview-independent chart placement testable outside React.
 
 **Tech Stack:** Python 3.12, `uv`, `xlrd`, `pytest`, React 19, TypeScript, Vite, Vitest, Testing Library, `d3-scale`, `d3-shape`, plain CSS.
 
@@ -29,8 +29,9 @@ payload, and clean legacy removal.
 - Raw `field` and `sourceVariants[].field` values remain unchanged.
 - Missing annual graduate matches and missing current-student matches remain `null`, never fabricated zeroes.
 - Every annual graduate sum equals `context[year].graduates`; current students equal `context[2025].students`.
-- The map and annual detail always use all analytical records in 2009–2025. Date, president, city, institution, faculty, appointed-date, and query filters cannot change coordinates, ratios, coverage, or series.
-- Only reviewed field selection synchronizes with atlas state and `URLSearchParams`; scale mode remains local presentation state.
+- The field comparison defaults to the 2009–2025 availability envelope and accepts an inclusive `fieldStartYear`–`fieldEndYear` subrange. It recomputes coordinates, ratios, coverage, annual series, rankings, and additive shares from all analytical records and graduate values inside that range; current students remain fixed 2025 stock.
+- Build ranged rows from the union of appointment and education keys. A field with graduates but zero appointments remains in rankings and graduate shares with `graduatesPerAppointment: null`, but is excluded from the logarithmic scatter.
+- Reviewed field selection plus `fieldStartYear` and `fieldEndYear` synchronize with atlas state and `URLSearchParams`; date, president, city, institution, faculty, appointed-date, and query filters remain independent. Scale mode remains local presentation state.
 - React owns the DOM. D3 is limited to scales, ticks, and line generation.
 - Visible copy, labels, dates, and number formatting are Slovak.
 - Preserve the archival visual system, WCAG AA contrast, non-color selection encoding, keyboard/touch access, and reduced-motion behavior.

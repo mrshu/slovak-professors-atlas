@@ -131,14 +131,15 @@ export default function Methodology({ data, status }: MethodologyProps) {
 
             <section aria-labelledby="method-fields-title">
               <p className="methodology-sections__index" aria-hidden="true">03</p>
-              <h3 id="method-fields-title">Pevné obdobie a recenzovaný katalóg odborov</h3>
+              <h3 id="method-fields-title">Dostupné obdobie a recenzovaný katalóg odborov</h3>
               <p>
-                Odborová vrstva používa rovnaké pevné obdobie <strong>2009 – 2025</strong> pre
-                vymenovania aj absolventov. Súradnica bodu je súčet udalostí vymenovania v odbore
-                a súčet absolventov zo 17 ročných zošitov CVTI; číslo pri bode je teda{' '}
-                <strong>tok ÷ tok</strong>, nie pravdepodobnosť, konverzia osoby ani príčinný
-                vzťah. Aktuálni študenti v roku 2025 sú stav a zobrazujú sa iba ako oddelený
-                kontext, nie v osi ani v pomere.
+                Odborová vrstva má spoločné dostupné obdobie <strong>2009 – 2025</strong>.
+                Ovládače volia inkluzívny podrozsah, ktorý sa zapisuje do URL ako{' '}
+                <code>fieldStartYear</code> a <code>fieldEndYear</code>. Súradnica bodu sčíta
+                udalosti vymenovania a dostupné počty absolventov iba vo vybraných rokoch; 17
+                ročných zošitov CVTI tvorí celý dostupný obal. Pomer <strong>tok ÷ tok</strong>{' '}
+                sa pri nulovom počte vymenovaní nezobrazuje. Aktuálni študenti zostávajú stavom
+                k roku 2025 a zobrazujú sa iba ako oddelený kontext, nie v osi ani v pomere.
               </p>
               <p>
                 Každý ročný zošit sa najprv sčíta po riadkoch študijných programov. Tie sa potom

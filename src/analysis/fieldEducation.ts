@@ -162,7 +162,12 @@ export function buildFieldEducationLandscape(
     .filter(({ value }) => value.year >= range.startYear && value.year <= range.endYear)
   const groups = appointmentGroups(records, range.startYear, range.endYear)
   const educationRows = indexedEducationRows(comparison)
-  const allRows = Array.from(groups, ([fieldKey, group]) => {
+  const fieldKeys = new Set([...groups.keys(), ...educationRows.keys()])
+  const allRows = Array.from(fieldKeys, (fieldKey) => {
+    const group = groups.get(fieldKey)
+    const appointmentCount = group?.appointmentCount ?? 0
+    const exactAppointmentCount = group?.exactAppointmentCount ?? 0
+    const aliasAppointmentCount = group?.aliasAppointmentCount ?? 0
     const education = educationRows.get(fieldKey)
     const selectedGraduateCounts = selectedYears.map(
       ({ index }) => education?.graduateCounts[index] ?? null,
@@ -176,20 +181,22 @@ export function buildFieldEducationLandscape(
       : null
     const annual = selectedYears.map(({ value, index }) => ({
       year: value.year,
-      appointmentCount: group.appointmentsByYear.get(value.year) ?? 0,
+      appointmentCount: group?.appointmentsByYear.get(value.year) ?? 0,
       graduateCount: education?.graduateCounts[index] ?? null,
     }))
-    const labelVariants = variants(group)
+    const labelVariants = group === undefined ? [] : variants(group)
     const row: FieldEducationLandscapeRow = {
       fieldKey,
       canonicalLabel:
         education?.canonicalLabel ?? catalog.labels[fieldKey] ?? labelVariants[0]?.label ?? fieldKey,
-      appointmentCount: group.appointmentCount,
-      exactAppointmentCount: group.exactAppointmentCount,
-      aliasAppointmentCount: group.aliasAppointmentCount,
+      appointmentCount,
+      exactAppointmentCount,
+      aliasAppointmentCount,
       graduateCount,
       graduatesPerAppointment:
-        graduateCount === null ? null : graduateCount / group.appointmentCount,
+        graduateCount === null || appointmentCount === 0
+          ? null
+          : graduateCount / appointmentCount,
       currentStudentCount: education?.currentStudentCount ?? null,
       annual,
       variants: labelVariants,

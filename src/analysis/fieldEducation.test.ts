@@ -147,7 +147,7 @@ describe('buildFieldEducationLandscape', () => {
       matchedAppointmentCount: 2,
       appointmentCount: 2,
       matchedFieldCount: 1,
-      fieldCount: 1,
+      fieldCount: 2,
       yearCount: 2,
     })
     expect(landscape.points[0]).toMatchObject({
@@ -161,6 +161,46 @@ describe('buildFieldEducationLandscape', () => {
         { year: 2010, appointmentCount: 1, graduateCount: null },
       ],
     })
+  })
+
+  it('retains education-only fields with an unavailable zero-denominator ratio', () => {
+    const landscape = buildFieldEducationLandscape(
+      records,
+      {
+        ...fieldCatalog,
+        labels: { ...fieldCatalog.labels, fyzika: 'Fyzika' },
+      },
+      {
+        ...comparison,
+        rows: [
+          ...comparison.rows,
+          {
+            fieldKey: 'fyzika',
+            canonicalLabel: 'Fyzika',
+            graduateCounts: [5, 5, ...Array<number | null>(15).fill(null)],
+            currentStudentCount: 100,
+          },
+        ],
+      },
+      { startYear: 2009, endYear: 2010 },
+    )
+
+    expect(landscape.allRows).toContainEqual({
+      fieldKey: 'fyzika',
+      canonicalLabel: 'Fyzika',
+      appointmentCount: 0,
+      exactAppointmentCount: 0,
+      aliasAppointmentCount: 0,
+      graduateCount: 10,
+      graduatesPerAppointment: null,
+      currentStudentCount: 100,
+      annual: [
+        { year: 2009, appointmentCount: 0, graduateCount: 5 },
+        { year: 2010, appointmentCount: 0, graduateCount: 5 },
+      ],
+      variants: [],
+    })
+    expect(landscape.points.some(({ fieldKey }) => fieldKey === 'fyzika')).toBe(false)
   })
 
   it('retains unmatched keys and never uses student stock in the ratio', () => {
@@ -194,10 +234,10 @@ describe('buildFieldEducationLandscape', () => {
       matchedAppointmentCount: 1_354,
       appointmentCount: 1_400,
       matchedFieldCount: 232,
-      fieldCount: 250,
+      fieldCount: 416,
       yearCount: 17,
     })
     expect(landscape.points).toHaveLength(232)
-    expect(landscape.unmatched).toHaveLength(18)
+    expect(landscape.unmatched).toHaveLength(184)
   })
 })
