@@ -152,7 +152,7 @@ The site is one scrolling page with stable anchor navigation:
 1. **Hero** — title, one-paragraph scope, coverage dates, analytical appointment count, number of ceremonies, and source disclosure.
 2. **Three verified findings** — compact editorial observations computed from the reconciled appointment records, not hard-coded unsupported claims.
 3. **Higher-education context** — selected-year exact values and normalized trends comparing appointments, graduates, students, and internal teachers.
-4. **Appointment fields and education activity** — an aggregate 2009–2025 appointment-event × graduate-event map, selected-field annual detail, current-student context, and complete matched/unmatched rankings.
+4. **Profesorské vymenovania × absolventi** — an aggregate 2009–2025 appointment-event × graduate-event field map, selected-field annual detail, current-student context, and complete matched/unmatched rankings. The explicit `vymenovania` noun prevents the heading from implying a count of professors or unique people.
 5. **Linked academic atlas** — city map, ranked institutions, faculty drill-down, annual timeline, and presidential bands.
 6. **Complete explorer** — search, filters, sortable records, details, and filtered CSV download.
 7. **Methodology and sources** — definitions, duplicate handling, incomplete years, context caveats, field-matching limits, downloads, checksums, and citations.
