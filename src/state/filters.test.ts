@@ -12,16 +12,24 @@ const data = {
   presidents: [{ id: 'caputova' }, { id: 'kiska' }],
   cities: [{ name: 'Bratislava' }, { name: 'Košice' }],
   institutions: [{ id: 'uniba' }, { id: 'tuke' }],
+  fieldCatalog: {
+    schemaVersion: 1,
+    aliases: [],
+    labels: {
+      'vnutorne lekarstvo': 'Vnútorné lekárstvo',
+      'hudobne umenie': 'hudobné umenie',
+    },
+  },
   records: [
-    { faculty: 'Lekárska fakulta', field: 'Vnútorné lekárstvo', appointedOn: '2011-01-24' },
-    { faculty: null, field: 'hudobné umenie', appointedOn: '2025-01-01' },
-    { faculty: '', field: 'HUDOBNÉ   UMENIE', appointedOn: '2025-01-01' },
-    { faculty: '   ', field: ' hudobne umenie ', appointedOn: '2025-02-01' },
-    { faculty: 'Lekárska fakulta', field: 'vnútorNÉ lekárstvo', appointedOn: '2011-01-24' },
-    { faculty: null, field: 'hudobné umenie', appointedOn: '2025-01-01' },
-    { faculty: null, field: 'Vnútorné lekárstvo', appointedOn: '2011-01-24' },
+    { faculty: 'Lekárska fakulta', field: 'Vnútorné lekárstvo', fieldKey: 'vnutorne lekarstvo', appointedOn: '2011-01-24', sourceVariants: [] },
+    { faculty: null, field: 'hudobné umenie', fieldKey: 'hudobne umenie', appointedOn: '2025-01-01', sourceVariants: [] },
+    { faculty: '', field: 'HUDOBNÉ   UMENIE', fieldKey: 'hudobne umenie', appointedOn: '2025-01-01', sourceVariants: [] },
+    { faculty: '   ', field: ' hudobne umenie ', fieldKey: 'hudobne umenie', appointedOn: '2025-02-01', sourceVariants: [] },
+    { faculty: 'Lekárska fakulta', field: 'vnútorNÉ lekárstvo', fieldKey: 'vnutorne lekarstvo', appointedOn: '2011-01-24', sourceVariants: [] },
+    { faculty: null, field: 'hudobné umenie', fieldKey: 'hudobne umenie', appointedOn: '2025-01-01', sourceVariants: [] },
+    { faculty: null, field: 'Vnútorné lekárstvo', fieldKey: 'vnutorne lekarstvo', appointedOn: '2011-01-24', sourceVariants: [] },
   ],
-} as AtlasData
+} as unknown as AtlasData
 
 describe('filter state metadata', () => {
   it('uses payload coverage bounds and the latest complete context year as defaults', () => {

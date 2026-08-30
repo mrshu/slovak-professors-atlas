@@ -14,6 +14,7 @@ import { formatNumber } from '../utils/format'
 interface Props {
   comparison: ComparisonData
   allRecords: readonly Appointment[]
+  fieldLabels: Readonly<Record<string, string>>
   comparisonRecords: readonly Appointment[]
   selectedField: string | null
   onFieldSelect: (field: string | null) => void
@@ -86,13 +87,14 @@ function LandscapeSummary({
 export default function FieldGraduateComparison({
   comparison,
   allRecords,
+  fieldLabels,
   comparisonRecords,
   selectedField,
   onFieldSelect,
 }: Props) {
   const landscape = useMemo(
-    () => fieldAppointmentLandscape(allRecords, comparisonRecords),
-    [allRecords, comparisonRecords],
+    () => fieldAppointmentLandscape(allRecords, comparisonRecords, fieldLabels),
+    [allRecords, comparisonRecords, fieldLabels],
   )
   const [sort, setSort] = useState<SortState>({
     key: 'appointmentCount',

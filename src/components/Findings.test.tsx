@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import type { Affiliation, Appointment, President } from '../data/types'
+import { normalizeForSearch } from '../utils/search'
 import Findings, { deriveHeadlineFindings } from './Findings'
 
 const affiliations: Affiliation[] = [
@@ -64,6 +65,7 @@ function appointment(
     affiliationId: `${institutionId}-aff`,
     institutionSource: institutionId,
     field,
+    fieldKey: normalizeForSearch(field),
     appointedOn,
     presidentId: 'president',
     sourceVariants: [],

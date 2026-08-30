@@ -18,6 +18,11 @@ from pipeline.affiliations import (
     resolve_affiliations,
 )
 from pipeline.context import ContextYear, load_context
+from pipeline.fields import (
+    DEFAULT_FIELD_ALIASES_PATH,
+    FieldCatalog,
+    build_field_catalog,
+)
 from pipeline.graduates import (
     build_field_graduate_comparison,
     load_graduates_by_field,
@@ -195,7 +200,7 @@ def _source_variant_payload(variant: SourceVariant) -> dict[str, object]:
 
 
 def _appointment_payload(
-    appointment: Appointment, affiliation_id: str
+    appointment: Appointment, affiliation_id: str, field_key: str
 ) -> dict[str, object]:
     return {
         "id": appointment.id,
@@ -207,6 +212,7 @@ def _appointment_payload(
         "affiliationId": affiliation_id,
         "institutionSource": appointment.institution_source,
         "field": appointment.field,
+        "fieldKey": field_key,
         "appointedOn": appointment.appointed_on.isoformat(),
         "presidentId": appointment.president_id,
         "sourceVariants": [
@@ -397,6 +403,7 @@ def build_payload(
     context: Sequence[ContextYear],
     geography: Mapping[str, object],
     sources: Mapping[str, object],
+    field_catalog: FieldCatalog,
     field_graduate_comparison: Mapping[str, object],
     affiliation_by_appointment: Mapping[str, str],
     affiliations: Sequence[Affiliation],
@@ -445,13 +452,18 @@ def build_payload(
         },
         "sources": dict(sources),
         "records": [
-            _appointment_payload(item, affiliation_by_appointment[item.id])
+            _appointment_payload(
+                item,
+                affiliation_by_appointment[item.id],
+                field_catalog.key_for(item.field),
+            )
             for item in sorted_appointments
         ],
         "institutions": [_institution_payload(item) for item in institutions],
         "affiliations": [_affiliation_payload(item) for item in affiliations],
         "cities": _city_payload(cities, affiliations),
         "presidents": [_president_payload(item) for item in presidents],
+        "fieldCatalog": field_catalog.payload(),
         "fieldGraduateComparison": dict(field_graduate_comparison),
         "context": [_context_payload(item) for item in context],
         "geography": dict(geography),
@@ -469,6 +481,7 @@ def build_atlas(
     geography_path: Path = DEFAULT_GEOMETRY_PATH,
     provenance_path: Path = DEFAULT_PROVENANCE_PATH,
     affiliation_locations_path: Path = DEFAULT_AFFILIATION_LOCATIONS_PATH,
+    field_aliases_path: Path = DEFAULT_FIELD_ALIASES_PATH,
 ) -> dict[str, object]:
     """Validate all committed inputs and write deterministic atlas JSON."""
     sources = _validated_provenance(
@@ -479,6 +492,7 @@ def build_atlas(
         population_path,
     )
     dataset = load_appointments(professors_path)
+    field_catalog = build_field_catalog(dataset.appointments, field_aliases_path)
     affiliation_by_appointment, affiliations, cities = resolve_affiliations(
         dataset.appointments,
         dataset.institutions,
@@ -503,6 +517,7 @@ def build_atlas(
         context,
         geography,
         sources,
+        field_catalog,
         field_graduate_comparison,
         affiliation_by_appointment,
         affiliations,
@@ -534,6 +549,11 @@ def main(argv: list[str] | None = None) -> int:
         type=Path,
         default=DEFAULT_GRADUATES_BY_FIELD_PATH,
     )
+    parser.add_argument(
+        "--field-aliases",
+        type=Path,
+        default=DEFAULT_FIELD_ALIASES_PATH,
+    )
     parser.add_argument("--provenance", type=Path, default=DEFAULT_PROVENANCE_PATH)
     parser.add_argument(
         "--affiliation-locations",
@@ -550,6 +570,7 @@ def main(argv: list[str] | None = None) -> int:
         population_path=args.population,
         provenance_path=args.provenance,
         affiliation_locations_path=args.affiliation_locations,
+        field_aliases_path=args.field_aliases,
     )
     meta = payload["meta"]
     assert isinstance(meta, dict)

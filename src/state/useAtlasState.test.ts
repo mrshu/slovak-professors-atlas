@@ -2,6 +2,7 @@ import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Appointment, AtlasData } from '../data/types'
+import { normalizeForSearch } from '../utils/search'
 import { useAtlasState } from './useAtlasState'
 
 function record(id: string, institutionId: string, field = 'Vnútorné lekárstvo'): Appointment {
@@ -15,6 +16,7 @@ function record(id: string, institutionId: string, field = 'Vnútorné lekárstv
     affiliationId: `${institutionId}-default`,
     institutionSource: institutionId === 'uniba' ? 'UK v Bratislave' : 'TU v Košiciach',
     field,
+    fieldKey: normalizeForSearch(field),
     appointedOn: id === 'one' ? '2011-01-24' : '2023-05-12',
     presidentId: 'caputova',
     sourceVariants: [],
@@ -65,6 +67,14 @@ const data = {
       note: null,
     },
   ],
+  fieldCatalog: {
+    schemaVersion: 1,
+    aliases: [],
+    labels: {
+      'vnutorne lekarstvo': 'Vnútorné lekárstvo',
+      historia: 'história',
+    },
+  },
   records: [
     record('one', 'uniba'),
     record('two', 'tuke', 'vnútorNÉ   lekárstvo'),

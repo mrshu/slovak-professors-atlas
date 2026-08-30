@@ -7,6 +7,7 @@ import type {
   Appointment,
   FieldGraduateComparison as FieldGraduateComparisonData,
 } from '../data/types'
+import { normalizeForSearch } from '../utils/search'
 import FieldGraduateComparison from './FieldGraduateComparison'
 
 
@@ -60,6 +61,7 @@ function appointment(id: string, field: string, appointedOn: string): Appointmen
     affiliationId: 'uniba-default',
     institutionSource: 'UK',
     field,
+    fieldKey: normalizeForSearch(field),
     appointedOn,
     presidentId: 'caputova',
     sourceVariants: [],
@@ -81,6 +83,11 @@ function renderComparison(
   props: Partial<ComponentProps<typeof FieldGraduateComparison>> = {},
 ) {
   const onFieldSelect = props.onFieldSelect ?? vi.fn()
+  const fieldLabels = props.fieldLabels ?? {
+    psychologia: 'Psychológia',
+    mikrobiologia: 'mikrobiológia',
+    historia: 'história',
+  }
   const view = render(
     <FieldGraduateComparison
       comparison={comparison}
@@ -89,6 +96,7 @@ function renderComparison(
       selectedField={null}
       onFieldSelect={onFieldSelect}
       {...props}
+      fieldLabels={fieldLabels}
     />,
   )
   return { ...view, onFieldSelect }

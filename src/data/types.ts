@@ -8,6 +8,19 @@ export interface SourceVariant {
   institution: string
   field: string
 }
+export interface FieldAlias {
+  sourceLabel: string
+  sourceKey: string
+  targetLabel: string
+  targetKey: string
+}
+
+export interface FieldCatalog {
+  schemaVersion: 1
+  aliases: FieldAlias[]
+  labels: Record<string, string>
+}
+
 
 export interface Appointment {
   id: string
@@ -19,6 +32,7 @@ export interface Appointment {
   affiliationId: string
   institutionSource: string
   field: string
+  fieldKey: string
   appointedOn: string
   presidentId: string
   sourceVariants: SourceVariant[]
@@ -212,6 +226,7 @@ export interface AtlasData {
   cities: City[]
   presidents: President[]
   context: ContextYear[]
+  fieldCatalog: FieldCatalog
   fieldGraduateComparison: FieldGraduateComparison
   geography: AtlasGeography
   editorialFacts: EditorialFacts

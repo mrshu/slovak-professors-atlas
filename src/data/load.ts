@@ -29,6 +29,7 @@ interface AtlasCandidate {
   cities?: unknown
   presidents?: unknown
   context?: unknown
+  fieldCatalog?: unknown
   fieldGraduateComparison?: unknown
   geography?: { type?: unknown }
   editorialFacts?: {
@@ -189,6 +190,57 @@ function assertAtlasData(value: unknown): asserts value is AtlasData {
     }
   }
 
+  const fieldCatalog = candidate.fieldCatalog
+  if (
+    typeof fieldCatalog !== 'object' ||
+    fieldCatalog === null ||
+    Array.isArray(fieldCatalog)
+  ) {
+    throw new TypeError('Atlas field catalog is missing')
+  }
+  const fieldCatalogRecord = fieldCatalog as Record<string, unknown>
+  if (
+    fieldCatalogRecord.schemaVersion !== 1 ||
+    !Array.isArray(fieldCatalogRecord.aliases) ||
+    fieldCatalogRecord.aliases.length !== 13 ||
+    typeof fieldCatalogRecord.labels !== 'object' ||
+    fieldCatalogRecord.labels === null ||
+    Array.isArray(fieldCatalogRecord.labels)
+  ) {
+    throw new TypeError('Atlas field catalog version is not supported')
+  }
+  const fieldLabels = fieldCatalogRecord.labels as Record<string, unknown>
+  if (
+    Object.keys(fieldLabels).length === 0 ||
+    Object.entries(fieldLabels).some(
+      ([key, label]) =>
+        key.length === 0 || typeof label !== 'string' || label.trim().length === 0,
+    )
+  ) {
+    throw new TypeError('Atlas field catalog labels are invalid')
+  }
+  const aliasSources = new Set<string>()
+  for (const value of fieldCatalogRecord.aliases) {
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+      throw new TypeError('Atlas field alias is invalid')
+    }
+    const alias = value as Record<string, unknown>
+    if (
+      typeof alias.sourceLabel !== 'string' ||
+      alias.sourceLabel.length === 0 ||
+      typeof alias.sourceKey !== 'string' ||
+      alias.sourceKey.length === 0 ||
+      aliasSources.has(alias.sourceKey) ||
+      typeof alias.targetLabel !== 'string' ||
+      alias.targetLabel.length === 0 ||
+      typeof alias.targetKey !== 'string' ||
+      !(alias.targetKey in fieldLabels)
+    ) {
+      throw new TypeError('Atlas field alias fields are invalid')
+    }
+    aliasSources.add(alias.sourceKey)
+  }
+
   for (const value of candidate.records as unknown[]) {
     if (typeof value !== 'object' || value === null || Array.isArray(value)) {
       throw new TypeError('Atlas record is invalid')
@@ -202,7 +254,11 @@ function assertAtlasData(value: unknown): asserts value is AtlasData {
       typeof record.institutionId !== 'string' ||
       !institutionIds.has(record.institutionId) ||
       affiliation === undefined ||
-      affiliation.institutionId !== record.institutionId
+      affiliation.institutionId !== record.institutionId ||
+      typeof record.field !== 'string' ||
+      record.field.length === 0 ||
+      typeof record.fieldKey !== 'string' ||
+      !(record.fieldKey in fieldLabels)
     ) {
       throw new TypeError('Atlas record affiliation reference is invalid')
     }

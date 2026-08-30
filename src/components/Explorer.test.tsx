@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Appointment, AtlasData } from '../data/types'
 import { useAtlasState } from '../state/useAtlasState'
+import { normalizeForSearch } from '../utils/search'
 import Explorer from './Explorer'
 import Methodology from './Methodology'
 
@@ -28,6 +29,7 @@ function appointment(
   index: number,
   overrides: Partial<Appointment> = {},
 ): Appointment {
+  const field = overrides.field ?? 'robotika'
   return {
     id: `appointment-${index}`,
     name: `Profesor ${String(index).padStart(2, '0')}`,
@@ -36,7 +38,8 @@ function appointment(
     faculty: 'Strojnícka fakulta',
     institutionId: 'tuke',
     institutionSource: 'TU v Košiciach',
-    field: 'robotika',
+    field,
+    fieldKey: overrides.fieldKey ?? normalizeForSearch(field),
     appointedOn: '2024-06-12',
     presidentId: 'pellegrini',
     sourceVariants: [
@@ -185,6 +188,14 @@ const data: AtlasData = {
       citationUrl: 'https://www.prezident.sk/zivotopis-petra-pellegriniho',
     },
   ],
+  fieldCatalog: {
+    schemaVersion: 1,
+    aliases: [],
+    labels: {
+      historia: 'história',
+      robotika: 'robotika',
+    },
+  },
   fieldGraduateComparison: {
     schemaVersion: 1,
     year: 2025,

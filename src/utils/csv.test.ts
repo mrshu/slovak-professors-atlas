@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
 import type { Appointment, Institution, President } from '../data/types'
+import { normalizeForSearch } from './search'
 import { METHODOLOGY_URL, recordsToCsv } from './csv'
 
 function record(overrides: Partial<Appointment> = {}): Appointment {
+  const field = overrides.field ?? 'vnútorné lekárstvo'
   return {
     id: 'abc-1',
     name: 'Anna "A." Žitná',
@@ -13,7 +15,8 @@ function record(overrides: Partial<Appointment> = {}): Appointment {
     institutionId: 'uniba',
     affiliationId: 'uniba-default',
     institutionSource: 'UK v Bratislave',
-    field: 'vnútorné lekárstvo',
+    field,
+    fieldKey: overrides.fieldKey ?? normalizeForSearch(field),
     appointedOn: '2023-05-12',
     presidentId: 'caputova',
     sourceVariants: [

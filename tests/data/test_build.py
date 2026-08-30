@@ -31,6 +31,7 @@ def test_build_is_byte_deterministic_and_serializes_public_contract(tmp_path: Pa
         "cities",
         "context",
         "editorialFacts",
+        "fieldCatalog",
         "fieldGraduateComparison",
         "geography",
         "institutions",
@@ -50,6 +51,22 @@ def test_build_is_byte_deterministic_and_serializes_public_contract(tmp_path: Pa
         "sourceRowCount": 2_419,
     }
     assert len(first_payload["records"]) == 2_378
+    field_catalog = first_payload["fieldCatalog"]
+    assert field_catalog["schemaVersion"] == 1
+    assert len(field_catalog["aliases"]) == 13
+    assert len(field_catalog["labels"]) == 416
+    assert field_catalog["labels"]["verejne zdravotnictvo"] == "verejné zdravotníctvo"
+    assert all(
+        record["fieldKey"] in field_catalog["labels"]
+        for record in first_payload["records"]
+    )
+    typo = next(
+        record
+        for record in first_payload["records"]
+        if record["field"] == "verejné zravotníctvo"
+    )
+    assert typo["fieldKey"] == "verejne zdravotnictvo"
+    assert typo["field"] == "verejné zravotníctvo"
     assert len(first_payload["institutions"]) == 22
     assert len(first_payload["presidents"]) == 5
     pellegrini = next(

@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Appointment, AtlasData, Institution } from '../data/types'
 import { useAtlasState } from '../state/useAtlasState'
+import { normalizeForSearch } from '../utils/search'
 import AtlasSection from './AtlasSection'
 
 const { projectPointSpy } = vi.hoisted(() => ({
@@ -69,13 +70,15 @@ function appointment(
   overrides: Partial<Appointment> & Pick<Appointment, 'id' | 'institutionId' | 'appointedOn'>,
 ): Appointment {
   const institution = institutions.find(({ id }) => id === overrides.institutionId)
+  const field = overrides.field ?? 'odbor'
   return {
     name: `Profesor ${overrides.id}`,
     titlesBefore: null,
     titlesAfter: null,
     faculty: 'Lekárska fakulta',
     institutionSource: institution?.shortName ?? overrides.institutionId,
-    field: 'odbor',
+    field,
+    fieldKey: overrides.fieldKey ?? normalizeForSearch(field),
     presidentId: 'caputova',
     sourceVariants: [],
     ...overrides,
@@ -200,6 +203,11 @@ const data = {
       citationUrl: 'https://www.prezident.sk/zivotopis-petra-pellegriniho',
     },
   ],
+  fieldCatalog: {
+    schemaVersion: 1,
+    aliases: [],
+    labels: Object.fromEntries(records.map(({ fieldKey, field }) => [fieldKey, field])),
+  },
   context: [{ year: 2025 }],
   geography: {
     type: 'Feature',

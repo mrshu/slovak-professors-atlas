@@ -186,10 +186,7 @@ export function filterAppointments(data: AtlasData, filters: FilterState): Appoi
     if (filters.faculty !== null && appointment.faculty !== filters.faculty) {
       return false
     }
-    if (
-      filters.field !== null &&
-      normalizeForSearch(appointment.field) !== filters.field
-    ) {
+    if (filters.field !== null && appointment.fieldKey !== filters.field) {
       return false
     }
     if (
@@ -295,6 +292,7 @@ export function facultyDistribution(records: readonly Appointment[]): FacultyCou
 
 export function fieldAppointmentRanking(
   records: readonly Appointment[],
+  labels: Readonly<Record<string, string>>,
 ): FieldAppointmentRankingRow[] {
   const groups = new Map<
     string,
@@ -307,15 +305,21 @@ export function fieldAppointmentRanking(
   >()
 
   for (const appointment of records) {
-    const key = normalizeForSearch(appointment.field)
+    const key = appointment.fieldKey
     const year = Number.parseInt(appointment.appointedOn.slice(0, 4), 10)
+    const sourceLabels =
+      appointment.sourceVariants.length === 0
+        ? [appointment.field]
+        : appointment.sourceVariants.map(({ field }) => field)
     const group = groups.get(key)
     if (group === undefined) {
+      const variants = new Map<string, number>()
+      for (const label of sourceLabels) incrementCount(variants, label)
       groups.set(key, {
         count: 1,
         firstYear: year,
         lastYear: year,
-        variants: new Map([[appointment.field, 1]]),
+        variants,
       })
       continue
     }
@@ -323,21 +327,20 @@ export function fieldAppointmentRanking(
     group.count += 1
     group.firstYear = Math.min(group.firstYear, year)
     group.lastYear = Math.max(group.lastYear, year)
-    incrementCount(group.variants, appointment.field)
+    for (const label of sourceLabels) incrementCount(group.variants, label)
   }
 
-  return Array.from(groups.values(), (group) => {
+  return Array.from(groups, ([fieldKey, group]) => {
     const variants = Array.from(group.variants, ([label, count]) => ({ label, count })).sort(
       (left, right) =>
         right.count - left.count ||
         slovakCollator.compare(left.label, right.label) ||
         left.label.localeCompare(right.label),
     )
-    const field = (variants[0]?.label ?? '').replace(/\s+/g, ' ').trim()
 
     return {
-      fieldKey: normalizeForSearch(field),
-      field,
+      fieldKey,
+      field: labels[fieldKey] ?? variants[0]?.label ?? fieldKey,
       appointmentCount: group.count,
       appointmentShare: records.length === 0 ? 0 : group.count / records.length,
       firstYear: group.firstYear,
@@ -385,9 +388,10 @@ function fieldLandscapeSummary(
 export function fieldAppointmentLandscape(
   wholeRegisterRecords: readonly Appointment[],
   selectionRecords: readonly Appointment[],
+  labels: Readonly<Record<string, string>>,
 ): FieldAppointmentLandscape {
-  const wholeRanking = fieldAppointmentRanking(wholeRegisterRecords)
-  const selectionRanking = fieldAppointmentRanking(selectionRecords)
+  const wholeRanking = fieldAppointmentRanking(wholeRegisterRecords, labels)
+  const selectionRanking = fieldAppointmentRanking(selectionRecords, labels)
   const wholeByKey = new Map(wholeRanking.map((row) => [row.fieldKey, row] as const))
   const selectionByKey = new Map(selectionRanking.map((row) => [row.fieldKey, row] as const))
   const selectionSummary = fieldLandscapeSummary(selectionRecords, selectionRanking)

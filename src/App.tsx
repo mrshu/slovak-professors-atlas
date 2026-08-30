@@ -59,6 +59,7 @@ function LoadedInteractiveSections({ data }: { data: AtlasData }) {
       <FieldGraduateComparison
         comparison={data.fieldGraduateComparison}
         allRecords={data.records}
+        fieldLabels={data.fieldCatalog.labels}
         comparisonRecords={fieldComparisonRecords}
         selectedField={atlasState.filters.field}
         onFieldSelect={(field) => atlasState.setFilter('field', field, 'push')}

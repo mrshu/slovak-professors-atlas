@@ -13,6 +13,7 @@ const appointment: Appointment = {
   affiliationId: 'uniba-default',
   institutionSource: 'Univerzita Komenského v Bratislave',
   field: 'vnútorné lekárstvo',
+  fieldKey: 'vnutorne lekarstvo',
   appointedOn: '2023-01-01',
   presidentId: 'caputova',
   sourceVariants: [

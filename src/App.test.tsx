@@ -68,6 +68,23 @@ const validAtlas = {
   cities: [],
   presidents: [],
   context: [],
+  fieldCatalog: {
+    schemaVersion: 1,
+    aliases: Array.from({ length: 13 }, (_, index) => ({
+      sourceLabel: `zdroj ${index}`,
+      sourceKey: `zdroj-${index}`,
+      targetLabel: `cieľ ${index}`,
+      targetKey: `ciel-${index}`,
+    })),
+    labels: {
+      historia: 'história',
+      psychologia: 'Psychológia',
+      mikrobiologia: 'mikrobiológia',
+      ...Object.fromEntries(
+        Array.from({ length: 13 }, (_, index) => [`ciel-${index}`, `cieľ ${index}`]),
+      ),
+    },
+  },
   fieldGraduateComparison: {
     schemaVersion: 1,
     year: 2025,
@@ -168,6 +185,7 @@ const atlasWithActiveLocalFilters = {
       affiliationId: 'uniba-default',
       institutionSource: 'Univerzita Komenského v Bratislave',
       field: 'história',
+      fieldKey: 'historia',
       appointedOn: '2000-02-22',
       presidentId: 'schuster',
       sourceVariants: [
@@ -232,12 +250,14 @@ const atlasWithFieldVariants = {
       id: 'history-variant',
       name: 'Variant histórie',
       field: ' HISTÓRIA ',
+      fieldKey: 'historia',
     },
     {
       ...atlasWithActiveLocalFilters.records[0],
       id: 'psychology',
       name: 'Psychológia',
       field: 'Psychológia',
+      fieldKey: 'psychologia',
     },
   ],
 }

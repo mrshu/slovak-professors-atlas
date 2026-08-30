@@ -76,7 +76,7 @@ export function createFilterDefaults(data: AtlasData): FilterState {
 }
 
 export function createFilterOptions(data: AtlasData): FilterOptions {
-  const fields = fieldAppointmentRanking(data.records)
+  const fields = fieldAppointmentRanking(data.records, data.fieldCatalog.labels)
     .map(({ fieldKey, field }) => ({ key: fieldKey, canonicalLabel: field }))
     .sort(
       (left, right) =>

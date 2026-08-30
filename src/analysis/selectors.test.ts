@@ -17,6 +17,7 @@ import {
   presidentialEraProfiles,
   yearCounts,
 } from './selectors'
+import { normalizeForSearch } from '../utils/search'
 
 const institutions: Institution[] = [
   {
@@ -129,6 +130,7 @@ const presidents: President[] = [
 ]
 
 function record(overrides: Partial<Appointment> & Pick<Appointment, 'id'>): Appointment {
+  const field = overrides.field ?? 'vnútorné lekárstvo'
   return {
     name: 'Zuzana Čaputová',
     titlesBefore: null,
@@ -136,7 +138,8 @@ function record(overrides: Partial<Appointment> & Pick<Appointment, 'id'>): Appo
     faculty: 'Lekárska fakulta',
     institutionId: 'uniba',
     institutionSource: 'UK v Bratislave',
-    field: 'vnútorné lekárstvo',
+    field,
+    fieldKey: overrides.fieldKey ?? normalizeForSearch(field),
     appointedOn: '2023-05-12',
     presidentId: 'caputova',
     sourceVariants: [],
@@ -144,6 +147,10 @@ function record(overrides: Partial<Appointment> & Pick<Appointment, 'id'>): Appo
     affiliationId:
       overrides.affiliationId ?? `${overrides.institutionId ?? 'uniba'}-default`,
   }
+}
+
+function fieldLabels(items: readonly Appointment[]): Record<string, string> {
+  return Object.fromEntries(items.map(({ fieldKey, field }) => [fieldKey, field.trim()]))
 }
 
 const records: Appointment[] = [
@@ -541,7 +548,7 @@ describe('deterministic aggregate selectors', () => {
       record({ id: 'hyphenated', field: 'Teória-a dejiny umenia' }),
     ]
 
-    expect(fieldAppointmentRanking(cohort)).toEqual([
+    expect(fieldAppointmentRanking(cohort, fieldLabels(cohort))).toEqual([
       {
         fieldKey: 'teoria a dejiny umenia',
         field: 'Teória a dejiny umenia',
@@ -591,7 +598,9 @@ describe('deterministic aggregate selectors', () => {
       (appointment): appointment is Appointment => appointment !== undefined,
     )
 
-    expect(fieldAppointmentLandscape(wholeRegister, selection)).toEqual({
+    expect(
+      fieldAppointmentLandscape(wholeRegister, selection, fieldLabels(wholeRegister)),
+    ).toEqual({
       wholeRegister: {
         appointmentCount: 6,
         distinctFieldCount: 3,
@@ -663,7 +672,7 @@ describe('deterministic aggregate selectors', () => {
   })
 
   it('defines empty field landscape summaries without invented leaders or years', () => {
-    expect(fieldAppointmentLandscape([], [])).toEqual({
+    expect(fieldAppointmentLandscape([], [], {})).toEqual({
       wholeRegister: {
         appointmentCount: 0,
         distinctFieldCount: 0,
@@ -700,8 +709,10 @@ describe('deterministic aggregate selectors', () => {
       record({ id: 'program-2', field: 'psychológia' }),
     ]
 
-    expect(fieldAppointmentRanking(distinctProgrammeNames)).toHaveLength(2)
-    expect(fieldAppointmentRanking([])).toEqual([])
+    expect(
+      fieldAppointmentRanking(distinctProgrammeNames, fieldLabels(distinctProgrammeNames)),
+    ).toHaveLength(2)
+    expect(fieldAppointmentRanking([], {})).toEqual([])
   })
 
   it('never mutates record or institution source arrays', () => {
@@ -715,7 +726,7 @@ describe('deterministic aggregate selectors', () => {
     ceremonyCadence(records)
     academicBreadth(records, affiliations)
     institutionConcentration(records, institutions)
-    fieldAppointmentRanking(records)
+    fieldAppointmentRanking(records, fieldLabels(records))
 
     expect(records).toEqual(beforeRecords)
     expect(institutions).toEqual(beforeInstitutions)
