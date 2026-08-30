@@ -2,11 +2,11 @@
 
 ## Status
 
-Approved direction. The user selected a balanced public-data story and research explorer, an academic-map editorial frame, the interactive-atlas product model, and the archival visual language. The user then delegated all remaining product decisions and requested implementation without further approval gates.
+Approved direction. The user selected a balanced public-data story and research explorer, an academic-map editorial frame, the interactive-atlas product model, and the archival visual language. The user subsequently approved an aggregate-first field comparison for 2009–2025, logarithmic and absolute scale modes, hover/focus previews with persistent click selection, and a reviewed 13-entry spelling-alias map.
 
 ## Goal
 
-Build a polished Slovak-language static website showing every professor appointment in the Ministry of Education workbook from 2000 onward. The page must explain how the academic map of Slovakia changed across universities, faculties, cities, years, ceremonies, presidential terms, and exact appointment-field labels; support direct person lookup; contextualize annual appointments against official counts of university students, graduates, and academic staff; and compare the 2025 appointment fields with an official 2025 graduate-by-study-program snapshot.
+Build a polished Slovak-language static website showing every professor appointment in the Ministry of Education workbook from 2000 onward. The page must explain how the academic map of Slovakia changed across universities, faculties, cities, years, ceremonies, presidential terms, and reviewed appointment-field keys; support direct person lookup without claiming unique-person counts; contextualize annual appointments against official counts of university students, graduates, and academic staff; and compare appointment events with graduate events by exactly matched field over the common 2009–2025 period, with current students as secondary field context.
 
 The finished artifact deploys to GitHub Pages. It has no backend, database, CMS, map-tile service, or runtime dependency on an upstream data provider.
 
@@ -40,7 +40,8 @@ Observed source baseline:
 - dates from 22 February 2000 through 3 June 2026;
 - 67 distinct appointment dates;
 - 32 normalized source labels resolving to 22 canonical institutions;
-- 439 raw appointment-field labels;
+- 431 distinct cleaned analytical-record field labels, producing 429 normalization-only keys before reviewed spelling aliases;
+- 450 distinct source-variant field strings, retained verbatim for provenance;
 - 11 missing faculty values and no missing names, institutions, fields, or dates.
 
 ### Official higher-education context
@@ -55,19 +56,30 @@ Student and graduate totals each equal Slovak-citizen daily first/second-degree,
 
 No student, graduate, or staff denominator is shown for 2026 because the official series currently ends at 2025/2026.
 
-### Official 2025 graduates by study program
+### Official graduates by study program, 2009–2025
 
 - CVTI SR statistical-yearbook catalog: <https://www.cvtisr.sk/cvti-sr-vedecka-kniznica/informacie-o-skolstve/statistiky/statisticka-rocenka-publikacia/statisticka-rocenka-vysoke-skoly.html?page_id=9596>
-- Workbook `abvs_2.xls`: <https://www.cvtisr.sk/buxus/docs//JC/ROCENKA/VS/abvs_2.xls>
-- Pinned SHA-256: `2bfc9bf67bcf7c1d4ed5e80296d498f634a9c8c9b949bf70f839a9bf90ba7729`
-- Retrieved: `2026-08-29`
+- Archived yearbooks for 2009/2010 through 2024/2025: `https://www.cvtisr.sk/buxus/docs//JC/ROCENKA/VS/vsYYYY.zip`
+- Current 2025 workbook `abvs_2.xls`: <https://www.cvtisr.sk/buxus/docs//JC/ROCENKA/VS/abvs_2.xls>
+- Pinned 2025 SHA-256: `2bfc9bf67bcf7c1d4ed5e80296d498f634a9c8c9b949bf70f839a9bf90ba7729`
 - Exact sheets: `Tab2v` (public universities), `Tab2s` (private universities), and `Tab2š` (state universities)
 
-This workbook is an official snapshot of graduates through 31 December 2025. It supports only a **2025** appointment-field comparison; it does not provide a historical field series. The committed source contains 1,723 study-program rows, which aggregate to 1,302 exact normalized labels and 37,627 graduates.
+The pipeline extracts the graduate workbook member from each 2009–2024 archive and uses the pinned direct workbook for 2025. Program-row identifiers have three validated eras: seven-digit legacy codes in 2009–2012, seven-character degree-bearing codes in 2013–2022, and the same codes followed by `/` from 2023. Legacy terminal `/Bc/` markers are removed from the program label; other punctuation remains significant.
 
-For each study-program row, the pipeline sums the seven `spolu` columns exactly once: first-/second-degree daily Slovak citizens, first-/second-degree daily other citizens, first-/second-degree external study, third-degree daily Slovak citizens, third-degree daily other citizens, third-degree external study, and external educational institutions. The adjacent `z toho ženy` cells are subsets and are not added. Counts are then summed across repeated program codes and the public, private, and state sheets when the normalized program label is exactly equal.
+For every program row, the pipeline sums the seven `spolu` columns exactly once: first-/second-degree daily Slovak citizens, first-/second-degree daily other citizens, first-/second-degree external study, third-degree daily Slovak citizens, third-degree daily other citizens, third-degree external study, and external educational institutions. Adjacent `z toho ženy` cells are subsets and are never added. Counts are summed across repeated program codes and the public, private, and state sheets only when the production-normalized program label is exactly equal after the reviewed spelling aliases.
 
-The workbook can place an identical study-program name under different codes and more than one broad source category. A name therefore does not determine a unique broad taxonomy. The product aggregates identical normalized labels for counting but does not force programs or appointment fields into inferred categories.
+Each annual parsed sum must equal the official national graduate total already stored in `context[year]`; generation fails on any mismatch. A label absent in a year remains `null`, producing a chart gap rather than a fabricated zero. Cumulative values sum graduation events across 2009–2025; they are not counts of unique natural persons.
+
+### Official current students by study program
+
+- Workbook `vs_4.xls`: <https://www.cvtisr.sk/buxus/docs//JC/ROCENKA/VS/vs_4.xls>
+- Pinned SHA-256: `bbe547ad1042521fd71365a1c3b69ab8cfbaed054af295380492268dd9c19ff5`
+- Public/private/state daily and external study-program sheets: `Tab5v`, `Tab12v`, `Tab5s`, `Tab12s`, `Tab5š`, and `Tab12š`
+
+The parser adds only each row's Slovak-citizen total and foreign-citizen total; year, gender, and other subset columns are not added again. The national sum must reconcile to the official 2025/2026 student stock in `context[2025]`. Canonically matched current students appear only as secondary selected-field context, with exact-versus-alias provenance retained. An absent program-label match remains `null`, never zero.
+
+Identical study-program names can appear under multiple codes and source categories. The product aggregates identical reviewed field keys for counting but does not infer a broad discipline taxonomy.
+
 ### Official national population
 
 - Statistical Office of the Slovak Republic DATAcube table `om7102rr`
@@ -103,7 +115,7 @@ Raw source values remain recoverable. Cleaning is limited to deterministic prese
 2. Replace non-breaking spaces, collapse repeated whitespace, and trim text.
 3. Preserve raw title, faculty, institution, and field strings on each source-row variant.
 4. Resolve known institution aliases to 22 canonical institutions. The workbook's second sheet is authoritative for 21 institutions; a reviewed alias table handles spelling/history variants and Vysoká škola DTI.
-5. Never classify gender or infer a discipline taxonomy from names or source field strings. Field equivalence is limited to case, diacritic, and whitespace normalization; substring, synonym, code, category, and manually guessed mappings are prohibited.
+5. Never classify gender or infer a discipline taxonomy from names or source field strings. Field equivalence first applies case, diacritic, and whitespace normalization, then only the 13 explicitly reviewed spelling aliases below. Substring, synonym, code-family, punctuation-insensitive, category, singular/plural, and other guessed mappings are prohibited.
 
 The source contains 41 reviewed likely duplicate appointments: 40 pairs on 20 January 2009 and one pair on 25 January 2010. Each pair has the same normalized first name, surname, and appointment date; many are byte-for-byte duplicates, while others differ in spacing, faculty, institution, or field text inside an evidently repeated source block.
 
@@ -111,7 +123,27 @@ The analytical dataset therefore contains **2,378 appointments**. Deduplication 
 
 Repeated names on different dates are not merged. The page never claims a count of unique natural persons.
 
-The all-time appointment-field analysis is derived in the client from all 2,378 analytical records. Its grouping key trims text, collapses internal whitespace, case-folds, and removes Unicode diacritics; it performs no broader semantic merge. Each group reports its appointment count and share, first and last appointment year, and every observed trimmed source label variant with its own count. The displayed label is the most frequent variant, with a Slovak lexical tie-break, and groups sort by count descending then displayed label. This analysis covers appointments from 22 February 2000 through 3 June 2026 and contains no graduate measure.
+The all-time appointment-field analysis is derived in the client from all 2,378 analytical records. Every record receives a deterministic `fieldKey`: production normalization followed by the committed alias map. The 431 analytical labels produce 429 normalization-only keys and 416 reviewed keys after the 13 singleton typos collapse into existing canonical targets. Raw `field` and `sourceVariants[].field` values never change. Alias groups display the approved target spelling; all other groups display the most frequent trimmed source variant with a Slovak lexical tie-break. Groups report appointment count and share, first and last appointment year, and every source-label variant with its own count.
+
+The approved spelling aliases are:
+
+| Source label | Canonical label |
+| --- | --- |
+| `mikobiológia` | `mikrobiológia` |
+| `folkoristika` | `folkloristika` |
+| `elektoenergetika` | `elektroenergetika` |
+| `medzináro+dné vzťahy` | `medzinárodné vzťahy` |
+| `fyzikálna metalutgia` | `fyzikálna metalurgia` |
+| `verejné zravotníctvo` | `verejné zdravotníctvo` |
+| `medziárodné podnikanie` | `medzinárodné podnikanie` |
+| `silnoprúdová eletrotechnika` | `silnoprúdová elektrotechnika` |
+| `teória vyučovcania matematiky` | `teória vyučovania matematiky` |
+| `slovenské deijny` | `slovenské dejiny` |
+| `odborová dadiktika` | `odborová didaktika` |
+| `otorynolaringológia` | `otorinolaryngológia` |
+| `tretsné právo` | `trestné právo` |
+
+The build validates that every alias source and target still exists in the appointment universe and that the map contains no chain or cycle. Review-only terminology, punctuation, singular/plural, and taxonomy neighbors remain separate.
 
 ## Product structure
 
@@ -120,7 +152,7 @@ The site is one scrolling page with stable anchor navigation:
 1. **Hero** — title, one-paragraph scope, coverage dates, analytical appointment count, number of ceremonies, and source disclosure.
 2. **Three verified findings** — compact editorial observations computed from the reconciled appointment records, not hard-coded unsupported claims.
 3. **Higher-education context** — selected-year exact values and normalized trends comparing appointments, graduates, students, and internal teachers.
-4. **Appointment fields and 2025 graduates** — an all-time exact-normalized appointment-field ranking followed by the complete exact-match 2025 graduate comparison.
+4. **Appointment fields and education activity** — an aggregate 2009–2025 appointment-event × graduate-event map, selected-field annual detail, current-student context, and complete matched/unmatched rankings.
 5. **Linked academic atlas** — city map, ranked institutions, faculty drill-down, annual timeline, and presidential bands.
 6. **Complete explorer** — search, filters, sortable records, details, and filtered CSV download.
 7. **Methodology and sources** — definitions, duplicate handling, incomplete years, context caveats, field-matching limits, downloads, checksums, and citations.
@@ -146,16 +178,26 @@ The interface states that the ladder compares only orders of magnitude. It is no
 
 A line chart indexes appointments, graduates, students, and internal teachers to 100 in 2000. Indexing makes differently sized series comparable without a misleading dual axis. Exact raw values appear on focus/hover and in the selected-year panel. The 2007 teacher-definition break and the missing 2026 context are visibly annotated.
 
-### Appointment fields at two scales
+### Appointment fields: aggregate comparison and selected detail
 
-The field section deliberately keeps two analyses separate:
+The field section leads with one aggregate map over the common 2009–2025 period:
 
-1. An **all-time appointment ranking** counts every analytical appointment by the appointment workbook's exact normalized `odbor` label. It shows the group's count and share of all appointments, first and last appointment year, and the contributing source-label variants. This ranking contains no graduate values and remains independent of the 2025 payload.
-2. A **2025 snapshot comparison** filters appointments to calendar year 2025 and joins each appointment-field label to the official CVTI study-program aggregate only when their normalized labels are exactly equal. Matching normalization removes only case, diacritic, and whitespace differences. Unmatched fields stay visible with `null` graduate counts and ratios.
+- each point is one reviewed appointment `fieldKey` with a canonical graduate-program key match; underlying appointment events retain whether the join was exact-normalized or recovered through an approved spelling alias;
+- the x-axis is cumulative appointment events and the y-axis is cumulative graduation events;
+- logarithmic axes are the default so the full distribution remains legible;
+- an **Absolútna** control switches both axes to linear counts without changing selection, labels, or detail;
+- low-opacity marks render the complete matched point cloud, while only the selected and a small generated set of leading/outlying fields receive persistent labels;
+- generated coverage splits exact-normalized appointment matches from reviewed-alias recoveries, then reports their combined total and matched reviewed field keys; unmatched keys remain available in the ranking and are never plotted at zero.
 
-For the pinned sources, 47 of 55 appointments match, representing 39 of 46 appointment-field labels. The interface presents these as coverage facts, not evidence that unmatched fields had no graduates. It identifies the inputs as two different administrative registers, publishes every matched and unmatched row, and labels graduates per appointment as a descriptive same-year ratio. It never treats that ratio as causation, quality, capacity, or a person-level outcome.
+The exploratory pinned-source baseline contains 1,347 exact-normalized appointment matches plus 7 reviewed-alias recoveries, or 1,354 of 1,400 appointment events in total. These form 232 plotted reviewed keys out of 250 appointment keys in the common period. The deterministic build and component tests must reproduce those values.
 
-No historical graduate-by-field trend is shown or implied. No substring, synonym, code-family, broad-category, or inferred-taxonomy match is allowed. Identical program names observed under more than one broad source category are aggregated by their names, not used to manufacture a category mapping.
+Hover or keyboard focus opens a clamped preview card containing the field label, both cumulative counts, graduates per appointment event, current 2025/2026 students when canonically matched, and match provenance. Provenance is `presná zhoda`, `schválená oprava`, or a mixed exact-plus-alias contribution with separate counts. The ratio divides two flows over the same period and is labelled descriptive; it is never called graduates per professor and never presented as causation, quality, capacity, or a person-level outcome. No student-stock/appointment-flow ratio is computed.
+
+Click, touch, Enter, or Space persist the field selection, update the right-hand detail, and write the canonical field key to the URL. The detail shows cumulative totals, the descriptive ratio, current student context, and aligned annual appointment and graduate series. Missing annual graduate matches remain gaps. The current student stock is a separate context card, not a plotted axis or cumulative total.
+
+The visual point radius may remain small, but interaction does not depend on that radius. Pointer and touch use nearest-point screen-space hit testing with a bounded tolerance. Exact-coordinate collisions form a deterministic group disclosed in the preview rather than silently hiding fields. The preview is clamped inside the plot. Keyboard access uses one roving chart focus target with directional arrow navigation, not 232 sequential tab stops; search and ranked views provide equivalent direct selection.
+
+The register does not support active-professor headcounts by field and repeated names on different dates are not identity-merged. The section therefore says `záznamy o vymenovaní`, never total or current professors. National internal-professor stock remains contextual and cannot be disaggregated by field.
 
 ### Linked analytical lenses
 
@@ -203,23 +245,25 @@ An h-index or total citation count may be presented only as a descriptive measur
 
 ## Linked atlas interaction
 
-All analytical views share one filter state:
+The linked atlas, findings, explorer, and records share one filter state:
 
 - date range;
 - president;
 - city;
 - canonical institution;
 - source faculty label;
-- raw appointment-field label;
+- reviewed appointment-field key;
 - free-text query.
+
+The aggregate field-education comparison is deliberately outside the active cohort. Its appointment axis, annual series, coverage, and ratio always use every analytical appointment from 2009–2025, matching the fixed national graduate window. Date, president, city, institution, faculty, and free-text filters never change those values. Only the reviewed field selection synchronizes both ways: an atlas/explorer field filter selects and pins the corresponding map point, while a map selection updates the shared field filter and URL without removing the rest of the point cloud.
 
 The city map uses proportional symbols. Selecting a city filters the institution ranking, timeline, totals, and records. Selecting an institution reveals its faculty distribution. Timeline bars represent annual appointment counts; ceremony markers expose exact dates and sizes; presidential terms appear as labeled background bands.
 
-Search is case-insensitive and accent-insensitive across first name, surname, full display name, institution, faculty, and field. Search normalization affects matching only; displayed Slovak diacritics remain untouched.
+Global search is case-insensitive and accent-insensitive across first name, surname, full display name, institution, faculty, and field. Search normalization affects matching only; displayed Slovak diacritics and punctuation remain untouched. The aggregate map has a separate field-only search over canonical labels and source variants; choosing a result sets the shared reviewed field key and pins it in the detail even when it has no graduate match.
 
-Filter state is encoded in `URLSearchParams`. Reload, copy/paste, browser Back/Forward, and direct links preserve the view. A single reset action clears every filter. Invalid URL values are ignored safely and removed on the next state write.
+Filter state, including selected field, is encoded in `URLSearchParams`. Reload, copy/paste, browser Back/Forward, and direct links preserve the view. The chart scale mode is presentational component state and does not alter analytical filters. A single reset action clears every filter. Invalid URL values are ignored safely and removed on the next state write.
 
-Hover is supplemental. Click, touch, and keyboard provide complete functionality. Focused chart elements expose the same labels as pointers. Result-count updates use a polite live region.
+Hover is supplemental. Click, touch, and keyboard provide complete functionality. Focused chart points expose the same preview as pointers. Result-count updates use a polite live region.
 
 ## Records and export
 
@@ -242,7 +286,7 @@ The selected direction is **Archívny atlas**:
 
 Use self-hosted open-source WOFF2 fonts so the page has no Google Fonts runtime request. Body contrast meets WCAG AA. Color is never the only series or selection encoding. Motion is short and functional, disabled under `prefers-reduced-motion`.
 
-The desktop content width is approximately 1,200 px. Mobile layouts stack summary, map, ranking, timeline, and records; no analytical function disappears. The map remains a complete SVG with a textual institution ranking as an equivalent view.
+The desktop content width is approximately 1,200 px. Mobile layouts stack summary, aggregate field map, selected-field detail, map, ranking, timeline, and records; no analytical function disappears. Touch uses the same nearest-point selection as pointer input, and equivalent searchable rankings remain available when dense graphics are inconvenient.
 
 ## Technical architecture
 
@@ -258,50 +302,58 @@ The dataset is small enough for in-browser filtering and aggregation. The app lo
 
 ### Data pipeline
 
-A Python pipeline managed by `uv` and pinned to `xlrd` reads three committed legacy XLS sources plus one pinned official JSON-stat population extract. The Node frontend never parses source workbooks or contacts upstream services at runtime.
+A Python pipeline managed by `uv` and pinned to `xlrd` reads committed official XLS inputs plus one pinned official JSON-stat population extract. The inputs include the appointment register, national context workbook, 2009–2025 graduate-by-program workbooks, and current student-by-program workbook. The Node frontend never parses source workbooks or contacts upstream services at runtime.
 
 Commands:
 
 - `npm run data:build` — validate every committed raw file and regenerate deterministic JSON;
-- `npm run data:update` — download all four official inputs, verify or intentionally refresh checksums, regenerate, and print a review summary;
+- `npm run data:update` — download current direct inputs and annual archives, extract the named graduate members, pin checksums, regenerate, and print a review summary;
 - `npm run build` — run data validation, TypeScript compilation, and Vite build;
 - `npm run test` — run focused pipeline and UI contract tests.
 
 Generated JSON contains:
 
-- source metadata and checksums;
-- analytical records with source variants;
+- source metadata and checksums for every direct input and archive member;
+- analytical records with raw source variants and deterministic reviewed `fieldKey` values;
+- the reviewed field-alias map and canonical display labels;
 - canonical institutions and cities;
 - president term metadata;
-- the 2000–2025 context series, including national graduate throughput, mid-year population, per-capita rates, and named stock/flow indicators;
-- `fieldGraduateComparison`, a versioned 2025-only exact-label comparison with source provenance, coverage counts, and every matched and unmatched appointment-field row;
+- the 2000–2025 national context series;
+- `fieldEducationComparison`, a versioned 2009–2025 graduate series plus current-student context keyed by reviewed field key;
 - build-derived editorial facts and the versioned payload contract.
 
-The exact field-comparison contract is:
+The field-education contract is:
 
 ```text
 {
-  schemaVersion: 1,
-  year: 2025,
-  source: { url, catalogUrl, sha256, retrievedOn },
-  appointmentCount,
-  matchedAppointmentCount,
-  matchedAppointmentShare,
-  distinctFieldCount,
-  matchedDistinctFieldCount,
+  schemaVersion: 2,
+  startYear: 2009,
+  endYear: 2025,
+  graduateSources: [{
+    year,
+    url,
+    archiveMember: string | null,
+    sha256,
+    retrievedOn
+  }],
+  currentStudentsSource: { year: 2025, url, catalogUrl, sha256, retrievedOn },
+  years: [{
+    year,
+    programRowCount,
+    nationalGraduateTotal
+  }],
   rows: [{
-    field,
-    appointmentCount,
-    graduateCount: number | null,
-    graduatesPerAppointment: number | null,
-    matchStatus: "exact" | "unmatched"
+    fieldKey,
+    canonicalLabel,
+    graduateCounts: Array<number | null>,
+    currentStudentCount: number | null
   }]
 }
 ```
 
-The all-time field ranking is intentionally not duplicated in generated JSON; the client derives it from analytical records so its totals cannot diverge from the explorer.
+The client derives fixed 2009–2025 appointment counts and annual appointment series from all analytical records, never from the active filtered cohort, then joins generated education rows by `fieldKey`. It computes cumulative graduate totals, descriptive same-period ratios, and coverage split into exact-normalized versus reviewed-alias appointment contributions. A record contributes to reviewed-alias coverage only when its production-normalized raw field differs from its committed `fieldKey`. This avoids duplicating appointment aggregates in generated JSON and prevents divergence from the explorer.
 
-Timestamps that would make output nondeterministic are excluded. A source retrieval date may live in a committed provenance file updated only by `data:update`.
+Timestamps that would make output nondeterministic are excluded. Retrieval dates live in committed provenance updated only by `data:update`.
 
 ### Deployment
 
@@ -311,7 +363,7 @@ A GitHub Actions workflow builds on pushes to `main` and deploys the `dist` arti
 
 The data build fails with actionable messages when:
 
-- workbook names, sheet names, or exact headers differ;
+- workbook names, archive member names, sheet names, or validated headers differ;
 - a required appointment name, institution, field, or date is missing;
 - a date cannot be converted or is earlier than 2000;
 - an appointment maps to zero or multiple presidential terms;
@@ -319,12 +371,15 @@ The data build fails with actionable messages when:
 - a canonical institution lacks city metadata;
 - a reviewed duplicate resolution no longer matches its source rows;
 - a new same-name/same-date collision appears;
+- a reviewed field alias source or target disappears, aliases chain or cycle, or an unreviewed alias appears;
 - contextual year labels or expected total rows are missing;
 - context arithmetic does not reconcile with source columns;
-- the graduate-by-field workbook's exact sheet set, 2025 titles, multirow headers, or 16-column structure changes;
-- a study-program total is missing, negative, fractional, or cannot be reconciled across the seven non-overlapping `spolu` columns;
-- graduate source provenance is incomplete or its committed bytes do not match the pinned SHA-256;
-- generated headline values disagree with tested pinned-source expectations.
+- an annual graduate workbook's expected sheets, year title, 16-column structure, or supported program-code schema changes;
+- a graduate program total is missing, negative, fractional, or uses anything beyond the seven non-overlapping `spolu` columns;
+- any annual graduate sum differs from `context[year].graduates`;
+- the current student workbook schema changes or its parsed national sum differs from `context[2025].students`;
+- source provenance is incomplete or committed bytes do not match pinned SHA-256 values;
+- generated headline or coverage values disagree with tested pinned-source expectations.
 
 Optional faculty/title fields render as `neuvedené`, never as fabricated values. A client data-load failure replaces the atlas with a Slovak error panel containing source links; the rest of the semantic page shell remains readable.
 
@@ -334,16 +389,19 @@ Permanent tests defend observable contracts:
 
 - primary workbook parsing and exact header/date conversion;
 - 2,419 source rows, 41 reviewed secondary rows, and 2,378 analytical appointments for the pinned source;
-- all records assigned to one president and one canonical institution;
-- context parsing for 2000–2025, selected known national totals, graduate subset handling, and stock/flow indicators;
-- graduate-by-field schema validation, seven-column arithmetic, aggregation across program codes and public/private/state sheets, and pinned 2025 totals;
-- exact normalized field matching, complete matched/unmatched rows, nullable ratios, and reviewed 2025 coverage;
-- all-time field grouping across case/diacritic/whitespace variants, deterministic representative labels, variant counts, shares, and first/last years;
-- filter intersection, accent-insensitive search, URL round-trip, and CSV escaping/BOM;
-- chart and field-table accessible labels, native sorting, keyboard interaction, and source/download links;
+- all records assigned to one president, one canonical institution, and one deterministic reviewed field key;
+- exact enforcement of the 13 approved spelling aliases, raw-label preservation, target display spelling, and rejection of punctuation/terminology/taxonomy neighbors;
+- context parsing for 2000–2025, selected known national totals, subset handling, and stock/flow indicators;
+- all three historical graduate program-code eras, seven-column arithmetic, aggregation across program codes and public/private/state sheets, and exact national-total reconciliation for every year 2009–2025;
+- current student parsing, subset exclusion, exact national-total reconciliation, and nullable field matches;
+- canonical reviewed-key joins, exact-versus-alias provenance counts, complete matched/unmatched coverage, annual `null` gaps, cumulative totals, and descriptive ratios;
+- all-time field grouping, deterministic representative labels, variant counts, shares, and first/last years;
+- active date, president, city, institution, faculty, and free-text filters leave field-map coordinates, coverage, ratios, and annual series unchanged while reviewed field selection still synchronizes through URL state;
+- filter intersection, accent-insensitive search, field URL round-trip, and CSV escaping/BOM;
+- aggregate chart accessible labels, log/absolute scale switching, complete point-cloud rendering, nearest-point hit testing, deterministic collision handling, clamped previews, persistent click selection, and roving arrow-key navigation;
 - filter-aware ceremony cadence, academic breadth, and top-three institutional concentration;
 - incomplete 2026 context behavior;
-- deterministic data generation, including all three pinned source checksums.
+- deterministic data generation, including every pinned source checksum.
 
 Before completion:
 
@@ -351,7 +409,7 @@ Before completion:
 2. run focused unit/component tests;
 3. run production build;
 4. serve the actual `dist` output;
-5. browser-test desktop and mobile layouts, the all-time field ranking and variant disclosures, the complete 2025 matched/unmatched comparison, source and pinned-download links, linked map/timeline filters, search with and without diacritics, president and institution filtering, Back/Forward URL state, record details, CSV download, methodology links, console errors, and reduced-motion behavior;
+5. browser-test desktop and mobile layouts, both aggregate field-map scales, dense and corner point previews, collision handling, hover/focus versus persistent selection, direct touch selection, field URL state, complete matched/unmatched rankings, annual gaps, source and pinned-download links, linked map/timeline filters, search with and without diacritics, president and institution filtering, Back/Forward state, record details, CSV download, methodology links, console errors, and reduced-motion behavior;
 6. inspect the final visual surface at desktop and narrow mobile widths.
 
 ## Commit strategy
@@ -374,12 +432,12 @@ The work is complete when:
 - the deployed artifact is a fully static GitHub Pages-compatible build;
 - every analytical appointment is traceable to committed ministry workbook rows;
 - source-row and analytical counts plus duplicate handling are visible;
-- map, timeline, rankings, filters, and record list stay synchronized;
-- students and academic staff appear as clearly labeled official context with stock/flow caveats;
-- the all-time appointment-field ranking is derived from every analytical record using only case/diacritic/whitespace equivalence;
-- the official graduate-by-field comparison is confined to 2025, aggregates every required source component once, exposes exact-match coverage and unmatched rows, and makes no historical, causal, quality, or inferred-category claim;
+- city map, timeline, rankings, shared filters, and record list stay synchronized;
+- students and academic staff appear as clearly labelled official context with stock/flow caveats;
+- the fixed aggregate field map compares all appointment and graduation events only over 2009–2025, offers logarithmic and absolute scales, separates exact matches from reviewed-alias recoveries, exposes unmatched keys, remains invariant under non-field cohort filters, and makes no active-professor, unique-person, causal, quality, or inferred-category claim;
+- every appointment record uses the reviewed field key while retaining raw field and source-variant values;
 - 2026 is marked partial and has no fabricated context denominator;
-- every professor is searchable and exportable;
+- every appointment record is searchable and exportable;
 - the page is Slovak, responsive, keyboard-operable, and visually follows the approved archival-atlas direction;
 - data validation, tests, production build, and real-browser smoke scenarios pass;
 - GitHub Pages deployment configuration is committed;
