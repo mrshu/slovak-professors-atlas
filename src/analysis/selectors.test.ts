@@ -11,7 +11,6 @@ import {
   fieldAppointmentLandscape,
   fieldAppointmentRanking,
   filterAppointments,
-  filterAppointmentsExceptField,
   institutionConcentration,
   institutionRanking,
   presidentialEraProfiles,
@@ -241,26 +240,6 @@ describe('filterAppointments', () => {
     },
   )
 
-  it('can exclude only the field facet for a comparison cohort', () => {
-    const filters: FilterState = {
-      startYear: 2000,
-      endYear: 2026,
-      presidentId: null,
-      city: null,
-      institutionId: 'uniba',
-      faculty: null,
-      field: 'vnutorne lekarstvo',
-      appointedOn: null,
-      query: '',
-      selectedYear: 2025,
-    }
-
-    expect(filterAppointments(data, filters).map(({ id }) => id)).toEqual(['match'])
-    expect(filterAppointmentsExceptField(data, filters).map(({ id }) => id)).toEqual([
-      'match',
-      'other-year',
-    ])
-  })
 
   it('matches canonical institution display text while preserving the source label', () => {
     const filters = { ...allFilters, query: 'Univerzita Komenskeho' }

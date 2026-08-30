@@ -24,6 +24,15 @@ const context2000 = {
   appointmentsPerMillionResidents: 19.44,
   professorsPer100kResidents: 17.37,
 }
+const fixtureFieldLabels = {
+  historia: 'história',
+  psychologia: 'Psychológia',
+  mikrobiologia: 'mikrobiológia',
+  ...Object.fromEntries(
+    Array.from({ length: 13 }, (_, index) => [`ciel-${index}`, `cieľ ${index}`]),
+  ),
+}
+
 
 const validAtlas = {
   meta: {
@@ -46,12 +55,6 @@ const validAtlas = {
       sha256: 'def7a52f5fe139dfcd01d88a141d3d65fafc33581a19082bf07fa62b1d06f59e',
       retrievedOn: '2026-08-29',
     },
-    graduates_by_field_2025: {
-      url: 'https://www.cvtisr.sk/buxus/docs//JC/ROCENKA/VS/abvs_2.xls',
-      catalogUrl: 'https://www.cvtisr.sk/catalog',
-      sha256: '2bfc9bf67bcf7c1d4ed5e80296d498f634a9c8c9b949bf70f839a9bf90ba7729',
-      retrievedOn: '2026-08-29',
-    },
     population: {
       url: 'https://data.statistics.sk/api/v2/dataset/om7102rr/SK0/2000:2025/IN010114/SPOLU?lang=en&type=json',
       catalogUrl:
@@ -67,7 +70,24 @@ const validAtlas = {
   affiliations: [],
   cities: [],
   presidents: [],
-  context: [],
+  context: Array.from({ length: 17 }, (_, index) => ({
+    year: 2009 + index,
+    academicYear: `${2009 + index}/${2010 + index}`,
+    students: 100_000,
+    graduates: 1_000 + index,
+    internalTeachers: 10_000,
+    internalProfessors: 1_000,
+    appointments: 10,
+    appointmentsPer1kGraduates: 10,
+    graduatesPerAppointment: 100,
+    appointmentsPer10kStudents: 1,
+    appointmentsPer1kTeachers: 1,
+    appointmentsPer100Professors: 1,
+    professorShare: 10,
+    population: 5_000_000,
+    appointmentsPerMillionResidents: 2,
+    professorsPer100kResidents: 20,
+  })),
   fieldCatalog: {
     schemaVersion: 1,
     aliases: Array.from({ length: 13 }, (_, index) => ({
@@ -76,45 +96,42 @@ const validAtlas = {
       targetLabel: `cieľ ${index}`,
       targetKey: `ciel-${index}`,
     })),
-    labels: {
-      historia: 'história',
-      psychologia: 'Psychológia',
-      mikrobiologia: 'mikrobiológia',
-      ...Object.fromEntries(
-        Array.from({ length: 13 }, (_, index) => [`ciel-${index}`, `cieľ ${index}`]),
-      ),
-    },
+    labels: fixtureFieldLabels,
   },
-  fieldGraduateComparison: {
-    schemaVersion: 1,
-    year: 2025,
-    source: {
-      url: 'https://www.cvtisr.sk/buxus/docs//JC/ROCENKA/VS/abvs_2.xls',
-      catalogUrl: 'https://www.cvtisr.sk/catalog',
+  fieldEducationComparison: {
+    schemaVersion: 2,
+    startYear: 2009,
+    endYear: 2025,
+    catalogUrl: 'https://www.cvtisr.sk/catalog',
+    graduateSources: Array.from({ length: 17 }, (_, index) => ({
+      year: 2009 + index,
+      url: `https://www.cvtisr.sk/graduates/${2009 + index}.xls`,
+      archiveMember: index < 16 ? `archive/${2009 + index}.xls` : null,
       sha256: '2bfc9bf67bcf7c1d4ed5e80296d498f634a9c8c9b949bf70f839a9bf90ba7729',
       retrievedOn: '2026-08-29',
+      localPath: `graduates-by-field/${2009 + index}.xls`,
+    })),
+    currentStudentsSource: {
+      year: 2025,
+      url: 'https://www.cvtisr.sk/students/2025.xls',
+      archiveMember: null,
+      sha256: '2bfc9bf67bcf7c1d4ed5e80296d498f634a9c8c9b949bf70f839a9bf90ba7729',
+      retrievedOn: '2026-08-29',
+      localPath: 'current-students-by-field-2025.xls',
     },
-    appointmentCount: 2,
-    matchedAppointmentCount: 1,
-    matchedAppointmentShare: 50,
-    distinctFieldCount: 2,
-    matchedDistinctFieldCount: 1,
-    rows: [
-      {
-        field: 'psychológia',
-        appointmentCount: 1,
-        graduateCount: 1146,
-        graduatesPerAppointment: 1146,
-        matchStatus: 'exact',
-      },
-      {
-        field: 'mikrobiológia',
-        appointmentCount: 1,
-        graduateCount: null,
-        graduatesPerAppointment: null,
-        matchStatus: 'unmatched',
-      },
-    ],
+    years: Array.from({ length: 17 }, (_, index) => ({
+      year: 2009 + index,
+      programRowCount: 1,
+      nationalGraduateCount: 1_000 + index,
+    })),
+    rows: Object.entries(fixtureFieldLabels).map(([fieldKey, canonicalLabel], rowIndex) => ({
+      fieldKey,
+      canonicalLabel,
+      graduateCounts: Array.from({ length: 17 }, (_, index) =>
+        rowIndex === 0 ? 10 + index : null,
+      ),
+      currentStudentCount: rowIndex === 0 ? 200 : null,
+    })),
   },
   geography: {
     type: 'Feature',
@@ -238,7 +255,7 @@ const atlasWithActiveLocalFilters = {
       citationUrl: 'https://www.prezident.sk/rudolf-schuster/',
     },
   ],
-  context: [context2000],
+  context: [context2000, ...validAtlas.context],
 }
 
 const atlasWithFieldVariants = {
@@ -258,6 +275,24 @@ const atlasWithFieldVariants = {
       name: 'Psychológia',
       field: 'Psychológia',
       fieldKey: 'psychologia',
+    },
+  ],
+}
+
+const atlasWithFieldWindow = {
+  ...atlasWithFieldVariants,
+  records: atlasWithFieldVariants.records.map((record) => ({
+    ...record,
+    appointedOn: '2009-02-22',
+    presidentId: 'gasparovic',
+  })),
+  presidents: [
+    {
+      id: 'gasparovic',
+      name: 'Ivan Gašparovič',
+      from: '2004-06-15',
+      to: '2014-06-15',
+      citationUrl: 'https://www.prezident.sk/ivan-gasparovic/',
     },
   ],
 }
@@ -308,16 +343,12 @@ describe('archívny atlas', () => {
     ).toBeVisible()
 
     const context = screen.getByRole('region', { name: 'Vymenovania v národnom kontexte' })
-    const unavailable = within(context)
-      .getByText('Kontext CVTI pre rok 2026 nie je k dispozícii')
-      .closest('[role="status"]')
-    expect(unavailable).toHaveTextContent('Kontext CVTI pre rok 2026 nie je k dispozícii')
-    expect(unavailable).toHaveTextContent(
-      'Oficiálny rad sa končí akademickým rokom 2025/2026.',
-    )
-    expect(unavailable).toHaveTextContent(
-      'Pre vymenovania v roku 2026 preto nezobrazujeme menovatele ani pomery.',
-    )
+    expect(
+      within(context).getByRole('group', {
+        name: 'Presné národné hodnoty pre rok 2025',
+      }),
+    ).toBeVisible()
+    expect(within(context).getByText('Najnovší dostupný kontext: 2025/2026')).toBeVisible()
 
     const banner = screen.getByRole('banner')
     const navigation = screen.getByRole('navigation', { name: 'Navigácia atlasu' })
@@ -375,40 +406,34 @@ describe('archívny atlas', () => {
     )
   })
 
-  it('deep-links the normalized field facet while the field comparison excludes only that facet', async () => {
+  it('deep-links the canonical field while the field landscape remains globally invariant', async () => {
     window.history.replaceState({}, '', '/slovak-professors/?field=historia')
-    vi.stubGlobal('fetch', vi.fn(async () => successfulResponse(atlasWithFieldVariants)))
+    vi.stubGlobal('fetch', vi.fn(async () => successfulResponse(atlasWithFieldWindow)))
 
     render(<App />)
 
     const section = await screen.findByRole('region', {
-      name: 'Odbory vymenovaní a absolventi v roku 2025',
+      name: 'Profesorské vymenovania × absolventi',
     })
     expect(window.location.search).toBe('?field=historia')
     const explorer = screen.getByRole('region', {
       name: 'Úplný register profesorských vymenovaní',
     })
     expect(within(explorer).getByRole('status')).toHaveTextContent('2')
-    expect(
-      within(section).getByRole('group', {
-        name: 'Súhrn aktívneho výberu bez filtra odboru',
-      }),
-    ).toHaveTextContent('3')
+    const coverageBefore = within(section)
+      .getByLabelText('Pokrytie odborového porovnania')
+      .textContent
+    const pointCountBefore = within(section).queryAllByTestId(/^field-point-/).length
 
     fireEvent.click(within(section).getByRole('button', { name: 'Psychológia' }))
 
     expect(window.location.search).toBe('?field=psychologia')
     await waitFor(() => expect(within(explorer).getByRole('status')).toHaveTextContent('1'))
     expect(
-      within(section).getByRole('group', {
-        name: 'Súhrn aktívneho výberu bez filtra odboru',
-      }),
-    ).toHaveTextContent('3')
-    expect(
-      within(section).getByRole('table', {
-        name: 'Presné porovnanie odborov a absolventov',
-      }),
-    ).toHaveTextContent('bez presnej zhody')
+      within(section).getByLabelText('Pokrytie odborového porovnania').textContent,
+    ).toBe(coverageBefore)
+    expect(within(section).queryAllByTestId(/^field-point-/)).toHaveLength(pointCountBefore)
+    expect(within(section).getByRole('heading', { name: 'Psychológia' })).toBeVisible()
   })
 
   it('opens a finding from defaults in one history entry instead of intersecting stale filters', async () => {
@@ -443,7 +468,7 @@ describe('archívny atlas', () => {
     fireEvent.click(within(findings).getByRole('button', { name: 'Otvoriť ceremoniál' }))
 
     expect(pushState).toHaveBeenCalledTimes(1)
-    expect(window.location.search).toBe('?appointedOn=2000-02-22')
+    expect(window.location.search).toBe('?appointedOn=2000-02-22&selectedYear=2000')
     expect(window.location.hash).toBe('#atlas')
   })
 
@@ -489,13 +514,16 @@ describe('archívny atlas', () => {
     ],
     [
       'chýbajúce porovnanie odborov',
-      { ...validAtlas, fieldGraduateComparison: undefined },
+      { ...validAtlas, fieldEducationComparison: undefined },
     ],
     [
       'nepodporovanú verziu porovnania odborov',
       {
         ...validAtlas,
-        fieldGraduateComparison: { ...validAtlas.fieldGraduateComparison, schemaVersion: 2 },
+        fieldEducationComparison: {
+          ...validAtlas.fieldEducationComparison,
+          schemaVersion: 1,
+        },
       },
     ],
   ])('fails closed for %s payloadu', async (_case, payload) => {

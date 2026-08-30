@@ -39,6 +39,7 @@ export default function FieldEducationComparison({
 
   return (
     <section
+      id="odbory-absolventi"
       className="section section--field-education"
       aria-labelledby="field-education-title"
     >

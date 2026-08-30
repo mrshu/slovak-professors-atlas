@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
-import { filterAppointmentsExceptField } from './analysis/selectors'
+import { useEffect, useState } from 'react'
 
 import AtlasSection from './components/AtlasSection'
 import { ContextSectionBody, ContextSectionShell } from './components/ContextSection'
 import ErrorPanel from './components/ErrorPanel'
 import Explorer from './components/Explorer'
-import FieldGraduateComparison from './components/FieldGraduateComparison'
+import FieldEducationComparison from './components/FieldEducationComparison'
 import Findings from './components/Findings'
 import Hero from './components/Hero'
 import Methodology from './components/Methodology'
@@ -29,10 +28,6 @@ function focusSection(id: string): void {
 
 function LoadedInteractiveSections({ data }: { data: AtlasData }) {
   const atlasState = useAtlasState(data)
-  const fieldComparisonRecords = useMemo(
-    () => filterAppointmentsExceptField(data, atlasState.filters),
-    [atlasState.filters, data],
-  )
 
   return (
     <>
@@ -56,11 +51,10 @@ function LoadedInteractiveSections({ data }: { data: AtlasData }) {
           setSelectedYear={atlasState.setSelectedYear}
         />
       </ContextSectionShell>
-      <FieldGraduateComparison
-        comparison={data.fieldGraduateComparison}
+      <FieldEducationComparison
+        comparison={data.fieldEducationComparison}
+        fieldCatalog={data.fieldCatalog}
         allRecords={data.records}
-        fieldLabels={data.fieldCatalog.labels}
-        comparisonRecords={fieldComparisonRecords}
         selectedField={atlasState.filters.field}
         onFieldSelect={(field) => atlasState.setFilter('field', field, 'push')}
       />

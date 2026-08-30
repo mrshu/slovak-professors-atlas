@@ -23,9 +23,11 @@ from pipeline.fields import (
     FieldCatalog,
     build_field_catalog,
 )
-from pipeline.graduates import (
-    build_field_graduate_comparison,
-    load_graduates_by_field,
+from pipeline.field_education import (
+    ProgramFieldDataset,
+    build_field_education_comparison,
+    load_current_student_fields,
+    load_graduate_fields,
 )
 from pipeline.models import (
     Affiliation,
@@ -43,8 +45,11 @@ from pipeline.text import normalize_display
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_PROFESSORS_PATH = _PROJECT_ROOT / "public/data/source/professors.xls"
 DEFAULT_CONTEXT_PATH = _PROJECT_ROOT / "public/data/source/higher-education.xls"
-DEFAULT_GRADUATES_BY_FIELD_PATH = (
-    _PROJECT_ROOT / "public/data/source/graduates-by-field/2025.xls"
+DEFAULT_GRADUATES_BY_FIELD_DIR = (
+    _PROJECT_ROOT / "public/data/source/graduates-by-field"
+)
+DEFAULT_CURRENT_STUDENTS_BY_FIELD_PATH = (
+    _PROJECT_ROOT / "public/data/source/current-students-by-field-2025.xls"
 )
 DEFAULT_POPULATION_PATH = _PROJECT_ROOT / "public/data/source/population.json"
 DEFAULT_GEOMETRY_PATH = _PROJECT_ROOT / "data/config/slovakia.geojson"
@@ -53,7 +58,6 @@ DEFAULT_OUTPUT_PATH = _PROJECT_ROOT / "public/data/atlas.json"
 _SOURCE_PATH_KEYS = (
     "professors",
     "higher_education",
-    "graduates_by_field_2025",
     "population",
 )
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
@@ -94,13 +98,47 @@ def _sha256(path: Path) -> str:
         raise AtlasBuildError(f"Cannot read build input {path}: {error}") from error
 
 
+def _validated_source_file(
+    source: object,
+    *,
+    key: str,
+    path: Path,
+) -> dict[str, Any]:
+    if not isinstance(source, dict):
+        raise AtlasBuildError(f"Provenance source {key!r} must be an object")
+    url = source.get("url")
+    if not isinstance(url, str) or not url:
+        raise AtlasBuildError(f"Provenance source {key!r} has no non-empty URL")
+    retrieved_on = source.get("retrievedOn")
+    try:
+        if not isinstance(retrieved_on, str):
+            raise ValueError
+        date.fromisoformat(retrieved_on)
+    except ValueError as error:
+        raise AtlasBuildError(
+            f"Provenance source {key!r} has no valid ISO retrieval date"
+        ) from error
+    expected = source.get("sha256")
+    if not isinstance(expected, str) or _SHA256.fullmatch(expected) is None:
+        raise AtlasBuildError(
+            f"Provenance source {key!r} has no valid lowercase SHA-256"
+        )
+    actual = _sha256(path)
+    if actual != expected:
+        raise AtlasBuildError(
+            f"Checksum mismatch for {key}: expected {expected}, got {actual}"
+        )
+    return source
+
+
 def _validated_provenance(
     provenance_path: Path,
     professors_path: Path,
     context_path: Path,
-    graduates_by_field_path: Path,
+    graduates_by_field_dir: Path,
+    current_students_by_field_path: Path,
     population_path: Path,
-) -> dict[str, Any]:
+) -> tuple[dict[str, Any], dict[str, Any]]:
     provenance = _load_object(provenance_path, "source provenance")
     sources = provenance.get("sources")
     if not isinstance(sources, dict) or set(sources) != set(_SOURCE_PATH_KEYS):
@@ -110,37 +148,10 @@ def _validated_provenance(
     paths = {
         "professors": professors_path,
         "higher_education": context_path,
-        "graduates_by_field_2025": graduates_by_field_path,
         "population": population_path,
     }
     for key in _SOURCE_PATH_KEYS:
-        source = sources[key]
-        if not isinstance(source, dict):
-            raise AtlasBuildError(f"Provenance source {key!r} must be an object")
-        url = source.get("url")
-        if not isinstance(url, str) or not url:
-            raise AtlasBuildError(
-                f"Provenance source {key!r} has no non-empty URL"
-            )
-        retrieved_on = source.get("retrievedOn")
-        try:
-            if not isinstance(retrieved_on, str):
-                raise ValueError
-            date.fromisoformat(retrieved_on)
-        except ValueError as error:
-            raise AtlasBuildError(
-                f"Provenance source {key!r} has no valid ISO retrieval date"
-            ) from error
-        expected = source.get("sha256")
-        if not isinstance(expected, str) or _SHA256.fullmatch(expected) is None:
-            raise AtlasBuildError(
-                f"Provenance source {key!r} has no valid lowercase SHA-256"
-            )
-        actual = _sha256(paths[key])
-        if actual != expected:
-            raise AtlasBuildError(
-                f"Checksum mismatch for {key}: expected {expected}, got {actual}"
-            )
+        _validated_source_file(sources[key], key=key, path=paths[key])
 
     population_source = sources["population"]
     assert isinstance(population_source, dict)
@@ -153,7 +164,63 @@ def _validated_provenance(
             "Population provenance must retain the reviewed national mid-year "
             "denominator contract"
         )
-    return sources
+
+    field_education = provenance.get("fieldEducation")
+    if not isinstance(field_education, dict):
+        raise AtlasBuildError("Field education provenance must be an object")
+    catalog_url = field_education.get("catalogUrl")
+    if not isinstance(catalog_url, str) or not catalog_url:
+        raise AtlasBuildError("Field education provenance requires a catalog URL")
+    graduate_sources = field_education.get("graduateSources")
+    if not isinstance(graduate_sources, list):
+        raise AtlasBuildError("Field education graduate sources must be an array")
+    years = [
+        source.get("year") if isinstance(source, dict) else None
+        for source in graduate_sources
+    ]
+    if years != list(range(2009, 2026)):
+        raise AtlasBuildError(
+            "Field education graduate sources must contain ordered years 2009 through 2025"
+        )
+    for source in graduate_sources:
+        assert isinstance(source, dict)
+        year = source["year"]
+        assert isinstance(year, int)
+        expected_local_path = f"graduates-by-field/{year}.xls"
+        if source.get("localPath") != expected_local_path:
+            raise AtlasBuildError(
+                f"Graduate source {year} must use local path {expected_local_path!r}"
+            )
+        archive_member = source.get("archiveMember")
+        if (year < 2025 and not isinstance(archive_member, str)) or (
+            year == 2025 and archive_member is not None
+        ):
+            raise AtlasBuildError(
+                f"Graduate source {year} has an invalid archive member contract"
+            )
+        _validated_source_file(
+            source,
+            key=f"graduates_by_field_{year}",
+            path=graduates_by_field_dir / f"{year}.xls",
+        )
+
+    current_students_source = field_education.get("currentStudentsSource")
+    if (
+        not isinstance(current_students_source, dict)
+        or current_students_source.get("year") != 2025
+        or current_students_source.get("archiveMember") is not None
+        or current_students_source.get("localPath")
+        != "current-students-by-field-2025.xls"
+    ):
+        raise AtlasBuildError(
+            "Field education current-student source contract is invalid"
+        )
+    _validated_source_file(
+        current_students_source,
+        key="current_students_by_field_2025",
+        path=current_students_by_field_path,
+    )
+    return sources, field_education
 
 
 def _validated_geography(path: Path) -> dict[str, Any]:
@@ -404,7 +471,7 @@ def build_payload(
     geography: Mapping[str, object],
     sources: Mapping[str, object],
     field_catalog: FieldCatalog,
-    field_graduate_comparison: Mapping[str, object],
+    field_education_comparison: Mapping[str, object],
     affiliation_by_appointment: Mapping[str, str],
     affiliations: Sequence[Affiliation],
     cities: Sequence[City],
@@ -464,7 +531,7 @@ def build_payload(
         "cities": _city_payload(cities, affiliations),
         "presidents": [_president_payload(item) for item in presidents],
         "fieldCatalog": field_catalog.payload(),
-        "fieldGraduateComparison": dict(field_graduate_comparison),
+        "fieldEducationComparison": dict(field_education_comparison),
         "context": [_context_payload(item) for item in context],
         "geography": dict(geography),
         "editorialFacts": _editorial_facts(dataset.appointments, context),
@@ -476,7 +543,8 @@ def build_atlas(
     *,
     professors_path: Path = DEFAULT_PROFESSORS_PATH,
     context_path: Path = DEFAULT_CONTEXT_PATH,
-    graduates_by_field_path: Path = DEFAULT_GRADUATES_BY_FIELD_PATH,
+    graduates_by_field_dir: Path = DEFAULT_GRADUATES_BY_FIELD_DIR,
+    current_students_by_field_path: Path = DEFAULT_CURRENT_STUDENTS_BY_FIELD_PATH,
     population_path: Path = DEFAULT_POPULATION_PATH,
     geography_path: Path = DEFAULT_GEOMETRY_PATH,
     provenance_path: Path = DEFAULT_PROVENANCE_PATH,
@@ -484,11 +552,12 @@ def build_atlas(
     field_aliases_path: Path = DEFAULT_FIELD_ALIASES_PATH,
 ) -> dict[str, object]:
     """Validate all committed inputs and write deterministic atlas JSON."""
-    sources = _validated_provenance(
+    sources, field_education_provenance = _validated_provenance(
         provenance_path,
         professors_path,
         context_path,
-        graduates_by_field_path,
+        graduates_by_field_dir,
+        current_students_by_field_path,
         population_path,
     )
     dataset = load_appointments(professors_path)
@@ -503,13 +572,32 @@ def build_atlas(
         population_path=population_path,
         appointments=dataset.appointments,
     )
-    graduate_fields = load_graduates_by_field(graduates_by_field_path)
-    graduate_source = sources["graduates_by_field_2025"]
-    assert isinstance(graduate_source, dict)
-    field_graduate_comparison = build_field_graduate_comparison(
-        dataset.appointments,
-        graduate_fields,
-        graduate_source,
+    graduate_datasets: list[ProgramFieldDataset] = [
+        load_graduate_fields(
+            graduates_by_field_dir / f"{year}.xls",
+            year,
+            field_catalog,
+        )
+        for year in range(2009, 2026)
+    ]
+    current_students = load_current_student_fields(
+        current_students_by_field_path,
+        field_catalog,
+    )
+    graduate_sources = field_education_provenance["graduateSources"]
+    current_students_source = field_education_provenance["currentStudentsSource"]
+    catalog_url = field_education_provenance["catalogUrl"]
+    assert isinstance(graduate_sources, list)
+    assert isinstance(current_students_source, dict)
+    assert isinstance(catalog_url, str)
+    field_education_comparison = build_field_education_comparison(
+        graduate_datasets,
+        current_students,
+        field_catalog,
+        context,
+        graduate_sources,
+        current_students_source,
+        catalog_url=catalog_url,
     )
     geography = _validated_geography(geography_path)
     payload = build_payload(
@@ -518,7 +606,7 @@ def build_atlas(
         geography,
         sources,
         field_catalog,
-        field_graduate_comparison,
+        field_education_comparison,
         affiliation_by_appointment,
         affiliations,
         cities,
@@ -545,9 +633,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--population", type=Path, default=DEFAULT_POPULATION_PATH)
     parser.add_argument("--geometry", type=Path, default=DEFAULT_GEOMETRY_PATH)
     parser.add_argument(
-        "--graduates-by-field",
+        "--graduates-by-field-dir",
         type=Path,
-        default=DEFAULT_GRADUATES_BY_FIELD_PATH,
+        default=DEFAULT_GRADUATES_BY_FIELD_DIR,
+    )
+    parser.add_argument(
+        "--current-students-by-field",
+        type=Path,
+        default=DEFAULT_CURRENT_STUDENTS_BY_FIELD_PATH,
     )
     parser.add_argument(
         "--field-aliases",
@@ -566,7 +659,8 @@ def main(argv: list[str] | None = None) -> int:
         professors_path=args.professors,
         context_path=args.context,
         geography_path=args.geometry,
-        graduates_by_field_path=args.graduates_by_field,
+        graduates_by_field_dir=args.graduates_by_field_dir,
+        current_students_by_field_path=args.current_students_by_field,
         population_path=args.population,
         provenance_path=args.provenance,
         affiliation_locations_path=args.affiliation_locations,

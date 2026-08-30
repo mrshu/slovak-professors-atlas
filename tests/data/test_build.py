@@ -32,7 +32,7 @@ def test_build_is_byte_deterministic_and_serializes_public_contract(tmp_path: Pa
         "context",
         "editorialFacts",
         "fieldCatalog",
-        "fieldGraduateComparison",
+        "fieldEducationComparison",
         "geography",
         "institutions",
         "meta",
@@ -126,65 +126,55 @@ def test_build_resolves_workplace_locations_without_inheriting_ambiguous_seats(
     assert "ku-spisska-kapitula" in cities["Spišské Podhradie"]["affiliationIds"]
 
 
-def test_build_publishes_versioned_exact_field_graduate_comparison(
+def test_build_publishes_reconciled_field_education_comparison(
     tmp_path: Path,
 ) -> None:
     payload = build_atlas(tmp_path / "atlas.json")
-    comparison = payload["fieldGraduateComparison"]
+    comparison = payload["fieldEducationComparison"]
 
     assert payload["meta"]["schemaVersion"] == 1
     assert set(payload["sources"]) == {
         "professors",
         "higher_education",
-        "graduates_by_field_2025",
         "population",
     }
-    assert comparison["schemaVersion"] == 1
-    assert comparison["year"] == 2025
-    assert set(comparison) == {
-        "appointmentCount",
-        "distinctFieldCount",
-        "matchedAppointmentCount",
-        "matchedAppointmentShare",
-        "matchedDistinctFieldCount",
-        "rows",
-        "schemaVersion",
-        "source",
-        "year",
-    }
-    assert comparison["source"] == {
-        "url": "https://www.cvtisr.sk/buxus/docs//JC/ROCENKA/VS/abvs_2.xls",
-        "catalogUrl": (
-            "https://www.cvtisr.sk/cvti-sr-vedecka-kniznica/informacie-o-skolstve/"
-            "statistiky/statisticka-rocenka-publikacia/"
-            "statisticka-rocenka-vysoke-skoly.html?page_id=9596"
-        ),
-        "sha256": "2bfc9bf67bcf7c1d4ed5e80296d498f634a9c8c9b949bf70f839a9bf90ba7729",
-        "retrievedOn": "2026-08-29",
-    }
-    assert comparison["appointmentCount"] == 55
-    assert comparison["matchedAppointmentCount"] == 47
-    assert comparison["matchedAppointmentShare"] == 85.45
-    assert comparison["distinctFieldCount"] == 46
-    assert comparison["matchedDistinctFieldCount"] == 39
-    assert len(comparison["rows"]) == 46
-    assert comparison["rows"][0] == {
-        "field": "strojárske technológie a materiály",
-        "appointmentCount": 4,
-        "graduateCount": 17,
-        "graduatesPerAppointment": 4.25,
-        "matchStatus": "exact",
-    }
+    assert comparison["schemaVersion"] == 2
+    assert comparison["startYear"] == 2009
+    assert comparison["endYear"] == 2025
+    assert [item["year"] for item in comparison["graduateSources"]] == list(
+        range(2009, 2026)
+    )
+    assert [item["year"] for item in comparison["years"]] == list(
+        range(2009, 2026)
+    )
+    assert comparison["currentStudentsSource"]["year"] == 2025
+    assert "fieldGraduateComparison" not in payload
 
-    rows = {row["field"]: row for row in comparison["rows"]}
-    assert rows["získavanie a spracovanie zemských zdrojov"] == {
-        "field": "získavanie a spracovanie zemských zdrojov",
-        "appointmentCount": 2,
-        "graduateCount": None,
-        "graduatesPerAppointment": None,
-        "matchStatus": "unmatched",
-    }
+    field_catalog = payload["fieldCatalog"]
+    rows = {row["fieldKey"]: row for row in comparison["rows"]}
+    assert len(rows) == len(field_catalog["labels"]) == 416
+    assert all(len(row["graduateCounts"]) == 17 for row in rows.values())
+    assert all(
+        row["canonicalLabel"] == field_catalog["labels"][field_key]
+        for field_key, row in rows.items()
+    )
+    assert any(
+        value is None
+        for row in rows.values()
+        for value in row["graduateCounts"]
+    )
+    assert any(row["currentStudentCount"] is None for row in rows.values())
 
+    social_work = rows["socialna praca"]
+    assert sum(
+        value for value in social_work["graduateCounts"] if value is not None
+    ) == 62_122
+    assert social_work["currentStudentCount"] == 4_505
+    public_health = rows["verejne zdravotnictvo"]
+    assert sum(
+        value for value in public_health["graduateCounts"] if value is not None
+    ) == 5_968
+    assert public_health["currentStudentCount"] == 785
 
 def test_generated_facts_match_reviewed_pinned_source_findings(tmp_path: Path) -> None:
     payload = build_atlas(tmp_path / "atlas.json")

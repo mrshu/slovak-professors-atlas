@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 import re
+import shutil
 import tempfile
 import urllib.request
 from zipfile import BadZipFile, ZipFile
@@ -16,12 +17,12 @@ from typing import Any, Sequence
 SOURCE_DESTINATIONS = {
     "professors": "professors.xls",
     "higher_education": "higher-education.xls",
-    "graduates_by_field_2025": "graduates-by-field-2025.xls",
     "population": "population.json",
 }
 CHUNK_SIZE = 1024 * 1024
 DEFAULT_PROVENANCE_PATH = Path("public/data/provenance.json")
 DEFAULT_SOURCE_DESTINATION = Path("public/data/source")
+DEFAULT_ATLAS_OUTPUT_PATH = Path("public/data/atlas.json")
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _POPULATION_URL = (
     "https://data.statistics.sk/api/v2/dataset/"
@@ -169,13 +170,10 @@ def _source_plans(
     sources: dict[str, dict[str, Any]],
     *,
     require_checksums: bool,
+    require_field_education: bool = False,
 ) -> list[SourcePlan]:
     field_education = provenance.get("fieldEducation")
-    base_names = (
-        tuple(SOURCE_DESTINATIONS)
-        if field_education is None
-        else tuple(name for name in SOURCE_DESTINATIONS if name != "graduates_by_field_2025")
-    )
+    base_names = tuple(SOURCE_DESTINATIONS)
     plans = [
         SourcePlan(
             name=name,
@@ -191,6 +189,10 @@ def _source_plans(
         for name in base_names
     ]
     if field_education is None:
+        if require_field_education:
+            raise SourceIntegrityError(
+                "fieldEducation provenance is required for the schema-2 atlas"
+            )
         return plans
     if not isinstance(field_education, dict):
         raise SourceIntegrityError("fieldEducation provenance must be an object")
@@ -296,11 +298,69 @@ def _replace_staged_files(replacements: Sequence[tuple[Path, Path]]) -> None:
                 backup_path.unlink(missing_ok=True)
 
 
+
+def _stage_atlas(
+    provenance_path: Path,
+    destination: Path,
+    atlas_output_path: Path,
+    replacements: Sequence[tuple[Path, Path]],
+) -> Path:
+    from pipeline.build import build_atlas
+
+    staged_by_relative_path = {
+        target.relative_to(destination).as_posix(): staged_path
+        for staged_path, target in replacements
+        if target.is_relative_to(destination)
+    }
+    atlas_output_path.parent.mkdir(parents=True, exist_ok=True)
+    staged_atlas: Path | None = None
+    try:
+        with tempfile.TemporaryDirectory(
+            dir=destination, prefix=".atlas-sources."
+        ) as temporary_directory:
+            graduate_directory = Path(temporary_directory) / "graduates-by-field"
+            graduate_directory.mkdir()
+            for year in range(2009, 2026):
+                relative_path = f"graduates-by-field/{year}.xls"
+                shutil.copyfile(
+                    staged_by_relative_path[relative_path],
+                    graduate_directory / f"{year}.xls",
+                )
+
+            with tempfile.NamedTemporaryFile(
+                dir=atlas_output_path.parent,
+                prefix=f".{atlas_output_path.name}.",
+                suffix=".tmp",
+                delete=False,
+            ) as temporary_atlas:
+                staged_atlas = Path(temporary_atlas.name)
+
+            build_atlas(
+                staged_atlas,
+                professors_path=staged_by_relative_path["professors.xls"],
+                context_path=staged_by_relative_path["higher-education.xls"],
+                graduates_by_field_dir=graduate_directory,
+                current_students_by_field_path=staged_by_relative_path[
+                    "current-students-by-field-2025.xls"
+                ],
+                population_path=staged_by_relative_path["population.json"],
+                provenance_path=provenance_path,
+            )
+    except BaseException:
+        if staged_atlas is not None:
+            staged_atlas.unlink(missing_ok=True)
+        raise
+
+    assert staged_atlas is not None
+    return staged_atlas
+
+
 def _download_sources(
     provenance_path: Path,
     destination: Path,
     *,
     accept_new_checksums: bool,
+    atlas_output_path: Path | None = None,
 ) -> list[DownloadedSource]:
     provenance = _load_provenance(provenance_path)
     sources = _validated_sources(
@@ -310,6 +370,7 @@ def _download_sources(
         provenance,
         sources,
         require_checksums=not accept_new_checksums,
+        require_field_education=atlas_output_path is not None,
     )
     destination.mkdir(parents=True, exist_ok=True)
     downloaded: list[DownloadedSource] = []
@@ -399,9 +460,20 @@ def _download_sources(
                     staged_path.unlink(missing_ok=True)
                 raise
 
+        build_provenance_path = provenance_path
         if accept_new_checksums:
             staged_provenance = _stage_provenance(provenance_path, provenance)
             staged_replacements.append((staged_provenance, provenance_path))
+            build_provenance_path = staged_provenance
+
+        if atlas_output_path is not None:
+            staged_atlas = _stage_atlas(
+                build_provenance_path,
+                destination,
+                atlas_output_path,
+                staged_replacements,
+            )
+            staged_replacements.append((staged_atlas, atlas_output_path))
 
         _replace_staged_files(staged_replacements)
     except BaseException:
@@ -443,12 +515,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             previous_provenance,
             previous_sources,
             require_checksums=False,
+            require_field_education=True,
         )
     }
     downloaded = _download_sources(
         DEFAULT_PROVENANCE_PATH,
         DEFAULT_SOURCE_DESTINATION,
         accept_new_checksums=args.accept_new_checksums,
+        atlas_output_path=DEFAULT_ATLAS_OUTPUT_PATH,
     )
 
     for item in downloaded:
@@ -462,6 +536,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(f"{item.name}: {item.sha256}")
         print(f"  size: {item.size} bytes")
         print(f"  destination: {destination}")
+
+    print(f"atlas: regenerated {DEFAULT_ATLAS_OUTPUT_PATH}")
 
     return 0
 

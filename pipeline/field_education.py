@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from collections import defaultdict
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from types import MappingProxyType
@@ -10,6 +10,7 @@ from typing import Any
 
 import xlrd
 
+from pipeline.context import ContextYear
 from pipeline.fields import FieldCatalog
 from pipeline.text import normalize_display, normalize_search
 
@@ -474,3 +475,87 @@ def load_current_student_fields(
         national_total=sum(counts.values()),
         counts_by_field_key=counts,
     )
+
+
+def build_field_education_comparison(
+    graduate_datasets: Sequence[ProgramFieldDataset],
+    current_students: ProgramFieldDataset,
+    catalog: FieldCatalog,
+    context: Sequence[ContextYear],
+    graduate_sources: Sequence[Mapping[str, object]],
+    current_students_source: Mapping[str, object],
+    *,
+    catalog_url: str,
+) -> dict[str, object]:
+    expected_years = list(range(2009, 2026))
+    actual_years = [dataset.year for dataset in graduate_datasets]
+    if actual_years != expected_years:
+        raise EducationWorkbookSchemaError(
+            f"Graduate datasets must cover ordered years 2009 through 2025; got {actual_years!r}"
+        )
+    source_years = [source.get("year") for source in graduate_sources]
+    if source_years != expected_years:
+        raise EducationWorkbookSchemaError(
+            f"Graduate sources must cover ordered years 2009 through 2025; got {source_years!r}"
+        )
+    if current_students.year != 2025 or current_students_source.get("year") != 2025:
+        raise EducationWorkbookSchemaError(
+            "Current-student dataset and source must identify year 2025"
+        )
+    if not catalog_url:
+        raise EducationWorkbookSchemaError("Field education catalog URL is required")
+
+    context_by_year = {item.year: item for item in context}
+    for dataset in graduate_datasets:
+        context_year = context_by_year.get(dataset.year)
+        if context_year is None or dataset.national_total != context_year.graduates:
+            expected = None if context_year is None else context_year.graduates
+            raise EducationWorkbookSchemaError(
+                f"Graduate total for {dataset.year} is {dataset.national_total}; "
+                f"national context requires {expected}"
+            )
+    context_2025 = context_by_year.get(2025)
+    if context_2025 is None or current_students.national_total != context_2025.students:
+        expected = None if context_2025 is None else context_2025.students
+        raise EducationWorkbookSchemaError(
+            f"Current-student total is {current_students.national_total}; "
+            f"national context requires {expected}"
+        )
+
+    field_keys = sorted(
+        catalog.labels,
+        key=lambda field_key: (
+            normalize_search(catalog.labels[field_key]),
+            catalog.labels[field_key],
+            field_key,
+        ),
+    )
+    rows = [
+        {
+            "fieldKey": field_key,
+            "canonicalLabel": catalog.labels[field_key],
+            "graduateCounts": [
+                dataset.counts_by_field_key.get(field_key)
+                for dataset in graduate_datasets
+            ],
+            "currentStudentCount": current_students.counts_by_field_key.get(field_key),
+        }
+        for field_key in field_keys
+    ]
+    return {
+        "schemaVersion": 2,
+        "startYear": 2009,
+        "endYear": 2025,
+        "catalogUrl": catalog_url,
+        "graduateSources": [dict(source) for source in graduate_sources],
+        "currentStudentsSource": dict(current_students_source),
+        "years": [
+            {
+                "year": dataset.year,
+                "programRowCount": dataset.program_row_count,
+                "nationalGraduateCount": dataset.national_total,
+            }
+            for dataset in graduate_datasets
+        ],
+        "rows": rows,
+    }

@@ -10,6 +10,8 @@ import pipeline.field_education as field_education
 from pipeline.context import load_context
 from pipeline.field_education import (
     EducationWorkbookSchemaError,
+    ProgramFieldDataset,
+    build_field_education_comparison,
     graduate_program_label,
     load_current_student_fields,
     load_graduate_fields,
@@ -166,6 +168,45 @@ def test_current_student_parser_sums_only_nationality_totals(monkeypatch: pytest
     assert dataset.program_row_count == 6
     assert dataset.national_total == 330
     assert dataset.counts_by_field_key == {"matematika": 330}
+
+
+def test_comparison_preserves_observed_zeroes_and_missing_labels() -> None:
+    graduate_datasets = [
+        ProgramFieldDataset(
+            year=year,
+            program_row_count=1,
+            national_total=0,
+            counts_by_field_key={"observed": 0},
+        )
+        for year in range(2009, 2026)
+    ]
+    current_students = ProgramFieldDataset(
+        year=2025,
+        program_row_count=1,
+        national_total=0,
+        counts_by_field_key={"observed": 0},
+    )
+    sources = [{"year": year} for year in range(2009, 2026)]
+    context = [
+        SimpleNamespace(year=year, graduates=0, students=0)
+        for year in range(2009, 2026)
+    ]
+
+    comparison = build_field_education_comparison(
+        graduate_datasets,
+        current_students,
+        SimpleNamespace(labels={"missing": "Missing", "observed": "Observed"}),
+        context,
+        sources,
+        {"year": 2025},
+        catalog_url="https://example.test/catalog",
+    )
+
+    rows = {row["fieldKey"]: row for row in comparison["rows"]}
+    assert rows["observed"]["graduateCounts"] == [0] * 17
+    assert rows["observed"]["currentStudentCount"] == 0
+    assert rows["missing"]["graduateCounts"] == [None] * 17
+    assert rows["missing"]["currentStudentCount"] is None
 
 
 def test_pinned_workbooks_reconcile_with_national_context() -> None:

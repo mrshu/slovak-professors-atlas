@@ -1,12 +1,16 @@
 import { describe, expect, it } from 'vitest'
+import productionAtlasValue from '../../public/data/atlas.json'
 
 import type {
   Appointment,
+  AtlasData,
   FieldCatalog,
   FieldEducationComparison,
 } from '../data/types'
 import { normalizeForSearch } from '../utils/search'
 import { buildFieldEducationLandscape } from './fieldEducation'
+
+const productionAtlas = productionAtlasValue as unknown as AtlasData
 
 const years = Array.from({ length: 17 }, (_, index) => ({
   year: 2009 + index,
@@ -145,5 +149,25 @@ describe('buildFieldEducationLandscape', () => {
     expect(landscape.points[0].graduatesPerAppointment).not.toBe(
       99_999 / landscape.points[0].appointmentCount,
     )
+  })
+
+  it('pins production coverage for the complete generated atlas', () => {
+    const landscape = buildFieldEducationLandscape(
+      productionAtlas.records,
+      productionAtlas.fieldCatalog,
+      productionAtlas.fieldEducationComparison,
+    )
+
+    expect(landscape.coverage).toEqual({
+      exactAppointmentCount: 1_347,
+      aliasAppointmentCount: 7,
+      matchedAppointmentCount: 1_354,
+      appointmentCount: 1_400,
+      matchedFieldCount: 232,
+      fieldCount: 250,
+      yearCount: 17,
+    })
+    expect(landscape.points).toHaveLength(232)
+    expect(landscape.unmatched).toHaveLength(18)
   })
 })

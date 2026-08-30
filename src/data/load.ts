@@ -3,6 +3,8 @@ import type { AtlasData } from './types'
 
 export const ATLAS_LOAD_MESSAGE =
   'Dáta sa teraz nedajú bezpečne zobraziť. Skúste stránku načítať znova.'
+const SHA256 = /^[0-9a-f]{64}$/u
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/u
 
 export class AtlasLoadError extends Error {
   constructor(cause: unknown) {
@@ -18,9 +20,6 @@ interface AtlasCandidate {
     higher_education?: Partial<
       Record<keyof AtlasData['sources']['higher_education'], unknown>
     >
-    graduates_by_field_2025?: Partial<
-      Record<keyof AtlasData['sources']['graduates_by_field_2025'], unknown>
-    >
     population?: Partial<Record<keyof AtlasData['sources']['population'], unknown>>
   }
   records?: unknown
@@ -30,7 +29,7 @@ interface AtlasCandidate {
   presidents?: unknown
   context?: unknown
   fieldCatalog?: unknown
-  fieldGraduateComparison?: unknown
+  fieldEducationComparison?: unknown
   geography?: { type?: unknown }
   editorialFacts?: {
     graduateThroughputPeak?: { statementSk?: unknown }
@@ -44,6 +43,19 @@ function assertAtlasData(value: unknown): asserts value is AtlasData {
     throw new TypeError('Atlas payload is not an object')
   }
   const candidate = value as AtlasCandidate
+  const rawCandidate = value as Record<string, unknown>
+  if ('fieldGraduateComparison' in rawCandidate) {
+    throw new TypeError('Atlas contains the retired field graduate comparison')
+  }
+  if (
+    typeof candidate.sources !== 'object' ||
+    candidate.sources === null ||
+    Array.isArray(candidate.sources) ||
+    Object.keys(candidate.sources).sort().join(',') !==
+      ['higher_education', 'population', 'professors'].sort().join(',')
+  ) {
+    throw new TypeError('Atlas source set is invalid')
+  }
   const meta = candidate.meta
 
   if (
@@ -267,7 +279,6 @@ function assertAtlasData(value: unknown): asserts value is AtlasData {
   for (const [label, source] of [
     ['professors', candidate.sources?.professors],
     ['higher_education', candidate.sources?.higher_education],
-    ['graduates_by_field_2025', candidate.sources?.graduates_by_field_2025],
     ['population', candidate.sources?.population],
   ] as const) {
     if (
@@ -277,21 +288,14 @@ function assertAtlasData(value: unknown): asserts value is AtlasData {
       typeof source.url !== 'string' ||
       source.url.length === 0 ||
       typeof source.sha256 !== 'string' ||
-      source.sha256.length === 0 ||
+      !SHA256.test(source.sha256) ||
       typeof source.retrievedOn !== 'string' ||
-      source.retrievedOn.length === 0
+      !ISO_DATE.test(source.retrievedOn)
     ) {
       throw new TypeError(`Atlas source ${label} is incomplete`)
     }
   }
 
-  const graduateSource = candidate.sources?.graduates_by_field_2025
-  if (
-    typeof graduateSource?.catalogUrl !== 'string' ||
-    graduateSource.catalogUrl.length === 0
-  ) {
-    throw new TypeError('Atlas source graduates_by_field_2025 is incomplete')
-  }
   const populationSource = candidate.sources?.population
   if (
     typeof populationSource?.catalogUrl !== 'string' ||
@@ -302,12 +306,22 @@ function assertAtlasData(value: unknown): asserts value is AtlasData {
     throw new TypeError('Atlas source population is incomplete')
   }
 
+  const contextByYear = new Map<number, Record<string, unknown>>()
   for (const value of candidate.context as unknown[]) {
     if (typeof value !== 'object' || value === null || Array.isArray(value)) {
       throw new TypeError('Atlas context row is invalid')
     }
     const context = value as Record<string, unknown>
     if (
+      typeof context.year !== 'number' ||
+      !Number.isInteger(context.year) ||
+      contextByYear.has(context.year) ||
+      typeof context.students !== 'number' ||
+      !Number.isInteger(context.students) ||
+      context.students < 0 ||
+      typeof context.graduates !== 'number' ||
+      !Number.isInteger(context.graduates) ||
+      context.graduates < 0 ||
       typeof context.population !== 'number' ||
       !Number.isInteger(context.population) ||
       context.population <= 0 ||
@@ -320,105 +334,158 @@ function assertAtlasData(value: unknown): asserts value is AtlasData {
     ) {
       throw new TypeError('Atlas context population metrics are invalid')
     }
+    contextByYear.set(context.year, context)
   }
 
 
-  const comparison = candidate.fieldGraduateComparison
-  if (typeof comparison !== 'object' || comparison === null || Array.isArray(comparison)) {
-    throw new TypeError('Atlas field graduate comparison is missing')
+  const comparison = candidate.fieldEducationComparison
+  if (
+    typeof comparison !== 'object' ||
+    comparison === null ||
+    Array.isArray(comparison)
+  ) {
+    throw new TypeError('Atlas field education comparison is missing')
   }
   const comparisonRecord = comparison as Record<string, unknown>
-  if (comparisonRecord.schemaVersion !== 1 || comparisonRecord.year !== 2025) {
-    throw new TypeError('Atlas field graduate comparison version is not supported')
-  }
-
-  for (const key of [
-    'appointmentCount',
-    'matchedAppointmentCount',
-    'distinctFieldCount',
-    'matchedDistinctFieldCount',
-  ] as const) {
-    const count = comparisonRecord[key]
-    if (typeof count !== 'number' || !Number.isInteger(count) || count < 0) {
-      throw new TypeError(`Atlas field graduate comparison ${key} is invalid`)
-    }
+  if (
+    comparisonRecord.schemaVersion !== 2 ||
+    comparisonRecord.startYear !== 2009 ||
+    comparisonRecord.endYear !== 2025 ||
+    typeof comparisonRecord.catalogUrl !== 'string' ||
+    comparisonRecord.catalogUrl.length === 0 ||
+    Object.keys(comparisonRecord).sort().join(',') !==
+      [
+        'catalogUrl',
+        'currentStudentsSource',
+        'endYear',
+        'graduateSources',
+        'rows',
+        'schemaVersion',
+        'startYear',
+        'years',
+      ].sort().join(',')
+  ) {
+    throw new TypeError('Atlas field education comparison version is not supported')
   }
   if (
-    typeof comparisonRecord.matchedAppointmentShare !== 'number' ||
-    !Number.isFinite(comparisonRecord.matchedAppointmentShare) ||
-    comparisonRecord.matchedAppointmentShare < 0 ||
-    comparisonRecord.matchedAppointmentShare > 100
+    !Array.isArray(comparisonRecord.graduateSources) ||
+    !Array.isArray(comparisonRecord.years) ||
+    !Array.isArray(comparisonRecord.rows) ||
+    comparisonRecord.graduateSources.length !== 17 ||
+    comparisonRecord.years.length !== 17
   ) {
-    throw new TypeError('Atlas field graduate comparison coverage is invalid')
+    throw new TypeError('Atlas field education annual arrays are incomplete')
   }
 
-  const comparisonSource = comparisonRecord.source
-  if (
-    typeof comparisonSource !== 'object' ||
-    comparisonSource === null ||
-    Array.isArray(comparisonSource)
-  ) {
-    throw new TypeError('Atlas field graduate comparison source is missing')
-  }
-  for (const key of ['url', 'catalogUrl', 'sha256', 'retrievedOn'] as const) {
+  for (let index = 0; index < 17; index += 1) {
+    const expectedYear = 2009 + index
+    const sourceValue = comparisonRecord.graduateSources[index]
     if (
-      typeof (comparisonSource as Record<string, unknown>)[key] !== 'string' ||
-      ((comparisonSource as Record<string, string>)[key]?.length ?? 0) === 0
+      typeof sourceValue !== 'object' ||
+      sourceValue === null ||
+      Array.isArray(sourceValue)
     ) {
-      throw new TypeError(`Atlas field graduate comparison source ${key} is missing`)
+      throw new TypeError(`Atlas graduate source ${expectedYear} is invalid`)
+    }
+    const source = sourceValue as Record<string, unknown>
+    if (
+      source.year !== expectedYear ||
+      typeof source.url !== 'string' ||
+      source.url.length === 0 ||
+      typeof source.sha256 !== 'string' ||
+      !SHA256.test(source.sha256) ||
+      typeof source.retrievedOn !== 'string' ||
+      !ISO_DATE.test(source.retrievedOn) ||
+      source.localPath !== `graduates-by-field/${expectedYear}.xls` ||
+      (expectedYear < 2025
+        ? typeof source.archiveMember !== 'string' || source.archiveMember.length === 0
+        : source.archiveMember !== null)
+    ) {
+      throw new TypeError(`Atlas graduate source ${expectedYear} is incomplete`)
+    }
+
+    const metadataValue = comparisonRecord.years[index]
+    if (
+      typeof metadataValue !== 'object' ||
+      metadataValue === null ||
+      Array.isArray(metadataValue)
+    ) {
+      throw new TypeError(`Atlas field education year ${expectedYear} is invalid`)
+    }
+    const metadata = metadataValue as Record<string, unknown>
+    const context = contextByYear.get(expectedYear)
+    if (
+      metadata.year !== expectedYear ||
+      typeof metadata.programRowCount !== 'number' ||
+      !Number.isInteger(metadata.programRowCount) ||
+      metadata.programRowCount <= 0 ||
+      typeof metadata.nationalGraduateCount !== 'number' ||
+      !Number.isInteger(metadata.nationalGraduateCount) ||
+      metadata.nationalGraduateCount < 0 ||
+      metadata.nationalGraduateCount !== context?.graduates
+    ) {
+      throw new TypeError(`Atlas field education year ${expectedYear} is inconsistent`)
     }
   }
 
-  if (!Array.isArray(comparisonRecord.rows)) {
-    throw new TypeError('Atlas field graduate comparison rows are missing')
+  const currentSourceValue = comparisonRecord.currentStudentsSource
+  if (
+    typeof currentSourceValue !== 'object' ||
+    currentSourceValue === null ||
+    Array.isArray(currentSourceValue)
+  ) {
+    throw new TypeError('Atlas current-student source is invalid')
   }
-  let appointmentCount = 0
-  let matchedAppointmentCount = 0
-  let matchedDistinctFieldCount = 0
+  const currentSource = currentSourceValue as Record<string, unknown>
+  if (
+    currentSource.year !== 2025 ||
+    currentSource.archiveMember !== null ||
+    currentSource.localPath !== 'current-students-by-field-2025.xls' ||
+    typeof currentSource.url !== 'string' ||
+    currentSource.url.length === 0 ||
+    typeof currentSource.sha256 !== 'string' ||
+    !SHA256.test(currentSource.sha256) ||
+    typeof currentSource.retrievedOn !== 'string' ||
+    !ISO_DATE.test(currentSource.retrievedOn)
+  ) {
+    throw new TypeError('Atlas current-student source is incomplete')
+  }
+
+  const comparisonFieldKeys = new Set<string>()
   for (const value of comparisonRecord.rows) {
     if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-      throw new TypeError('Atlas field graduate comparison row is invalid')
+      throw new TypeError('Atlas field education row is invalid')
     }
     const row = value as Record<string, unknown>
+    const fieldKey = row.fieldKey
     if (
-      typeof row.field !== 'string' ||
-      row.field.trim().length === 0 ||
-      typeof row.appointmentCount !== 'number' ||
-      !Number.isInteger(row.appointmentCount) ||
-      row.appointmentCount <= 0
+      typeof fieldKey !== 'string' ||
+      comparisonFieldKeys.has(fieldKey) ||
+      !(fieldKey in fieldLabels) ||
+      row.canonicalLabel !== fieldLabels[fieldKey] ||
+      !Array.isArray(row.graduateCounts) ||
+      row.graduateCounts.length !== 17 ||
+      row.graduateCounts.some(
+        (count) =>
+          count !== null &&
+          (typeof count !== 'number' || !Number.isInteger(count) || count < 0),
+      ) ||
+      !(
+        row.currentStudentCount === null ||
+        (typeof row.currentStudentCount === 'number' &&
+          Number.isInteger(row.currentStudentCount) &&
+          row.currentStudentCount >= 0)
+      )
     ) {
-      throw new TypeError('Atlas field graduate comparison row is incomplete')
+      throw new TypeError('Atlas field education row is inconsistent')
     }
-
-    const exact = row.matchStatus === 'exact'
-    const unmatched = row.matchStatus === 'unmatched'
-    if (
-      (!exact && !unmatched) ||
-      (exact &&
-        (typeof row.graduateCount !== 'number' ||
-          !Number.isInteger(row.graduateCount) ||
-          row.graduateCount < 0 ||
-          typeof row.graduatesPerAppointment !== 'number' ||
-          !Number.isFinite(row.graduatesPerAppointment) ||
-          row.graduatesPerAppointment < 0)) ||
-      (unmatched && (row.graduateCount !== null || row.graduatesPerAppointment !== null))
-    ) {
-      throw new TypeError('Atlas field graduate comparison row match is inconsistent')
-    }
-
-    appointmentCount += row.appointmentCount
-    if (exact) {
-      matchedAppointmentCount += row.appointmentCount
-      matchedDistinctFieldCount += 1
-    }
+    comparisonFieldKeys.add(fieldKey)
   }
   if (
-    appointmentCount !== comparisonRecord.appointmentCount ||
-    matchedAppointmentCount !== comparisonRecord.matchedAppointmentCount ||
-    comparisonRecord.rows.length !== comparisonRecord.distinctFieldCount ||
-    matchedDistinctFieldCount !== comparisonRecord.matchedDistinctFieldCount
+    comparisonFieldKeys.size !== Object.keys(fieldLabels).length ||
+    Object.keys(fieldLabels).some((fieldKey) => !comparisonFieldKeys.has(fieldKey))
   ) {
-    throw new TypeError('Atlas field graduate comparison totals are inconsistent')
+    throw new TypeError('Atlas field education rows do not cover the reviewed catalog')
   }
 
   if (

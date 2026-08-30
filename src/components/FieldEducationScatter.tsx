@@ -124,6 +124,7 @@ export default function FieldEducationScatter({
 }: FieldEducationScatterProps) {
   const [mode, setMode] = useState<ScaleMode>('log')
   const [hoveredKey, setHoveredKey] = useState<string | null>(null)
+  const [hasKeyboardFocus, setHasKeyboardFocus] = useState(false)
   const initialKey = selectedField !== null && points.some(({ fieldKey }) => fieldKey === selectedField)
     ? selectedField
     : points[0]?.fieldKey ?? null
@@ -162,7 +163,7 @@ export default function FieldEducationScatter({
     return <p className="field-education-scatter__empty" role="status">Pre mapu odborov nie sú dostupné žiadne spárované údaje.</p>
   }
 
-  const inspectedKey = hoveredKey ?? selectedField ?? activeKey
+  const inspectedKey = hoveredKey ?? (hasKeyboardFocus ? activeKey : null)
   const inspected = inspectedKey === null ? null : projectedByKey.get(inspectedKey) ?? null
   const selected = selectedField === null ? null : projectedByKey.get(selectedField) ?? null
 
@@ -252,9 +253,20 @@ export default function FieldEducationScatter({
                 r={point.fieldKey === selectedField ? 4.5 : 3.2}
               />
             ))}
-            {projected.filter(({ fieldKey }) => labelKeys.has(fieldKey)).map((point) => (
-              <text key={point.fieldKey} className="field-education-scatter__label" x={point.x + 8} y={point.y - 8}>{point.canonicalLabel}</text>
-            ))}
+            {projected.filter(({ fieldKey }) => labelKeys.has(fieldKey)).map((point) => {
+              const rightAligned = point.x > PLOT.x + PLOT.width * 0.72
+              return (
+                <text
+                  key={point.fieldKey}
+                  className="field-education-scatter__label"
+                  x={point.x + (rightAligned ? -8 : 8)}
+                  y={point.y - 8}
+                  textAnchor={rightAligned ? 'end' : 'start'}
+                >
+                  {point.canonicalLabel}
+                </text>
+              )
+            })}
           </g>
           <rect
             className="field-education-scatter__target"
@@ -270,6 +282,8 @@ export default function FieldEducationScatter({
             onPointerLeave={() => setHoveredKey(null)}
             onPointerUp={handlePointerUp}
             onKeyDown={handleKeyDown}
+            onFocus={() => setHasKeyboardFocus(true)}
+            onBlur={() => setHasKeyboardFocus(false)}
           />
         </svg>
         {inspected === null ? null : <Preview point={inspected} />}

@@ -10,12 +10,6 @@
       "sha256": "def7a52f5fe139dfcd01d88a141d3d65fafc33581a19082bf07fa62b1d06f59e",
       "retrievedOn": "2026-08-29"
     },
-    "graduates_by_field_2025": {
-      "url": "https://www.cvtisr.sk/buxus/docs//JC/ROCENKA/VS/abvs_2.xls",
-      "catalogUrl": "https://www.cvtisr.sk/cvti-sr-vedecka-kniznica/informacie-o-skolstve/statistiky/statisticka-rocenka-publikacia/statisticka-rocenka-vysoke-skoly.html?page_id=9596",
-      "sha256": "2bfc9bf67bcf7c1d4ed5e80296d498f634a9c8c9b949bf70f839a9bf90ba7729",
-      "retrievedOn": "2026-08-29"
-    },
     "population": {
       "url": "https://data.statistics.sk/api/v2/dataset/om7102rr/SK0/2000:2025/IN010114/SPOLU?lang=en&type=json",
       "catalogUrl": "https://datacube.statistics.sk/#!/view/en/VBD_DEM/om7102rr/v_om7102rr_00_00_00_en",

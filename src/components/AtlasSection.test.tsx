@@ -206,7 +206,10 @@ const data = {
   fieldCatalog: {
     schemaVersion: 1,
     aliases: [],
-    labels: Object.fromEntries(records.map(({ fieldKey, field }) => [fieldKey, field])),
+    labels: {
+      ...Object.fromEntries(records.map(({ fieldKey, field }) => [fieldKey, field])),
+      'vnutorne lekarstvo': 'Vnútorné lekárstvo',
+    },
   },
   context: [{ year: 2025 }],
   geography: {

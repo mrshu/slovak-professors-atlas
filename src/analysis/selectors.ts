@@ -208,12 +208,6 @@ export function filterAppointments(data: AtlasData, filters: FilterState): Appoi
   })
 }
 
-export function filterAppointmentsExceptField(
-  data: AtlasData,
-  filters: FilterState,
-): Appointment[] {
-  return filterAppointments(data, { ...filters, field: null })
-}
 
 export function institutionRanking(
   records: readonly Appointment[],

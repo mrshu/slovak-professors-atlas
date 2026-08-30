@@ -117,13 +117,6 @@ const data: AtlasData = {
       sha256: 'def7a52f5fe139dfcd01d88a141d3d65fafc33581a19082bf07fa62b1d06f59e',
       retrievedOn: '2026-08-29',
     },
-    graduates_by_field_2025: {
-      url: 'https://www.cvtisr.sk/buxus/docs//JC/ROCENKA/VS/abvs_2.xls',
-      catalogUrl:
-        'https://www.cvtisr.sk/cvti-sr-vedecka-kniznica/informacie-o-skolstve/statistiky/statisticka-rocenka-publikacia/statisticka-rocenka-vysoke-skoly.html?page_id=9596',
-      sha256: '2bfc9bf67bcf7c1d4ed5e80296d498f634a9c8c9b949bf70f839a9bf90ba7729',
-      retrievedOn: '2026-08-29',
-    },
     population: {
       url: 'https://data.statistics.sk/api/v2/dataset/om7102rr/SK0/2000:2025/IN010114/SPOLU?lang=en&type=json',
       catalogUrl:
@@ -196,22 +189,46 @@ const data: AtlasData = {
       robotika: 'robotika',
     },
   },
-  fieldGraduateComparison: {
-    schemaVersion: 1,
-    year: 2025,
-    source: {
-      url: 'https://www.cvtisr.sk/buxus/docs//JC/ROCENKA/VS/abvs_2.xls',
-      catalogUrl:
-        'https://www.cvtisr.sk/cvti-sr-vedecka-kniznica/informacie-o-skolstve/statistiky/statisticka-rocenka-publikacia/statisticka-rocenka-vysoke-skoly.html?page_id=9596',
+  fieldEducationComparison: {
+    schemaVersion: 2,
+    startYear: 2009,
+    endYear: 2025,
+    catalogUrl: 'https://www.cvtisr.sk/catalog',
+    graduateSources: Array.from({ length: 17 }, (_, index) => ({
+      year: 2009 + index,
+      url: `https://www.cvtisr.sk/graduates/${2009 + index}.xls`,
+      archiveMember: index < 16 ? `archive/${2009 + index}.xls` : null,
       sha256: '2bfc9bf67bcf7c1d4ed5e80296d498f634a9c8c9b949bf70f839a9bf90ba7729',
       retrievedOn: '2026-08-29',
+      localPath: `graduates-by-field/${2009 + index}.xls`,
+    })),
+    currentStudentsSource: {
+      year: 2025,
+      url: 'https://www.cvtisr.sk/students/2025.xls',
+      archiveMember: null,
+      sha256: '2bfc9bf67bcf7c1d4ed5e80296d498f634a9c8c9b949bf70f839a9bf90ba7729',
+      retrievedOn: '2026-08-29',
+      localPath: 'current-students-by-field-2025.xls',
     },
-    appointmentCount: 0,
-    matchedAppointmentCount: 0,
-    matchedAppointmentShare: 0,
-    distinctFieldCount: 0,
-    matchedDistinctFieldCount: 0,
-    rows: [],
+    years: Array.from({ length: 17 }, (_, index) => ({
+      year: 2009 + index,
+      programRowCount: 1,
+      nationalGraduateCount: 1,
+    })),
+    rows: [
+      {
+        fieldKey: 'historia',
+        canonicalLabel: 'história',
+        graduateCounts: Array.from({ length: 17 }, () => 1),
+        currentStudentCount: 1,
+      },
+      {
+        fieldKey: 'robotika',
+        canonicalLabel: 'robotika',
+        graduateCounts: Array.from({ length: 17 }, () => null),
+        currentStudentCount: null,
+      },
+    ],
   },
   context: [],
   geography: {

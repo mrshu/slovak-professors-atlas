@@ -131,17 +131,22 @@ export default function Methodology({ data, status }: MethodologyProps) {
 
             <section aria-labelledby="method-fields-title">
               <p className="methodology-sections__index" aria-hidden="true">03</p>
-              <h3 id="method-fields-title">Presné názvy odborov, nie taxonómia</h3>
+              <h3 id="method-fields-title">Pevné obdobie a recenzovaný katalóg odborov</h3>
               <p>
-                Celkový rebríček zoskupuje odbory iba po odstránení diakritiky, zjednotení veľkosti
-                písmen a orezaní či zlúčení medzier; interpunkcia a význam názvu sa nemenia a
-                zdrojové podoby zostávajú viditeľné. Rovnaké názvy programov môžu patriť do rôznych
-                kategórií, preto atlas nevytvára širšie disciplíny.
+                Odborová vrstva používa rovnaké pevné obdobie <strong>2009 – 2025</strong> pre
+                vymenovania aj absolventov. Súradnica bodu je súčet udalostí vymenovania v odbore
+                a súčet absolventov zo 17 ročných zošitov CVTI; číslo pri bode je teda{' '}
+                <strong>tok ÷ tok</strong>, nie pravdepodobnosť, konverzia osoby ani príčinný
+                vzťah. Aktuálni študenti v roku 2025 sú stav a zobrazujú sa iba ako oddelený
+                kontext, nie v osi ani v pomere.
               </p>
               <p>
-                Porovnanie za rok 2025 spája dva samostatné registre iba pri presnej zhode takto
-                normalizovaného názvu. Nezhody ostávajú označené a pomer absolventov k vymenovaniu
-                nie je konverziou, príčinným vzťahom ani hodnotením kvality.
+                Každý ročný zošit sa najprv sčíta po riadkoch študijných programov. Tie sa potom
+                priradia k ručne recenzovanému katalógu presných odborov. Katalóg zjednocuje iba
+                doložené historické, pravopisné a jazykové aliasy; samotná zhoda po odstránení
+                diakritiky alebo podobný význam nestačia. Zdrojové názvy vymenovaní ostávajú
+                viditeľné. Nula znamená pozorovanú nulu v zdroji, pomlčka chýbajúce pozorovanie.
+                Odbory bez bezpečnej zhody zostávajú explicitne mimo bodového grafu.
               </p>
             </section>
 
@@ -234,28 +239,49 @@ export default function Methodology({ data, status }: MethodologyProps) {
             </section>
 
 
-            <section aria-labelledby="field-graduate-sources-title">
-              <h3 id="field-graduate-sources-title">Absolventi podľa odboru 2025</h3>
+            <section aria-labelledby="field-education-sources-title">
+              <h3 id="field-education-sources-title">Absolventi a študenti podľa odboru</h3>
               <ul>
                 <li>
-                  <a href={data.sources.graduates_by_field_2025.catalogUrl}>
+                  <a href={data.fieldEducationComparison.catalogUrl}>
                     Katalóg štatistickej ročenky CVTI SR
                   </a>
                 </li>
                 <li>
-                  <a href={data.sources.graduates_by_field_2025.url}>
-                    Priamy oficiálny zošit absolventov (XLS)
+                  <a href={data.fieldEducationComparison.currentStudentsSource.url}>
+                    Oficiálny zošit aktuálnych študentov 2025 (XLS)
                   </a>
                 </li>
                 <li>
-                  <a href={`${baseUrl}data/source/graduates-by-field-2025.xls`} download>
-                    Uložený zošit absolventov podľa odboru (XLS)
+                  <a
+                    href={`${baseUrl}data/source/${data.fieldEducationComparison.currentStudentsSource.localPath}`}
+                    download
+                  >
+                    Uložený zošit aktuálnych študentov (XLS)
                   </a>
                 </li>
               </ul>
               <p className="method-sources__hash">
-                SHA-256: <code>{data.sources.graduates_by_field_2025.sha256}</code>
+                SHA-256 študentov:{' '}
+                <code>{data.fieldEducationComparison.currentStudentsSource.sha256}</code>
               </p>
+              <details>
+                <summary>17 ročných zošitov absolventov, 2009 – 2025</summary>
+                <ul>
+                  {data.fieldEducationComparison.graduateSources.map((source) => (
+                    <li key={source.year}>
+                      {source.year}:{' '}
+                      <a href={source.url}>oficiálny zdroj</a>
+                      {' · '}
+                      <a href={`${baseUrl}data/source/${source.localPath}`} download>
+                        uložený XLS
+                      </a>
+                      {' · '}
+                      <code>{source.sha256}</code>
+                    </li>
+                  ))}
+                </ul>
+              </details>
             </section>
           </div>
 
