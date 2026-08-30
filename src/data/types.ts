@@ -100,6 +100,42 @@ export interface SourceMetadata {
 export interface GraduateFieldSourceMetadata extends SourceMetadata {
   catalogUrl: string
 }
+
+export interface GraduateFieldYearSource extends SourceMetadata {
+  year: number
+  archiveMember: string | null
+  localPath: string
+}
+
+export interface CurrentStudentFieldSource extends SourceMetadata {
+  year: 2025
+  archiveMember: null
+  localPath: string
+}
+
+export interface FieldEducationYearMetadata {
+  year: number
+  programRowCount: number
+  nationalGraduateCount: number
+}
+
+export interface FieldEducationRow {
+  fieldKey: string
+  canonicalLabel: string
+  graduateCounts: Array<number | null>
+  currentStudentCount: number | null
+}
+
+export interface FieldEducationComparison {
+  schemaVersion: 2
+  startYear: 2009
+  endYear: 2025
+  catalogUrl: string
+  graduateSources: GraduateFieldYearSource[]
+  currentStudentsSource: CurrentStudentFieldSource
+  years: FieldEducationYearMetadata[]
+  rows: FieldEducationRow[]
+}
 export interface PopulationSourceMetadata extends SourceMetadata {
   catalogUrl: string
   denominatorDateConvention: string
