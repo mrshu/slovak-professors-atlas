@@ -4,6 +4,7 @@ import json
 from datetime import date
 from pathlib import Path
 from unittest.mock import patch
+from zipfile import ZIP_DEFLATED, ZipFile
 
 import pytest
 
@@ -228,3 +229,142 @@ def test_accept_new_checksums_updates_provenance_and_reports_changes(
     assert f"new sha256: {professor_sha256}" in output
     assert f"size: {len(PROFESSOR_BYTES)} bytes" in output
     assert f"destination: {destination / 'professors.xls'}" in output
+
+
+def test_download_sources_extracts_historical_members_and_current_students(
+    tmp_path: Path,
+) -> None:
+    provenance_path = tmp_path / "provenance.json"
+    destination = tmp_path / "source"
+    write_provenance(provenance_path)
+    provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
+    graduate_sources = []
+    archive_bytes_by_url: dict[str, bytes] = {}
+    for year in range(2009, 2025):
+        member = f"abvs{year}.xls"
+        workbook_bytes = f"graduates {year}".encode()
+        archive_url = f"https://example.test/vs{year}.zip"
+        archive_buffer = io.BytesIO()
+        with ZipFile(archive_buffer, "w", ZIP_DEFLATED) as archive:
+            archive.writestr(member, workbook_bytes)
+        archive_bytes_by_url[archive_url] = archive_buffer.getvalue()
+        graduate_sources.append(
+            {
+                "year": year,
+                "url": archive_url,
+                "archiveMember": member,
+                "sha256": hashlib.sha256(workbook_bytes).hexdigest(),
+                "retrievedOn": "2026-08-29",
+                "localPath": f"graduates-by-field/{year}.xls",
+            }
+        )
+    graduate_sources.append(
+        {
+            "year": 2025,
+            "url": SOURCE_URLS["graduates_by_field_2025"],
+            "archiveMember": None,
+            "sha256": hashlib.sha256(GRADUATES_BY_FIELD_BYTES).hexdigest(),
+            "retrievedOn": "2026-08-29",
+            "localPath": "graduates-by-field/2025.xls",
+        }
+    )
+    student_bytes = b"current students"
+    student_url = "https://example.test/current-students.xls"
+    provenance["fieldEducation"] = {
+        "catalogUrl": "https://example.test/catalog",
+        "graduateSources": graduate_sources,
+        "currentStudentsSource": {
+            "year": 2025,
+            "url": student_url,
+            "catalogUrl": "https://example.test/catalog",
+            "sha256": hashlib.sha256(student_bytes).hexdigest(),
+            "retrievedOn": "2026-08-29",
+            "localPath": "current-students-by-field-2025.xls",
+        },
+    }
+    provenance_path.write_text(json.dumps(provenance), encoding="utf-8")
+
+    def response(url: str):
+        if url in archive_bytes_by_url:
+            return io.BytesIO(archive_bytes_by_url[url])
+        direct = {
+            SOURCE_URLS["professors"]: PROFESSOR_BYTES,
+            SOURCE_URLS["higher_education"]: HIGHER_EDUCATION_BYTES,
+            SOURCE_URLS["graduates_by_field_2025"]: GRADUATES_BY_FIELD_BYTES,
+            SOURCE_URLS["population"]: POPULATION_BYTES,
+            student_url: student_bytes,
+        }
+        return io.BytesIO(direct[url])
+
+    with patch("scripts.update_data.urllib.request.urlopen", side_effect=response):
+        result = download_sources(provenance_path, destination)
+
+    assert len(result) == 21
+    assert (destination / "graduates-by-field/2009.xls").read_bytes() == b"graduates 2009"
+    assert (
+        destination / "graduates-by-field/2025.xls"
+    ).read_bytes() == GRADUATES_BY_FIELD_BYTES
+    assert (
+        destination / "current-students-by-field-2025.xls"
+    ).read_bytes() == student_bytes
+
+
+def test_archive_failure_preserves_every_existing_destination(tmp_path: Path) -> None:
+    provenance_path = tmp_path / "provenance.json"
+    destination = tmp_path / "source"
+    destination.mkdir()
+    existing = destination / "professors.xls"
+    existing.write_bytes(b"existing")
+    write_provenance(provenance_path)
+    provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
+    provenance["fieldEducation"] = {
+        "catalogUrl": "https://example.test/catalog",
+        "graduateSources": [
+            {
+                "year": year,
+                "url": f"https://example.test/vs{year}.zip",
+                "archiveMember": f"missing-{year}.xls",
+                "sha256": "0" * 64,
+                "retrievedOn": "2026-08-29",
+                "localPath": f"graduates-by-field/{year}.xls",
+            }
+            for year in range(2009, 2025)
+        ]
+        + [
+            {
+                "year": 2025,
+                "url": SOURCE_URLS["graduates_by_field_2025"],
+                "archiveMember": None,
+                "sha256": hashlib.sha256(GRADUATES_BY_FIELD_BYTES).hexdigest(),
+                "retrievedOn": "2026-08-29",
+                "localPath": "graduates-by-field/2025.xls",
+            }
+        ],
+        "currentStudentsSource": {
+            "year": 2025,
+            "url": "https://example.test/current-students.xls",
+            "catalogUrl": "https://example.test/catalog",
+            "sha256": "0" * 64,
+            "retrievedOn": "2026-08-29",
+            "localPath": "current-students-by-field-2025.xls",
+        },
+    }
+    provenance_path.write_text(json.dumps(provenance), encoding="utf-8")
+    archive_buffer = io.BytesIO()
+    with ZipFile(archive_buffer, "w", ZIP_DEFLATED) as archive:
+        archive.writestr("different.xls", b"changed")
+
+    with patch(
+        "scripts.update_data.urllib.request.urlopen",
+        side_effect=[
+            io.BytesIO(PROFESSOR_BYTES),
+            io.BytesIO(HIGHER_EDUCATION_BYTES),
+            io.BytesIO(POPULATION_BYTES),
+            io.BytesIO(archive_buffer.getvalue()),
+        ],
+    ):
+        with pytest.raises(SourceIntegrityError, match="archive member"):
+            download_sources(provenance_path, destination)
+
+    assert existing.read_bytes() == b"existing"
+    assert {path.name for path in destination.iterdir()} == {"professors.xls"}

@@ -44,7 +44,7 @@ _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_PROFESSORS_PATH = _PROJECT_ROOT / "public/data/source/professors.xls"
 DEFAULT_CONTEXT_PATH = _PROJECT_ROOT / "public/data/source/higher-education.xls"
 DEFAULT_GRADUATES_BY_FIELD_PATH = (
-    _PROJECT_ROOT / "public/data/source/graduates-by-field-2025.xls"
+    _PROJECT_ROOT / "public/data/source/graduates-by-field/2025.xls"
 )
 DEFAULT_POPULATION_PATH = _PROJECT_ROOT / "public/data/source/population.json"
 DEFAULT_GEOMETRY_PATH = _PROJECT_ROOT / "data/config/slovakia.geojson"

@@ -43,5 +43,154 @@
       },
       "denominatorDateConvention": "Mid-year population at midnight from 30 June to 1 July of the reference calendar year."
     }
+  },
+  "fieldEducation": {
+    "catalogUrl": "https://www.cvtisr.sk/cvti-sr-vedecka-kniznica/informacie-o-skolstve/statistiky/statisticka-rocenka-publikacia/statisticka-rocenka-vysoke-skoly.html?page_id=9596",
+    "graduateSources": [
+      {
+        "year": 2009,
+        "url": "https://www.cvtisr.sk/buxus/docs//JC/ROCENKA/VS/vs2009.zip",
+        "archiveMember": "abvs2009.XLS",
+        "retrievedOn": "2026-08-30",
+        "localPath": "graduates-by-field/2009.xls",
+        "sha256": "26270799f1f11db0f8d76e95e3c907a8a07705daa0acfc15839b6c2ab4831610"
+      },
+      {
+        "year": 2010,
+        "url": "https://www.cvtisr.sk/buxus/docs//JC/ROCENKA/VS/vs2010.zip",
+        "archiveMember": "abvs2010.XLS",
+        "retrievedOn": "2026-08-30",
+        "localPath": "graduates-by-field/2010.xls",
+        "sha256": "a98c47f9d33c28dc417dfccef6c6c4a69d687780394ba30cae1b00907d53ec85"
+      },
+      {
+        "year": 2011,
+        "url": "https://www.cvtisr.sk/buxus/docs//JC/ROCENKA/VS/vs2011.zip",
+        "archiveMember": "abvs2011.XLS",
+        "retrievedOn": "2026-08-30",
+        "localPath": "graduates-by-field/2011.xls",
+        "sha256": "23b81678a4946aa1ed373056b3c56e6c9432c616974439a82cde6f117df74d01"
+      },
+      {
+        "year": 2012,
+        "url": "https://www.cvtisr.sk/buxus/docs//JC/ROCENKA/VS/vs2012.zip",
+        "archiveMember": "abvs2012.XLS",
+        "retrievedOn": "2026-08-30",
+        "localPath": "graduates-by-field/2012.xls",
+        "sha256": "f3a72c04a33c8f1de95ae8751eb500a4a5da423ca9a75585ce35b208a7191050"
+      },
+      {
+        "year": 2013,
+        "url": "https://www.cvtisr.sk/buxus/docs//JC/ROCENKA/VS/vs2013.zip",
+        "archiveMember": "abvs2013.XLS",
+        "retrievedOn": "2026-08-30",
+        "localPath": "graduates-by-field/2013.xls",
+        "sha256": "9216f453ac2ad801200264b0b98d07e41fc04048b5da6a41165619c2fcc03b79"
+      },
+      {
+        "year": 2014,
+        "url": "https://www.cvtisr.sk/buxus/docs//JC/ROCENKA/VS/vs2014.zip",
+        "archiveMember": "abvs2014.xls",
+        "retrievedOn": "2026-08-30",
+        "localPath": "graduates-by-field/2014.xls",
+        "sha256": "963de8cb9fc9ab083f3f3629f111de6be98785e31e46d3428887737fabf417f0"
+      },
+      {
+        "year": 2015,
+        "url": "https://www.cvtisr.sk/buxus/docs//JC/ROCENKA/VS/vs2015.zip",
+        "archiveMember": "abvs2015.xls",
+        "retrievedOn": "2026-08-30",
+        "localPath": "graduates-by-field/2015.xls",
+        "sha256": "94cadb52104be39ab15bdf0cf5c0d41f98e3e3beb6eb5c40a9379fa1c20d9782"
+      },
+      {
+        "year": 2016,
+        "url": "https://www.cvtisr.sk/buxus/docs//JC/ROCENKA/VS/vs2016.zip",
+        "archiveMember": "abvs2016.xls",
+        "retrievedOn": "2026-08-30",
+        "localPath": "graduates-by-field/2016.xls",
+        "sha256": "12c787423a2f7efd95486a557f470a22419372489751718f4836de695c8cb1ca"
+      },
+      {
+        "year": 2017,
+        "url": "https://www.cvtisr.sk/buxus/docs//JC/ROCENKA/VS/vs2017.zip",
+        "archiveMember": "abvs2017.xls",
+        "retrievedOn": "2026-08-30",
+        "localPath": "graduates-by-field/2017.xls",
+        "sha256": "1dc02a70bde888e73abd65ec0756a1d298ba6e5defcbb6dca00e833c6b081170"
+      },
+      {
+        "year": 2018,
+        "url": "https://www.cvtisr.sk/buxus/docs//JC/ROCENKA/VS/vs2018.zip",
+        "archiveMember": "abvs_2018.xls",
+        "retrievedOn": "2026-08-30",
+        "localPath": "graduates-by-field/2018.xls",
+        "sha256": "957f30953416c4803501f9ffc2328de9bfdefa7d6e0280393581eb0c7593dfee"
+      },
+      {
+        "year": 2019,
+        "url": "https://www.cvtisr.sk/buxus/docs//JC/ROCENKA/VS/vs2019.zip",
+        "archiveMember": "abvs_2019.xls",
+        "retrievedOn": "2026-08-30",
+        "localPath": "graduates-by-field/2019.xls",
+        "sha256": "774874eaa122c48b58a8c53e6e5de5f1f49ad824426d3d2286e40cccd27161ba"
+      },
+      {
+        "year": 2020,
+        "url": "https://www.cvtisr.sk/buxus/docs//JC/ROCENKA/VS/vs2020.zip",
+        "archiveMember": "abvs_2020.xls",
+        "retrievedOn": "2026-08-30",
+        "localPath": "graduates-by-field/2020.xls",
+        "sha256": "decb18c090bf79a48f2d41e3f644ea0fce7e78572ef32dd891216f2b5275725e"
+      },
+      {
+        "year": 2021,
+        "url": "https://www.cvtisr.sk/buxus/docs//JC/ROCENKA/VS/vs2021.zip",
+        "archiveMember": "abvs_2021.xls",
+        "retrievedOn": "2026-08-30",
+        "localPath": "graduates-by-field/2021.xls",
+        "sha256": "33a0a423887087b5a69b018e014de4bccc829d837a982c5533212d4458fe7fd3"
+      },
+      {
+        "year": 2022,
+        "url": "https://www.cvtisr.sk/buxus/docs//JC/ROCENKA/VS/vs2022.zip",
+        "archiveMember": "abvs2022.xls",
+        "retrievedOn": "2026-08-30",
+        "localPath": "graduates-by-field/2022.xls",
+        "sha256": "5dbc5f3f37e1f0eff3a64ea6da56ab6564726d98d9184f39dad1da7451d3842a"
+      },
+      {
+        "year": 2023,
+        "url": "https://www.cvtisr.sk/buxus/docs//JC/ROCENKA/VS/vs2023.zip",
+        "archiveMember": "abvs2023.xls",
+        "retrievedOn": "2026-08-30",
+        "localPath": "graduates-by-field/2023.xls",
+        "sha256": "649fbf3f519143a3b9191f4cbdffa0af67c242691353e8d1a61068da5af114e8"
+      },
+      {
+        "year": 2024,
+        "url": "https://www.cvtisr.sk/buxus/docs//JC/ROCENKA/VS/vs2024.zip",
+        "archiveMember": "abvs2024.xls",
+        "retrievedOn": "2026-08-30",
+        "localPath": "graduates-by-field/2024.xls",
+        "sha256": "9b186ba2c35e0f1442848229810cabf62dd9aabb259f391c400ad7500b9a4fed"
+      },
+      {
+        "year": 2025,
+        "url": "https://www.cvtisr.sk/buxus/docs//JC/ROCENKA/VS/abvs_2.xls",
+        "archiveMember": null,
+        "retrievedOn": "2026-08-30",
+        "localPath": "graduates-by-field/2025.xls",
+        "sha256": "2bfc9bf67bcf7c1d4ed5e80296d498f634a9c8c9b949bf70f839a9bf90ba7729"
+      }
+    ],
+    "currentStudentsSource": {
+      "year": 2025,
+      "url": "https://www.cvtisr.sk/buxus/docs//JC/ROCENKA/VS/vs_4.xls",
+      "archiveMember": null,
+      "retrievedOn": "2026-08-30",
+      "localPath": "current-students-by-field-2025.xls",
+      "sha256": "bbe547ad1042521fd71365a1c3b69ab8cfbaed054af295380492268dd9c19ff5"
+    }
   }
 }
