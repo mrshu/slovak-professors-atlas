@@ -206,7 +206,7 @@ export default function FieldEducationScatter({
       <figcaption>
         <div>
           <p className="eyebrow">Pevné obdobie 2009 – 2025</p>
-          <h3 id="field-education-scatter-title">Profesorské vymenovania × absolventi</h3>
+          <h3 id="field-education-scatter-title">Mapa spoločného obdobia</h3>
         </div>
         <div className="field-education-scatter__modes" aria-label="Mierka mapy odborov">
           <button type="button" aria-pressed={mode === 'log'} onClick={() => setMode('log')}>Logaritmická</button>
