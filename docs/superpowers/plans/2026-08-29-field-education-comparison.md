@@ -10,6 +10,14 @@
 
 **Spec:** `docs/superpowers/specs/2026-08-29-slovak-professors-atlas-design.md`
 
+**Supersession:** This focused plan is the authoritative field-comparison
+contract. It supersedes the 2025-only requirements in
+`2026-08-29-slovak-professors-atlas.md` Global Constraints 21–23, its
+`pipeline/graduates.py` and `graduates-by-field-2025.xls` file entries, and
+its former Task 11. When the two plans conflict, implement this plan's
+reviewed 2009–2025 graduate history, separate 2025 student stock, schema-2
+payload, and clean legacy removal.
+
 ## Global Constraints
 
 - The site remains fully static and GitHub Pages-compatible; no runtime upstream requests, backend, database, CMS, or map-tile service.

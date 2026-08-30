@@ -10,6 +10,14 @@
 
 **Spec:** `docs/superpowers/specs/2026-08-29-slovak-professors-atlas-design.md`
 
+**Superseded field-comparison scope:** The authoritative contract is now
+`2026-08-29-field-education-comparison.md`. That focused plan supersedes
+Global Constraints 21–23 below, the legacy `pipeline/graduates.py` and
+`graduates-by-field-2025.xls` file entries, and Task 11. Retain the remaining
+atlas requirements, but use the focused plan's reviewed 2009–2025 history,
+separate 2025 student stock, schema-2 payload, and legacy removal wherever
+the plans conflict.
+
 ## Global Constraints
 
 - Every professor field and appointment count must derive from the committed ministry workbook at `https://www.minedu.sk/data/att/41c/36688.d8c1fd.xls`.
