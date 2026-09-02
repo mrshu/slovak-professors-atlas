@@ -16,7 +16,7 @@ interface SmallLineProps {
 }
 
 const W = 370
-const H = 200
+const H = 160
 const M = { l: 40, r: 56, t: 16, b: 26 }
 
 export default function SmallLine({
