@@ -74,6 +74,29 @@ main > section, footer { scroll-margin-top: var(--sp-4); }
   font-size: var(--text-xs);
 }
 
+.context-selection {
+  display: grid;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+}
+
+.context-selection__heading h3,
+.context-selection__heading p {
+  margin: 0;
+}
+
+.context-selection__heading h3 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--t-3);
+}
+
+.context-selection__coverage {
+  margin: 0;
+  font-size: var(--t-small);
+  color: var(--color-ink-muted);
+}
+
 .context-snapshot {
   display: grid;
   grid-template-columns: minmax(0, 1.65fr) minmax(17rem, 0.65fr);

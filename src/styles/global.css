@@ -49,7 +49,6 @@ a:hover {
 }
 
 .hero,
-.section--atlas,
 .site-footer {
   --focus-ring: 3px solid var(--color-focus-on-dark);
 }
