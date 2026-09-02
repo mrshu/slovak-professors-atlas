@@ -64,17 +64,17 @@ function renderedPoint(fieldKey: string): { x: number; y: number } {
 
 describe('FieldEducationScatter', () => {
   it('renders every point in logarithmic and absolute modes while preserving selection', () => {
-    render(
-      <FieldEducationScatter points={points} selectedField="center" onFieldSelect={vi.fn()} />,
+    const { rerender } = render(
+      <FieldEducationScatter points={points} selectedField="center" onFieldSelect={vi.fn()} mode="log" zeroRail={[]} />,
     )
 
-    expect(screen.getByRole('button', { name: 'Logaritmická' })).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getAllByTestId(/^field-point-/)).toHaveLength(3)
     expect(screen.getByTestId('field-point-center')).toHaveAttribute('data-selected', 'true')
 
-    fireEvent.click(screen.getByRole('button', { name: 'Absolútna' }))
+    rerender(
+      <FieldEducationScatter points={points} selectedField="center" onFieldSelect={vi.fn()} mode="linear" zeroRail={[]} />,
+    )
 
-    expect(screen.getByRole('button', { name: 'Absolútna' })).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getAllByTestId(/^field-point-/)).toHaveLength(3)
     expect(screen.getByTestId('field-point-center')).toHaveAttribute('data-selected', 'true')
   })
@@ -94,6 +94,8 @@ describe('FieldEducationScatter', () => {
         points={rangedPoints}
         selectedField={null}
         onFieldSelect={vi.fn()}
+        mode="log"
+        zeroRail={[]}
       />,
     )
 
@@ -103,7 +105,7 @@ describe('FieldEducationScatter', () => {
   it('previews and selects the nearest point through the transparent overlay', () => {
     const onFieldSelect = vi.fn()
     render(
-      <FieldEducationScatter points={points} selectedField="center" onFieldSelect={onFieldSelect} />,
+      <FieldEducationScatter points={points} selectedField="center" onFieldSelect={onFieldSelect} mode="log" zeroRail={[]} />,
     )
     const target = chartTarget()
     const east = renderedPoint('east')
@@ -133,7 +135,7 @@ describe('FieldEducationScatter', () => {
   it('supports directional, Home/End, Enter, and Space keys on one focus target', () => {
     const onFieldSelect = vi.fn()
     render(
-      <FieldEducationScatter points={points} selectedField="center" onFieldSelect={onFieldSelect} />,
+      <FieldEducationScatter points={points} selectedField="center" onFieldSelect={onFieldSelect} mode="log" zeroRail={[]} />,
     )
     const target = chartTarget()
 
@@ -159,7 +161,7 @@ describe('FieldEducationScatter', () => {
       point('b', 1, 10),
     ]
     render(
-      <FieldEducationScatter points={collisionPoints} selectedField="a" onFieldSelect={vi.fn()} />,
+      <FieldEducationScatter points={collisionPoints} selectedField="a" onFieldSelect={vi.fn()} mode="log" zeroRail={[]} />,
     )
     const target = chartTarget()
     const a = renderedPoint('a')
@@ -169,5 +171,27 @@ describe('FieldEducationScatter', () => {
     expect(preview).toHaveTextContent('Aliasom obnovené vymenovania 1')
     expect(preview).toHaveTextContent('Rovnaké analytické súradnice: 2 odbory')
     expect(preview.closest('.field-education-scatter__inspection')).toBeInTheDocument()
+  })
+
+  it('draws three ratio guides in log mode and a rail point for zero-graduate fields', () => {
+    // A domain wide enough (appointments 1–100, graduates 100–100 000) for all three
+    // ratio guides (10x, 100x, 1000x) to fall inside the box without degenerating to a
+    // single point; the shared `points` fixture above is too narrow for that.
+    const widePoints = [
+      point('p1', 1, 100),
+      point('p2', 10, 1_000),
+      point('p3', 100, 100_000),
+    ]
+    render(
+      <FieldEducationScatter
+        points={widePoints}
+        selectedField={null}
+        onFieldSelect={vi.fn()}
+        mode="log"
+        zeroRail={[{ ...widePoints[0]!, fieldKey: 'x', canonicalLabel: 'x', graduateCount: 0, graduatesPerAppointment: null }]}
+      />,
+    )
+    expect(document.querySelectorAll('.field-education-scatter__guide')).toHaveLength(3)
+    expect(screen.getByTestId('field-rail-x')).toBeInTheDocument()
   })
 })

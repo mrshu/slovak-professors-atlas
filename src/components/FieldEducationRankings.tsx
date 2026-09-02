@@ -3,7 +3,6 @@ import { useMemo, useState } from 'react'
 import type { FieldEducationLandscapeRow } from '../analysis/fieldEducation'
 import { formatNumber } from '../utils/format'
 import { normalizeForSearch } from '../utils/search'
-import FieldEducationRankingDonuts from './FieldEducationRankingDonuts'
 
 interface FieldEducationRankingsProps {
   rows: readonly FieldEducationLandscapeRow[]
@@ -183,7 +182,6 @@ export default function FieldEducationRankings({
       <p className="field-education-rankings__count">
         {formatNumber(rows.length)} odbory celkom · {formatNumber(visibleRows.length)} zobrazených
       </p>
-      <FieldEducationRankingDonuts rows={visibleRows} />
       <div className="field-education-rankings__tables">
         <RankingTable
           caption="Spárované odbory"

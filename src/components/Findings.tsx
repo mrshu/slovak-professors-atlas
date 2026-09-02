@@ -242,7 +242,7 @@ export default function Findings({
             registri objaví jediný raz; desať najčastejších spolu tvorí len{' '}
             {percent(facts.fields.topTenShare)} % vymenovaní.
           </p>
-          <a className="finding__action" href="#odbory-absolventi">
+          <a className="finding__action" href="#odbory">
             Preskúmať odbory
           </a>
         </article>

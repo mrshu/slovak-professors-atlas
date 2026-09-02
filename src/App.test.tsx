@@ -359,7 +359,7 @@ describe('archívny atlas', () => {
     expect(mainSections).toEqual([
       'zistenia',
       'kontext',
-      'odbory-absolventi',
+      'odbory',
       'atlas',
       'zaznamy',
       'metodika',
@@ -407,25 +407,22 @@ describe('archívny atlas', () => {
     render(<App />)
 
     const section = await screen.findByRole('region', {
-      name: 'Profesorské vymenovania × absolventi',
+      name: 'Profesorské vymenovania a absolventi v rovnakom odbore',
     })
     expect(window.location.search).toBe('?field=historia')
     const explorer = screen.getByRole('region', {
       name: 'Úplný register profesorských vymenovaní',
     })
     expect(within(explorer).getByRole('status')).toHaveTextContent('2')
-    const coverageBefore = within(section)
-      .getByLabelText('Pokrytie odborového porovnania')
-      .textContent
+    const coverageBefore = within(section).getByText(/Spárované vymenovania:/).textContent
     const pointCountBefore = within(section).queryAllByTestId(/^field-point-/).length
 
+    fireEvent.click(within(section).getByText('Rebríček odborov'))
     fireEvent.click(within(section).getByRole('button', { name: 'Psychológia' }))
 
     expect(window.location.search).toBe('?field=psychologia')
     await waitFor(() => expect(within(explorer).getByRole('status')).toHaveTextContent('1'))
-    expect(
-      within(section).getByLabelText('Pokrytie odborového porovnania').textContent,
-    ).toBe(coverageBefore)
+    expect(within(section).getByText(/Spárované vymenovania:/).textContent).toBe(coverageBefore)
     expect(within(section).queryAllByTestId(/^field-point-/)).toHaveLength(pointCountBefore)
     expect(within(section).getByRole('heading', { name: 'Psychológia' })).toBeVisible()
   })

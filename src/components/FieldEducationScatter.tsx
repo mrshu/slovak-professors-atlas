@@ -7,7 +7,7 @@ import {
   type PointerEvent,
 } from 'react'
 
-import type { FieldEducationPoint } from '../analysis/fieldEducation'
+import type { FieldEducationLandscapeRow, FieldEducationPoint } from '../analysis/fieldEducation'
 import { formatNumber } from '../utils/format'
 import {
   fieldScaleDomain,
@@ -24,6 +24,8 @@ interface FieldEducationScatterProps {
   points: readonly FieldEducationPoint[]
   selectedField: string | null
   onFieldSelect: (fieldKey: string) => void
+  mode: ScaleMode
+  zeroRail: readonly FieldEducationLandscapeRow[]
 }
 
 interface AxisTick {
@@ -32,19 +34,16 @@ interface AxisTick {
 }
 
 const WIDTH = 960
-const HEIGHT = 540
+const HEIGHT = 580
 const PLOT = { x: 76, y: 34, width: 836, height: 430 }
+const RAIL_Y = PLOT.y + PLOT.height + 30
 const AXIS_TICK_COUNT = 5
 
 function axisTicks(
-  values: readonly number[],
+  domain: [number, number],
   mode: ScaleMode,
-  range: [number, number],
+  scale: (value: number) => number,
 ): AxisTick[] {
-  const domain = fieldScaleDomain(values, mode)
-  const scale = mode === 'log'
-    ? scaleLog().domain(domain).range(range)
-    : scaleLinear().domain(domain).range(range)
   return Array.from({ length: AXIS_TICK_COUNT }, (_, index) => {
     const fraction = index / (AXIS_TICK_COUNT - 1)
     const value = mode === 'log'
@@ -103,8 +102,9 @@ export default function FieldEducationScatter({
   points,
   selectedField,
   onFieldSelect,
+  mode,
+  zeroRail,
 }: FieldEducationScatterProps) {
-  const [mode, setMode] = useState<ScaleMode>('log')
   const [hoveredKey, setHoveredKey] = useState<string | null>(null)
   const [hasKeyboardFocus, setHasKeyboardFocus] = useState(false)
   const initialKey = selectedField !== null && points.some(({ fieldKey }) => fieldKey === selectedField)
@@ -124,14 +124,30 @@ export default function FieldEducationScatter({
     () => generatedLabelKeys(points, selectedField),
     [points, selectedField],
   )
-  const xTicks = useMemo(
-    () => axisTicks(points.map(({ appointmentCount }) => appointmentCount), mode, [PLOT.x, PLOT.x + PLOT.width]),
+  const xDomain = useMemo(
+    () => fieldScaleDomain(points.map((point) => point.appointmentCount), mode),
     [mode, points],
   )
-  const yTicks = useMemo(
-    () => axisTicks(points.map(({ graduateCount }) => graduateCount), mode, [PLOT.y + PLOT.height, PLOT.y]),
+  const yDomain = useMemo(
+    () => fieldScaleDomain(points.map((point) => point.graduateCount), mode),
     [mode, points],
   )
+  const xScale = useMemo(
+    () =>
+      mode === 'log'
+        ? scaleLog().domain(xDomain).range([PLOT.x, PLOT.x + PLOT.width])
+        : scaleLinear().domain(xDomain).range([PLOT.x, PLOT.x + PLOT.width]),
+    [mode, xDomain],
+  )
+  const yScale = useMemo(
+    () =>
+      mode === 'log'
+        ? scaleLog().domain(yDomain).range([PLOT.y + PLOT.height, PLOT.y])
+        : scaleLinear().domain(yDomain).range([PLOT.y + PLOT.height, PLOT.y]),
+    [mode, yDomain],
+  )
+  const xTicks = useMemo(() => axisTicks(xDomain, mode, xScale), [mode, xDomain, xScale])
+  const yTicks = useMemo(() => axisTicks(yDomain, mode, yScale), [mode, yDomain, yScale])
 
   useEffect(() => {
     setActiveKey((current) => {
@@ -195,14 +211,8 @@ export default function FieldEducationScatter({
   return (
     <figure className="field-education-scatter" aria-labelledby="field-education-scatter-title">
       <figcaption>
-        <div>
-          <p className="eyebrow">Vybrané obdobie {periodLabel}</p>
-          <h3 id="field-education-scatter-title">Mapa spoločného obdobia</h3>
-        </div>
-        <div className="field-education-scatter__modes" aria-label="Mierka mapy odborov">
-          <button type="button" aria-pressed={mode === 'log'} onClick={() => setMode('log')}>Logaritmická</button>
-          <button type="button" aria-pressed={mode === 'linear'} onClick={() => setMode('linear')}>Absolútna</button>
-        </div>
+        <p className="eyebrow">Vybrané obdobie {periodLabel}</p>
+        <h3 className="visually-hidden" id="field-education-scatter-title">Mapa spoločného obdobia</h3>
       </figcaption>
       <div className="field-education-scatter__inspection">
         {inspected === null ? (
@@ -227,6 +237,21 @@ export default function FieldEducationScatter({
               </g>
             ))}
           </g>
+          {mode === 'log' &&
+            [10, 100, 1000].map((ratio) => {
+              const a0 = Math.max(xDomain[0], yDomain[0] / ratio)
+              const a1 = Math.min(xDomain[1], yDomain[1] / ratio)
+              if (a0 >= a1) return null
+              const am = Math.exp((Math.log(a0) + Math.log(a1)) / 2)
+              return (
+                <g key={ratio} className="field-education-scatter__guide" aria-hidden="true">
+                  <line x1={xScale(a0)} y1={yScale(a0 * ratio)} x2={xScale(a1)} y2={yScale(a1 * ratio)} />
+                  <text x={xScale(am) + 4} y={yScale(am * ratio) - 5}>
+                    {formatNumber(ratio)} absolventov na vymenovanie
+                  </text>
+                </g>
+              )
+            })}
           <text className="field-education-scatter__axis-label" x={PLOT.x + PLOT.width / 2} y={HEIGHT - 12} textAnchor="middle">Profesorské vymenovania</text>
           <text className="field-education-scatter__axis-label" transform={`translate(18 ${PLOT.y + PLOT.height / 2}) rotate(-90)`} textAnchor="middle">Absolventi</text>
           {selected === null ? null : (
@@ -264,6 +289,33 @@ export default function FieldEducationScatter({
                 </text>
               )
             })}
+          </g>
+          <g className="field-education-scatter__rail">
+            <line x1={PLOT.x} x2={PLOT.x + PLOT.width} y1={RAIL_Y} y2={RAIL_Y} />
+            <text x={PLOT.x - 6} y={RAIL_Y + 4} textAnchor="end">0</text>
+            <text x={PLOT.x + PLOT.width} y={RAIL_Y + 16} textAnchor="end">
+              odbory bez absolventa v období
+            </text>
+            {zeroRail.map((row) => (
+              <circle
+                key={row.fieldKey}
+                data-testid={`field-rail-${row.fieldKey}`}
+                className="field-education-scatter__point"
+                cx={xScale(Math.max(row.appointmentCount, xDomain[0]))}
+                cy={RAIL_Y}
+                r={4.5}
+                role="button"
+                tabIndex={0}
+                aria-label={`${row.canonicalLabel}: ${formatNumber(row.appointmentCount)} vymenovaní, bez absolventa`}
+                onClick={() => onFieldSelect(row.fieldKey)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault()
+                    onFieldSelect(row.fieldKey)
+                  }
+                }}
+              />
+            ))}
           </g>
           <rect
             className="field-education-scatter__target"

@@ -160,7 +160,7 @@ describe('headline findings', () => {
     expect(onCitySelect).toHaveBeenCalledWith('Bratislava')
     expect(screen.getByRole('link', { name: /preskúmať odbory/i })).toHaveAttribute(
       'href',
-      '#odbory-absolventi',
+      '#odbory',
     )
   })
 })

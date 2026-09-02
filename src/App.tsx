@@ -4,7 +4,7 @@ import AtlasSection from './components/AtlasSection'
 import { ContextSectionBody, ContextSectionShell } from './components/ContextSection'
 import ErrorPanel from './components/ErrorPanel'
 import Explorer from './components/Explorer'
-import FieldEducationComparison from './components/FieldEducationComparison'
+import FieldSection from './components/FieldSection'
 import Findings from './components/Findings'
 import Masthead from './components/Masthead'
 import Methodology from './components/Methodology'
@@ -51,10 +51,8 @@ function LoadedInteractiveSections({ data }: { data: AtlasData }) {
           setSelectedYear={atlasState.setSelectedYear}
         />
       </ContextSectionShell>
-      <FieldEducationComparison
-        comparison={data.fieldEducationComparison}
-        fieldCatalog={data.fieldCatalog}
-        allRecords={data.records}
+      <FieldSection
+        data={data}
         selectedField={atlasState.filters.field}
         onFieldSelect={(field) => atlasState.setFilter('field', field, 'push')}
         fieldRange={{
