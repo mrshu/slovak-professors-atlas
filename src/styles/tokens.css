@@ -35,4 +35,26 @@
   --section-space: clamp(5rem, 10vw, 9.5rem);
   --rule: 1px solid var(--color-line);
   --focus-ring: 3px solid var(--color-focus);
+
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+
+  --t-1: 1.6rem;
+  --t-2: 1.3rem;
+  --t-3: 1.05rem;
+  --t-body: 0.875rem;
+  --t-small: 0.8rem;
+  --t-label: 0.7rem;
+
+  --series-1: #b0452c;
+  --series-2: #0a8aa6;
+  --series-3: #a0721a;
+  --series-1-on-dark: #d9704e;
+  --series-2-on-dark: #3fb0c9;
+  --series-3-on-dark: #d4a83a;
 }

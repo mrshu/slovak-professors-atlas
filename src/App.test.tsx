@@ -325,10 +325,9 @@ describe('archívny atlas', () => {
 
     render(<App />)
 
-    expect(screen.getByRole('heading', { name: 'Kde vzniká slovenská profesúra?' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: /Kde vzniká slovenská profesúra\?/ })).toBeVisible()
     const ledger = await screen.findByLabelText('Rozsah analytického súboru')
     expect(within(ledger).getByText(/2[\s ]378/)).toBeVisible()
-    expect(within(ledger).getByText(/22\. februára 2000/)).toBeVisible()
 
     const findings = screen.getByRole('region', { name: 'Čísla, ktoré menia mierku' })
     expect(within(findings).getAllByRole('article')).toHaveLength(3)
@@ -351,11 +350,10 @@ describe('archívny atlas', () => {
     expect(within(context).getByText('Najnovší dostupný kontext: 2025/2026')).toBeVisible()
 
     const banner = screen.getByRole('banner')
-    const navigation = screen.getByRole('navigation', { name: 'Navigácia atlasu' })
     const main = screen.getByRole('main')
-    expect(banner.nextElementSibling).toBe(navigation)
-    expect(navigation.nextElementSibling).toBe(main)
-    expect(banner).not.toContainElement(navigation)
+    expect(
+      within(banner).getByRole('navigation', { name: 'Navigácia atlasu' }),
+    ).toBeVisible()
 
     const mainSections = Array.from(main.children).map((section) => section.id)
     expect(mainSections).toEqual([
@@ -367,10 +365,6 @@ describe('archívny atlas', () => {
       'metodika',
     ])
 
-    expect(screen.getByRole('link', { name: 'Zdrojový zoznam ministerstva' })).toHaveAttribute(
-      'href',
-      MINISTRY_SOURCE_URL,
-    )
     expect(fetchMock).toHaveBeenCalledTimes(1)
     expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
       'https://example.test/slovak-professors/data/atlas.json',
@@ -483,7 +477,6 @@ describe('archívny atlas', () => {
       name: 'Vymenovania v národnom kontexte',
     })
     expect(loadingContext).toHaveAttribute('id', 'kontext')
-    expect(screen.getByRole('link', { name: 'Kontext' })).toHaveAttribute('href', '#kontext')
 
     expect(await screen.findByRole('heading', { name: 'Atlas sa nepodarilo načítať' })).toBeVisible()
     expect(screen.getByText('Dáta sa teraz nedajú bezpečne zobraziť. Skúste stránku načítať znova.')).toBeVisible()
@@ -491,7 +484,7 @@ describe('archívny atlas', () => {
       'href',
       MINISTRY_SOURCE_URL,
     )
-    expect(screen.getByRole('heading', { name: 'Kde vzniká slovenská profesúra?' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: /Kde vzniká slovenská profesúra\?/ })).toBeVisible()
     expect(consoleError).toHaveBeenCalledTimes(1)
     expect(
       screen.getByRole('region', { name: 'Vymenovania v národnom kontexte' }),

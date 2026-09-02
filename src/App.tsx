@@ -6,7 +6,7 @@ import ErrorPanel from './components/ErrorPanel'
 import Explorer from './components/Explorer'
 import FieldEducationComparison from './components/FieldEducationComparison'
 import Findings from './components/Findings'
-import Hero from './components/Hero'
+import Masthead from './components/Masthead'
 import Methodology from './components/Methodology'
 import { loadAtlas } from './data/load'
 import type { AtlasData } from './data/types'
@@ -102,36 +102,12 @@ export default function App() {
         Preskočiť na obsah
       </a>
 
-      <header aria-labelledby="hero-title">
-        <Hero data={state.data} status={state.status} />
-      </header>
-      <nav className="anchor-nav" aria-label="Navigácia atlasu">
-        <div className="anchor-nav__inner">
-          <a className="anchor-nav__brand" href="#hero-title" aria-label="Na začiatok atlasu">
-            AP
-          </a>
-          <ol>
-            <li>
-              <a href="#zistenia">Zistenia</a>
-            </li>
-            <li>
-              <a href="#kontext">Kontext</a>
-            </li>
-            <li>
-              <a href="#odbory-absolventi">Odbory</a>
-            </li>
-            <li>
-              <a href="#atlas">Atlas</a>
-            </li>
-            <li>
-              <a href="#zaznamy">Záznamy</a>
-            </li>
-            <li>
-              <a href="#metodika">Metodika</a>
-            </li>
-          </ol>
-        </div>
-      </nav>
+      <Masthead
+        status={state.status}
+        meta={state.data?.meta ?? null}
+        institutionCount={state.data?.institutions.length ?? 0}
+        cityCount={state.data?.cities.length ?? 0}
+      />
 
       <main id="obsah">
         {state.status === 'loading' && (

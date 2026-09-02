@@ -8,7 +8,7 @@ html {
   background: var(--color-paper);
   color: var(--color-ink);
   scroll-behavior: smooth;
-  scroll-padding-top: 5.5rem;
+  scroll-padding-top: 1rem;
   text-rendering: optimizeLegibility;
 }
 
