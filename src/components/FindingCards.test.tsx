@@ -60,9 +60,11 @@ describe('FindingCards', () => {
   it('selects a field when a dumbbell row is activated', () => {
     const onFieldSelect = vi.fn()
     render(<FindingCards data={data as never} onFieldSelect={onFieldSelect} />)
-    fireEvent.click(
-      screen.getByRole('button', { name: /sociálna práca: 90,0 % absolventov, 50,0 % vymenovaní/ }),
-    )
+    const row = screen.getByRole('button', {
+      name: /sociálna práca: 90,0 % absolventov, 50,0 % vymenovaní/,
+    })
+    expect(row.closest('svg')).toHaveAttribute('role', 'group')
+    fireEvent.click(row)
     expect(onFieldSelect).toHaveBeenCalledWith('socialna praca')
   })
 

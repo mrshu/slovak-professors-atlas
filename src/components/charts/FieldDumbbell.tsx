@@ -23,7 +23,7 @@ export default function FieldDumbbell({ rows, onSelect }: FieldDumbbellProps) {
     <svg
       className="chart"
       viewBox={`0 0 ${W} ${H}`}
-      role="img"
+      role="group"
       aria-label="Podiel odboru na absolventoch a na vymenovaniach"
     >
       {[0, 0.1, 0.2].map((value) => (
