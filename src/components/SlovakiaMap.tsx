@@ -40,12 +40,12 @@ const LABEL_DIRECTIONS: Record<string, LabelDirection> = {
   Trnava: [0, -1],
   Nitra: [0, 1],
   Žilina: [0, -1],
-  Martin: [1, -1],
+  Martin: [-1, 1],
   'Banská Bystrica': [1, 0],
   Zvolen: [0, 1],
   Prešov: [0, -1],
   Košice: [1, 1],
-  Ružomberok: [-1, -1],
+  Ružomberok: [1, -1],
   Trenčín: [-1, 0],
   'Dubnica nad Váhom': [0, -1],
 }
@@ -103,7 +103,7 @@ export default function SlovakiaMap({
     return () => observer.disconnect()
   }, [])
 
-  const height = Math.max(230, Math.min(390, Math.round(width * 0.54)))
+  const height = Math.max(230, Math.min(380, Math.round(width * 0.54)))
   const projection = useMemo(
     () =>
       geoMercator().fitExtent(
