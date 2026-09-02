@@ -83,7 +83,10 @@ export default function FindingCards({ data, onFieldSelect }: FindingCardsProps)
             ? 'Podiel odborov na absolventoch a vymenovaniach'
             : `${lead.label[0]!.toUpperCase()}${lead.label.slice(1)}: ${formatNumber(
                 lead.graduateShare * 100,
-              )} % absolventov, ${formatNumber(lead.appointmentShare * 100)} % profesorov`}
+                { maximumFractionDigits: 0 },
+              )} % absolventov, ${formatNumber(lead.appointmentShare * 100, {
+                maximumFractionDigits: 0,
+              })} % profesorov`}
         </h3>
         <p className="card__sub">
           Podiel odboru na <i className="sw sw--2" />absolventoch a na{' '}

@@ -72,7 +72,8 @@ export default function TitlesChart({ rows, crossoverYear }: TitlesChartProps) {
           <g key={series.key}>
             <path className={series.className} d={path} strokeDasharray={series.dash} />
             <text className="chart__value" x={W - M.r + 6} y={end.y}>
-              {series.label} {formatNumber(share(last, series.key) * 100)} %
+              {series.label}{' '}
+              {formatNumber(share(last, series.key) * 100, { maximumFractionDigits: 0 })} %
             </text>
           </g>
         )

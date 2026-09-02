@@ -32,6 +32,24 @@ const SELECTED_RING_RADIUS_OFFSET = 6
 const SELECTED_RING_STROKE_WIDTH = 3
 const MAP_PADDING = 24
 
+type LabelDirection = readonly [-1 | 0 | 1, -1 | 0 | 1]
+
+const DEFAULT_LABEL_DIRECTION: LabelDirection = [1, 0]
+const LABEL_DIRECTIONS: Record<string, LabelDirection> = {
+  Bratislava: [1, 1],
+  Trnava: [0, -1],
+  Nitra: [0, 1],
+  Žilina: [0, -1],
+  Martin: [1, -1],
+  'Banská Bystrica': [1, 0],
+  Zvolen: [0, 1],
+  Prešov: [0, -1],
+  Košice: [1, 1],
+  Ružomberok: [-1, -1],
+  Trenčín: [-1, 0],
+  'Dubnica nad Váhom': [0, -1],
+}
+
 function niceSizeKeyValue(value: number): number {
   if (value <= 0) {
     return 0
@@ -160,7 +178,10 @@ export default function SlovakiaMap({
             ? selectedRingRadius + SELECTED_RING_STROKE_WIDTH / 2
             : cityRadius
           const targetSize = Math.max(MINIMUM_TARGET_SIZE, visibleRadius * 2)
-          const labelOnLeft = city.x > width * 0.72
+          const [dx, dy] = LABEL_DIRECTIONS[city.city] ?? DEFAULT_LABEL_DIRECTION
+          const labelX = city.x + dx * (cityRadius + 6)
+          const labelY = dy === -1 ? city.y - cityRadius - 6 : dy === 1 ? city.y + cityRadius + 13 : city.y + 4
+          const labelTextAnchor = dx === 1 ? 'start' : dx === -1 ? 'end' : 'middle'
           const accessibleLabel = `${city.city}: ${formatAppointmentCount(city.count)}, ${
             selected ? 'vybrané' : 'nevybrané'
           }`
@@ -198,9 +219,9 @@ export default function SlovakiaMap({
               {(city.count >= labelMinimumCount || selected) && (
                 <text
                   className="slovakia-map__label"
-                  x={city.x + (labelOnLeft ? -cityRadius - 7 : cityRadius + 7)}
-                  y={city.y + 4}
-                  textAnchor={labelOnLeft ? 'end' : 'start'}
+                  x={labelX}
+                  y={labelY}
+                  textAnchor={labelTextAnchor}
                   aria-hidden="true"
                 >
                   {city.city} · {city.count}

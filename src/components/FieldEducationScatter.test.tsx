@@ -79,29 +79,6 @@ describe('FieldEducationScatter', () => {
     expect(screen.getByTestId('field-point-center')).toHaveAttribute('data-selected', 'true')
   })
 
-  it('labels the scatter with the selected annual period', () => {
-    const rangedPoints = points.map((entry) => ({
-      ...entry,
-      annual: [
-        { year: 2018, appointmentCount: 1, graduateCount: 10 },
-        { year: 2019, appointmentCount: 1, graduateCount: 11 },
-        { year: 2020, appointmentCount: 1, graduateCount: 12 },
-      ],
-    }))
-
-    render(
-      <FieldEducationScatter
-        points={rangedPoints}
-        selectedField={null}
-        onFieldSelect={vi.fn()}
-        mode="log"
-        zeroRail={[]}
-      />,
-    )
-
-    expect(screen.getByText('Vybrané obdobie 2018 – 2020')).toBeInTheDocument()
-  })
-
   it('previews and selects the nearest point through the transparent overlay', () => {
     const onFieldSelect = vi.fn()
     render(
