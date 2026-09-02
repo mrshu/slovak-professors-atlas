@@ -194,4 +194,20 @@ describe('FieldEducationScatter', () => {
     expect(document.querySelectorAll('.field-education-scatter__guide')).toHaveLength(3)
     expect(screen.getByTestId('field-rail-x')).toBeInTheDocument()
   })
+
+  it('keeps a zero-graduate rail point on canvas even when its appointment count exceeds every point', () => {
+    render(
+      <FieldEducationScatter
+        points={points}
+        selectedField={null}
+        onFieldSelect={vi.fn()}
+        mode="log"
+        zeroRail={[{ ...points[0]!, fieldKey: 'off-canvas', canonicalLabel: 'OFF-CANVAS', appointmentCount: 10_000, graduateCount: 0, graduatesPerAppointment: null }]}
+      />,
+    )
+    const rail = screen.getByTestId('field-rail-off-canvas')
+    const cx = Number(rail.getAttribute('cx'))
+    expect(cx).toBeGreaterThanOrEqual(76)
+    expect(cx).toBeLessThanOrEqual(76 + 836)
+  })
 })

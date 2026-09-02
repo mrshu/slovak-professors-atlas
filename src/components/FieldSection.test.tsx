@@ -50,6 +50,13 @@ describe('FieldSection', () => {
     expect(within(section).getByTestId('field-rail-hudobne umenie')).toBeInTheDocument()
     expect(within(section).getByRole('heading', { name: 'sociálna práca' })).toBeVisible()
     expect(within(section).getByText('Rebríček odborov').closest('details')).not.toHaveAttribute('open')
+    const sourcesDetails = within(section).getByText(/ročných zdrojov absolventov/).closest('details')
+    expect(sourcesDetails).toBeInTheDocument()
+    expect(sourcesDetails).not.toHaveAttribute('open')
+    expect(within(section).getByRole('link', { name: 'Uložený XLS aktuálnych študentov' })).toHaveAttribute(
+      'href',
+      expect.stringMatching(/data\/source\/x\.xls$/),
+    )
   })
 
   it('selects a field from the search box on Enter and switches the scale', () => {

@@ -125,8 +125,15 @@ export default function FieldEducationScatter({
     [points, selectedField],
   )
   const xDomain = useMemo(
-    () => fieldScaleDomain(points.map((point) => point.appointmentCount), mode),
-    [mode, points],
+    () =>
+      fieldScaleDomain(
+        [
+          ...points.map((point) => point.appointmentCount),
+          ...zeroRail.map((row) => row.appointmentCount),
+        ],
+        mode,
+      ),
+    [mode, points, zeroRail],
   )
   const yDomain = useMemo(
     () => fieldScaleDomain(points.map((point) => point.graduateCount), mode),
@@ -301,7 +308,7 @@ export default function FieldEducationScatter({
                 key={row.fieldKey}
                 data-testid={`field-rail-${row.fieldKey}`}
                 className="field-education-scatter__point"
-                cx={xScale(Math.max(row.appointmentCount, xDomain[0]))}
+                cx={xScale(Math.min(Math.max(row.appointmentCount, xDomain[0]), xDomain[1]))}
                 cy={RAIL_Y}
                 r={4.5}
                 role="button"

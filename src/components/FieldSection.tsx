@@ -167,11 +167,39 @@ export default function FieldSection({
         <summary>Rebríček odborov</summary>
         <FieldEducationRankings rows={landscape.allRows} selectedField={selectedField} onFieldSelect={onFieldSelect} />
       </details>
-      <p className="field-section__sources">
-        <a href={data.fieldEducationComparison.catalogUrl}>Štatistické ročenky CVTI SR</a> ·
-        absolventi {data.fieldEducationComparison.startYear}–{data.fieldEducationComparison.endYear}
-        · študenti k 31. 10. {data.fieldEducationComparison.currentStudentsSource.year}
-      </p>
+      <div className="field-section__sources">
+        <p>
+          <a href={data.fieldEducationComparison.catalogUrl}>Štatistické ročenky CVTI SR</a> ·
+          absolventi {data.fieldEducationComparison.startYear}–{data.fieldEducationComparison.endYear}
+          · študenti k 31. 10. {data.fieldEducationComparison.currentStudentsSource.year}
+        </p>
+        <details>
+          <summary>
+            {formatNumber(data.fieldEducationComparison.graduateSources.length)} ročných zdrojov absolventov
+          </summary>
+          <ul>
+            {data.fieldEducationComparison.graduateSources.map((source) => (
+              <li key={source.year}>
+                <a href={source.url}>{source.year} · oficiálny zdroj</a>{' '}
+                <a href={`${import.meta.env.BASE_URL}data/source/${source.localPath}`} download>
+                  uložený XLS
+                </a>
+              </li>
+            ))}
+          </ul>
+          <p>
+            <a href={data.fieldEducationComparison.currentStudentsSource.url}>
+              Oficiálny zošit aktuálnych študentov
+            </a>{' '}
+            <a
+              href={`${import.meta.env.BASE_URL}data/source/${data.fieldEducationComparison.currentStudentsSource.localPath}`}
+              download
+            >
+              Uložený XLS aktuálnych študentov
+            </a>
+          </p>
+        </details>
+      </div>
     </section>
   )
 }
