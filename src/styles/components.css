@@ -924,7 +924,6 @@ main > section, footer { scroll-margin-top: var(--sp-4); }
   margin: 0;
 }
 
-.slovakia-map figcaption,
 .appointment-timeline figcaption,
 .institution-ranking__heading {
   display: grid;
@@ -936,13 +935,11 @@ main > section, footer { scroll-margin-top: var(--sp-4); }
   border-top: 2px solid var(--color-brass);
 }
 
-.slovakia-map figcaption h3,
 .appointment-timeline figcaption h3,
 .institution-ranking__heading h3 {
   margin-bottom: 0;
 }
 
-.slovakia-map figcaption > p,
 .appointment-timeline figcaption > p,
 .institution-ranking__heading > p,
 .institution-ranking__faculty-heading p {
@@ -952,44 +949,11 @@ main > section, footer { scroll-margin-top: var(--sp-4); }
   line-height: 1.5;
 }
 
-.slovakia-map__chart {
-  width: 100%;
-  overflow: visible;
-  border: 1px solid rgb(243 236 223 / 20%);
-  background: rgb(243 236 223 / 3%);
-}
-
-.slovakia-map__outline {
-  fill: rgb(156 173 152 / 12%);
-  stroke: var(--color-sage);
-  stroke-width: 1.4;
-  vector-effect: non-scaling-stroke;
-}
-
-.slovakia-map__mark {
-  fill: var(--color-terracotta);
-  fill-opacity: 0.9;
-  stroke: var(--color-paper-light);
-  stroke-width: 1.5;
-  vector-effect: non-scaling-stroke;
-}
-
 .slovakia-map__selected-ring {
   fill: none;
   stroke: var(--color-brass);
   stroke-dasharray: 3 2;
   vector-effect: non-scaling-stroke;
-}
-
-.slovakia-map__label {
-  fill: var(--color-paper-light);
-  font-family: var(--font-interface);
-  font-size: 10px;
-  font-weight: 700;
-  paint-order: stroke;
-  stroke: var(--color-forest-deep);
-  stroke-width: 3px;
-  stroke-linejoin: round;
 }
 
 .slovakia-map__target,
@@ -1021,9 +985,52 @@ main > section, footer { scroll-margin-top: var(--sp-4); }
   font-size: 0.69rem;
 }
 
-.slovakia-map__key {
-  display: none;
+.map-stage {
+  max-width: var(--content-width);
+  margin: var(--sp-4) auto 0;
+  padding: var(--sp-4) var(--sp-5);
+  background: var(--color-forest);
+  color: var(--color-paper);
+  display: grid;
+  gap: var(--sp-3);
+  --focus-ring: 3px solid var(--color-focus-on-dark);
 }
+.map-stage__head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-4); flex-wrap: wrap; }
+.map-stage__head h2 { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: var(--t-1); }
+.map-stage__head h2 em { color: var(--color-focus-on-dark); }
+.map-stage__periods { display: flex; flex-wrap: wrap; gap: 2px; border: 1px solid #2f4f45; padding: 2px; }
+.map-stage__periods button { border: 0; background: transparent; color: #b8c6bd; padding: var(--sp-1) var(--sp-3); font-size: var(--t-small); font-weight: 600; cursor: pointer; font-variant-numeric: tabular-nums; }
+.map-stage__periods button[aria-pressed='true'] { background: var(--color-paper); color: var(--color-forest); }
+.map-stage__cap { margin: 0; font-size: var(--t-small); color: #b8c6bd; }
+.slovakia-map svg { display: block; width: 100%; height: auto; }
+.slovakia-map__outline { fill: var(--color-forest-deep); stroke: #b8c6bd; stroke-width: 1; }
+.slovakia-map__mark { fill: var(--color-terracotta); fill-opacity: 0.9; stroke: var(--color-forest); stroke-width: 1.2; cursor: pointer; }
+.is-hot .slovakia-map__mark { fill-opacity: 1; stroke: var(--color-focus-on-dark); }
+.is-dim .slovakia-map__mark { fill-opacity: 0.35; }
+.slovakia-map__label { font-size: 11.5px; font-weight: 600; fill: var(--color-paper); paint-order: stroke; stroke: var(--color-forest); stroke-width: 3px; stroke-linejoin: round; }
+.slovakia-map__size-key circle { fill: none; stroke: #b8c6bd; }
+.slovakia-map__size-key text { font-size: 10.5px; fill: #b8c6bd; }
+@media (prefers-reduced-motion: no-preference) { .slovakia-map__mark { transition: r 0.35s ease; } }
+@media (max-width: 600px) { .slovakia-map__label, .slovakia-map__size-key { display: none; } }
+.city-strip { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: var(--sp-3); padding-top: var(--sp-3); border-top: 1px solid #2f4f45; }
+.city-strip__cell { display: grid; gap: 2px; text-align: left; border: 0; background: transparent; color: inherit; padding: var(--sp-1) var(--sp-2); margin: 0 calc(-1 * var(--sp-2)); border-radius: 2px; cursor: pointer; font-size: var(--t-small); font-variant-numeric: tabular-nums; }
+.city-strip__cell.is-hot, .city-strip__cell:hover { background: var(--color-forest-deep); }
+.city-strip__cell.is-selected .city-strip__name { color: var(--color-focus-on-dark); }
+.city-strip__bar { display: block; height: 6px; background: #2f4f45; position: relative; }
+.city-strip__bar i { position: absolute; inset: 0 auto 0 0; background: var(--color-terracotta); }
+.city-strip__values { display: flex; justify-content: space-between; color: #b8c6bd; }
+.city-strip__values b { color: var(--color-paper); }
+.city-strip svg { display: block; width: 100%; height: 26px; }
+.city-strip svg path { fill: none; stroke: #b8c6bd; stroke-width: 1.2; }
+.city-strip svg circle { fill: #b8c6bd; }
+.city-strip svg circle.city-strip__now { fill: var(--color-terracotta); }
+@media (max-width: 900px) { .city-strip { grid-template-columns: repeat(2, 1fr); } }
+.fold { border: var(--rule); background: var(--color-paper-light); }
+.fold--on-dark { border-color: #2f4f45; background: transparent; color: inherit; }
+.fold > summary { padding: var(--sp-3) var(--sp-4); font-family: var(--font-display); font-size: var(--t-3); cursor: pointer; list-style: none; display: flex; justify-content: space-between; }
+.fold > summary::after { content: '+'; font-family: var(--font-interface); }
+.fold[open] > summary::after { content: '−'; }
+.fold > :not(summary) { padding: 0 var(--sp-4) var(--sp-4); }
 
 .institution-ranking__list,
 .institution-ranking__faculties ol {
@@ -2527,58 +2534,12 @@ main > section, footer { scroll-margin-top: var(--sp-4); }
     justify-content: flex-start;
   }
 
-  .slovakia-map figcaption,
   .appointment-timeline figcaption,
   .institution-ranking__heading {
     grid-template-columns: 1fr;
     gap: 0.7rem;
   }
 
-
-  .slovakia-map__label {
-    display: none;
-  }
-
-  .slovakia-map__key {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1px;
-    margin: 0.75rem 0 0;
-    padding: 1px;
-    background: rgb(243 236 223 / 20%);
-    list-style: none;
-  }
-
-  .slovakia-map__key li:last-child:nth-child(odd) {
-    grid-column: 1 / -1;
-  }
-
-  .slovakia-map__key button {
-    display: grid;
-    width: 100%;
-    min-height: 2.75rem;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 0.5rem;
-    align-items: center;
-    padding: 0.45rem 0.55rem;
-    border: 0;
-    background: var(--color-forest-deep);
-    box-shadow: inset 3px 0 0 var(--color-terracotta);
-    color: var(--color-paper-light);
-    cursor: pointer;
-    font-size: 0.68rem;
-    line-height: 1.25;
-    text-align: left;
-  }
-
-  .slovakia-map__key button[aria-pressed='true'] {
-    box-shadow: inset 5px 0 0 var(--color-brass);
-  }
-
-  .slovakia-map__key strong {
-    color: var(--color-brass);
-    font-variant-numeric: tabular-nums;
-  }
   .analysis-lenses {
     grid-template-columns: 1fr;
   }

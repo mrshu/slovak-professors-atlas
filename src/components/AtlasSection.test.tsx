@@ -425,7 +425,7 @@ describe('AtlasSection visual and analytical contracts', () => {
     }).parentElement
     const targetWidth = Number(target?.getAttribute('width'))
     const targetHeight = Number(target?.getAttribute('height'))
-    expect(radius).toBe(29)
+    expect(radius).toBe(30)
     expect(targetWidth).toBe(Math.max(44, 2 * radius))
     expect(targetHeight).toBe(Math.max(44, 2 * radius))
     expect(Number(target?.getAttribute('x')) + targetWidth / 2).toBe(Number(mark.getAttribute('cx')))
@@ -467,8 +467,8 @@ describe('AtlasSection visual and analytical contracts', () => {
     const targetWidth = Number(target?.getAttribute('width'))
     const targetHeight = Number(target?.getAttribute('height'))
 
-    expect(Number(mark.getAttribute('r'))).toBe(29)
-    expect(ringRadius).toBe(35)
+    expect(Number(mark.getAttribute('r'))).toBe(30)
+    expect(ringRadius).toBe(36)
     expect(ringStrokeWidth).toBe(3)
     expect(targetWidth).toBe(2 * visibleRadius)
     expect(targetHeight).toBe(2 * visibleRadius)

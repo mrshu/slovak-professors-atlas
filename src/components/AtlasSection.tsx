@@ -287,6 +287,8 @@ function LoadedAtlasSection({ data, atlasState }: LoadedAtlasSectionProps) {
           cities={data.cities}
           affiliations={data.affiliations}
           selectedCity={filters.city}
+          hoveredCity={null}
+          onHoverCity={() => {}}
           onToggleCity={(city) => setFilter('city', filters.city === city ? null : city, 'push')}
         />
         <InstitutionRanking

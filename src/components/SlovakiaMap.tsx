@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { cityCounts } from '../analysis/selectors'
 import type { Affiliation, Appointment, AtlasGeography, City } from '../data/types'
-import { formatAppointmentCount } from '../utils/format'
+import { formatAppointmentCount, formatNumber } from '../utils/format'
 
 interface SlovakiaMapProps {
   records: readonly Appointment[]
@@ -12,7 +12,10 @@ interface SlovakiaMapProps {
   cities: readonly City[]
   affiliations: readonly Affiliation[]
   selectedCity: string | null
+  hoveredCity: string | null
+  onHoverCity: (city: string | null) => void
   onToggleCity: (city: string) => void
+  labelMinimumCount?: number
 }
 
 interface ProjectedCityLocation {
@@ -24,11 +27,24 @@ interface ProjectedCityLocation {
 const DEFAULT_WIDTH = 720
 const MINIMUM_TARGET_SIZE = 44
 const CITY_MARK_MIN_RADIUS = 5
-const CITY_MARK_MAX_RADIUS = 29
-const CITY_LABEL_MIN_COUNT = 50
+const CITY_MARK_MAX_RADIUS = 30
 const SELECTED_RING_RADIUS_OFFSET = 6
 const SELECTED_RING_STROKE_WIDTH = 3
 const MAP_PADDING = 24
+
+function niceSizeKeyValue(value: number): number {
+  if (value <= 0) {
+    return 0
+  }
+  const figures = value < 20 ? 2 : 1
+  const magnitude = Math.pow(10, Math.ceil(Math.log10(value)) - figures)
+  return Math.round(value / magnitude) * magnitude
+}
+
+function sizeKeyValues(maxCount: number): number[] {
+  const raw = [niceSizeKeyValue(maxCount), niceSizeKeyValue(maxCount / 4), niceSizeKeyValue(maxCount / 16)]
+  return Array.from(new Set(raw.filter((value) => value > 0)))
+}
 
 export default function SlovakiaMap({
   records,
@@ -36,7 +52,10 @@ export default function SlovakiaMap({
   cities,
   affiliations,
   selectedCity,
+  hoveredCity,
+  onHoverCity,
   onToggleCity,
+  labelMinimumCount = 10,
 }: SlovakiaMapProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState(DEFAULT_WIDTH)
@@ -101,14 +120,6 @@ export default function SlovakiaMap({
     () => new Map(cityCounts(records, affiliations).map(({ city, count }) => [city, count])),
     [affiliations, records],
   )
-  const mappedAffiliationIds = useMemo(
-    () => new Set(cities.flatMap(({ affiliationIds }) => affiliationIds)),
-    [cities],
-  )
-  const unresolvedRecordCount = useMemo(
-    () => records.filter(({ affiliationId }) => !mappedAffiliationIds.has(affiliationId)).length,
-    [mappedAffiliationIds, records],
-  )
   const projectedCities = useMemo(
     () =>
       projectedCityLocations.map((city) => ({
@@ -125,25 +136,17 @@ export default function SlovakiaMap({
         .range([CITY_MARK_MIN_RADIUS, CITY_MARK_MAX_RADIUS]),
     [maxCount],
   )
+  const keyValues = useMemo(() => sizeKeyValues(maxCount), [maxCount])
 
   return (
     <figure className="slovakia-map" aria-labelledby="slovakia-map-title" ref={containerRef}>
-      <figcaption>
-        <div>
-          <p className="eyebrow eyebrow--light">Proporcionálna mapa</p>
-          <h3 id="slovakia-map-title">Mestá navrhujúcich pracovísk</h3>
-        </div>
-        <p id="map-note">
-          Plocha značky rastie s počtom vymenovaní. Poloha označuje mesto pracoviska, nie
-          bydlisko profesora.
-          {unresolvedRecordCount > 0 &&
-            ` ${formatAppointmentCount(unresolvedRecordCount)} bez vyriešenej polohy sa na mape nezobrazuje.`}
-        </p>
-      </figcaption>
+      <h3 className="visually-hidden" id="slovakia-map-title">
+        Mestá navrhujúcich pracovísk
+      </h3>
       <svg
         className="slovakia-map__chart"
         viewBox={`0 0 ${width} ${height}`}
-        aria-labelledby="slovakia-map-title map-note"
+        aria-labelledby="slovakia-map-title"
       >
         <path className="slovakia-map__outline" d={outline} data-testid="slovakia-outline" />
         {projectedCities.map((city) => {
@@ -159,8 +162,16 @@ export default function SlovakiaMap({
             selected ? 'vybrané' : 'nevybrané'
           }`
 
+          const isHot = city.city === hoveredCity
+          const isDim = selectedCity !== null && selectedCity !== city.city
+
           return (
-            <g className="slovakia-map__city" key={city.city}>
+            <g
+              className={`slovakia-map__city${isHot ? ' is-hot' : ''}${isDim ? ' is-dim' : ''}`}
+              key={city.city}
+              onMouseEnter={() => onHoverCity(city.city)}
+              onMouseLeave={() => onHoverCity(null)}
+            >
               {selected && (
                 <circle
                   className="slovakia-map__selected-ring"
@@ -181,7 +192,7 @@ export default function SlovakiaMap({
                   aria-hidden="true"
                 />
               )}
-              {(city.count >= CITY_LABEL_MIN_COUNT || selected) && (
+              {(city.count >= labelMinimumCount || selected) && (
                 <text
                   className="slovakia-map__label"
                   x={city.x + (labelOnLeft ? -cityRadius - 7 : cityRadius + 7)}
@@ -210,29 +221,26 @@ export default function SlovakiaMap({
             </g>
           )
         })}
+        {keyValues.length > 0 && (
+          <g
+            className="slovakia-map__size-key"
+            transform={`translate(${width - 96} ${height - 30})`}
+            aria-hidden="true"
+          >
+            {keyValues.map((value) => (
+              <circle key={value} cx={0} cy={-radius(value)} r={radius(value)} />
+            ))}
+            {keyValues.map((value) => (
+              <text key={value} x={radius(keyValues[0]!) + 8} y={-2 * radius(value) + 4}>
+                {formatNumber(value)}
+              </text>
+            ))}
+            <text x={-radius(keyValues[0]!)} y={16}>
+              vymenovaní vo výbere
+            </text>
+          </g>
+        )}
       </svg>
-      <ul className="slovakia-map__key" aria-label="Mestá na mape">
-        {projectedCities
-          .filter(({ count }) => count > 0)
-          .map((city) => {
-            const selected = city.city === selectedCity
-            return (
-              <li key={city.city}>
-                <button
-                  type="button"
-                  aria-label={`${city.city}: ${formatAppointmentCount(city.count)}, ${
-                    selected ? 'vybrané' : 'nevybrané'
-                  }, zoznam mapy`}
-                  aria-pressed={selected}
-                  onClick={() => onToggleCity(city.city)}
-                >
-                  <span aria-hidden="true">{city.city}</span>
-                  <strong aria-hidden="true">{city.count}</strong>
-                </button>
-              </li>
-            )
-          })}
-      </ul>
       <p className="slovakia-map__source">
         Obrys: Natural Earth, verejná doména. Poloha pracovísk: zdroje sú uvedené v metodike.
       </p>
