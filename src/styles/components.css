@@ -3660,3 +3660,34 @@ main > section, footer { scroll-margin-top: var(--sp-4); }
     display: none;
   }
 }
+
+.cards { max-width: var(--content-width); margin: var(--sp-4) auto 0; padding: 0 var(--page-gutter); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-4); }
+@media (max-width: 900px) { .cards { grid-template-columns: 1fr; } }
+.card { background: var(--color-paper-light); border: var(--rule); padding: var(--sp-4) var(--sp-4) var(--sp-3); display: grid; grid-template-rows: auto auto auto 1fr auto; gap: var(--sp-1); }
+.card__kicker { margin: 0; font-size: var(--t-label); letter-spacing: 0.11em; text-transform: uppercase; font-weight: 600; color: var(--color-ink-muted); }
+.card h3 { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: var(--t-2); line-height: 1.1; min-height: 2.2em; text-wrap: balance; }
+.card__sub { margin: 0; font-size: var(--t-small); color: var(--color-ink-muted); min-height: 2.9em; }
+.card a { justify-self: start; margin-top: var(--sp-2); font-size: var(--t-small); font-weight: 600; text-decoration-color: currentColor; text-decoration-thickness: 1px; }
+.sw { display: inline-block; width: 9px; height: 9px; border-radius: 50%; vertical-align: middle; margin: 0 3px 0 2px; }
+.sw--1 { background: var(--series-1); }
+.sw--2 { background: var(--series-2); }
+.sw--3 { background: var(--series-3); }
+.chart { display: block; width: 100%; height: auto; font-family: var(--font-interface); }
+.chart__grid { stroke: var(--color-line); stroke-opacity: 0.6; }
+.chart__tick { font-size: 11px; fill: var(--color-ink-muted); }
+.chart__tick--ink { fill: var(--color-ink); }
+.chart__value { font-size: 11px; font-weight: 600; fill: var(--color-ink); font-variant-numeric: tabular-nums; }
+.chart__annotation { font-size: 11px; font-weight: 600; fill: var(--color-ink); }
+.chart__marker { stroke: var(--color-line); stroke-dasharray: 2 4; }
+.chart__line { fill: none; stroke-width: 2; stroke-linejoin: round; }
+.chart__line--1 { stroke: var(--series-1); }
+.chart__line--2 { stroke: var(--series-2); }
+.chart__line--3 { stroke: var(--series-3); }
+.chart__bar { fill: var(--color-paper-deep); }
+.chart__bar--accent { fill: var(--series-1); }
+.chart__connector { stroke: var(--color-line); stroke-width: 2; }
+.chart__dot--1 { fill: var(--series-1); }
+.chart__dot--2 { fill: var(--series-2); }
+.chart__row { cursor: pointer; }
+.chart__row:focus-visible { outline: none; }
+.chart__row:focus-visible .chart__tick--ink { text-decoration: underline; }
