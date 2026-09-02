@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 
-import AtlasSection from './components/AtlasSection'
-import { ContextSectionBody, ContextSectionShell } from './components/ContextSection'
+import ContextStrip from './components/ContextStrip'
 import ErrorPanel from './components/ErrorPanel'
 import FieldSection from './components/FieldSection'
-import Findings from './components/Findings'
+import FindingCards from './components/FindingCards'
+import MapStage from './components/MapStage'
 import Masthead from './components/Masthead'
 import Methodology from './components/Methodology'
 import Register from './components/Register'
@@ -28,33 +28,24 @@ function focusSection(id: string): void {
 
 function LoadedInteractiveSections({ data }: { data: AtlasData }) {
   const atlasState = useAtlasState(data)
+  const selectField = (fieldKey: string) => {
+    atlasState.setFilter('field', fieldKey, 'push')
+    focusSection('odbory')
+  }
 
   return (
     <>
-      <Findings
-        records={data.records}
-        affiliations={data.affiliations}
-        presidents={data.presidents}
-        onCeremonySelect={(appointedOn) => {
-          atlasState.setExclusiveFilter('appointedOn', appointedOn, 'push')
-          focusSection('atlas')
-        }}
-        onCitySelect={(city) => {
-          atlasState.setExclusiveFilter('city', city, 'push')
-          focusSection('atlas')
-        }}
+      <MapStage data={data} atlasState={atlasState} />
+      <FindingCards data={data} onFieldSelect={selectField} />
+      <ContextStrip
+        years={data.context}
+        selectedYear={atlasState.filters.selectedYear}
+        setSelectedYear={atlasState.setSelectedYear}
       />
-      <ContextSectionShell>
-        <ContextSectionBody
-          years={data.context}
-          selectedYear={atlasState.filters.selectedYear}
-          setSelectedYear={atlasState.setSelectedYear}
-        />
-      </ContextSectionShell>
       <FieldSection
         data={data}
         selectedField={atlasState.filters.field}
-        onFieldSelect={(field) => atlasState.setFilter('field', field, 'push')}
+        onFieldSelect={(fieldKey) => atlasState.setFilter('field', fieldKey, 'push')}
         fieldRange={{
           startYear: atlasState.filters.fieldStartYear,
           endYear: atlasState.filters.fieldEndYear,
@@ -63,7 +54,6 @@ function LoadedInteractiveSections({ data }: { data: AtlasData }) {
           atlasState.setFieldEducationRange(startYear, endYear, 'push')
         }
       />
-      <AtlasSection data={data} atlasState={atlasState} />
       <Register data={data} atlasState={atlasState} />
     </>
   )
@@ -110,7 +100,7 @@ export default function App() {
       <main id="obsah">
         {state.status === 'loading' && (
           <section
-            id="zistenia"
+            id="mapa"
             className="section section--status"
             aria-labelledby="loading-title"
           >
@@ -125,18 +115,14 @@ export default function App() {
           </section>
         )}
         {state.status === 'error' && (
-          <section id="zistenia" className="section section--status" aria-labelledby="load-error-title">
+          <section id="mapa" className="section section--status" aria-labelledby="load-error-title">
             <ErrorPanel />
           </section>
         )}
         {state.status === 'ready' ? (
           <LoadedInteractiveSections data={state.data} />
         ) : (
-          <>
-            <ContextSectionShell status={state.status} />
-            <AtlasSection status={state.status} />
-            <Register status={state.status} />
-          </>
+          <Register status={state.status} />
         )}
 
         <Methodology
@@ -146,8 +132,16 @@ export default function App() {
       </main>
 
       <footer className="site-footer">
-        <p>Archívny atlas profesorských vymenovaní na Slovensku</p>
-        <a href="#hero-title">Späť na začiatok</a>
+        <span>
+          Zdroj vymenovaní:{' '}
+          {state.data ? (
+            <a href={state.data.sources.professors.url}>Zdrojový zoznam ministerstva</a>
+          ) : (
+            'Zdrojový zoznam ministerstva'
+          )}{' '}
+          · Kontext: CVTI SR 2000–2025 · Obyvateľstvo: ŠÚ SR · Obrys: Natural Earth
+        </span>
+        <a href="#hore">Na začiatok</a>
       </footer>
     </>
   )

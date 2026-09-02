@@ -65,11 +65,70 @@ const validAtlas = {
         'Mid-year population at midnight from 30 June to 1 July of the reference calendar year.',
     },
   },
-  records: [],
-  institutions: [],
-  affiliations: [],
-  cities: [],
-  presidents: [],
+  records: [
+    {
+      id: 'valid-atlas-appointment',
+      name: 'Overený záznam',
+      titlesBefore: null,
+      titlesAfter: null,
+      faculty: 'Filozofická fakulta',
+      institutionId: 'uniba',
+      affiliationId: 'uniba-default',
+      institutionSource: 'Univerzita Komenského v Bratislave',
+      field: 'história',
+      fieldKey: 'historia',
+      appointedOn: '2000-02-22',
+      presidentId: 'schuster',
+      sourceVariants: [
+        {
+          rowNumber: 2,
+          titlesBefore: null,
+          titlesAfter: null,
+          faculty: 'Filozofická fakulta',
+          institution: 'Univerzita Komenského v Bratislave',
+          field: 'história',
+        },
+      ],
+    },
+  ],
+  institutions: [
+    {
+      id: 'uniba',
+      shortName: 'UK',
+      fullName: 'Univerzita Komenského v Bratislave',
+      sourceLabels: ['Univerzita Komenského v Bratislave'],
+      citationUrl: 'https://uniba.sk/',
+    },
+  ],
+  affiliations: [
+    {
+      id: 'uniba-default',
+      institutionId: 'uniba',
+      facultyKeys: [],
+      status: 'resolved',
+      city: 'Bratislava',
+      sourceUrl: 'https://uniba.sk/',
+      sourceLabel: 'UK',
+      note: null,
+    },
+  ],
+  cities: [
+    {
+      name: 'Bratislava',
+      latitude: 48.1486,
+      longitude: 17.1077,
+      affiliationIds: ['uniba-default'],
+    },
+  ],
+  presidents: [
+    {
+      id: 'schuster',
+      name: 'Rudolf Schuster',
+      from: '1999-06-15',
+      to: '2004-06-15',
+      citationUrl: 'https://www.prezident.sk/rudolf-schuster/',
+    },
+  ],
   context: Array.from({ length: 17 }, (_, index) => ({
     year: 2009 + index,
     academicYear: `${2009 + index}/${2010 + index}`,
@@ -324,47 +383,29 @@ describe('archívny atlas', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     render(<App />)
-
-    expect(screen.getByRole('heading', { name: /Kde vzniká slovenská profesúra\?/ })).toBeVisible()
+    expect(
+      screen.getByRole('heading', { level: 1, name: /Kde vzniká slovenská profesúra\?/ }),
+    ).toBeVisible()
     const ledger = await screen.findByLabelText('Rozsah analytického súboru')
     expect(within(ledger).getByText(/2[\s ]378/)).toBeVisible()
-
-    const findings = screen.getByRole('region', { name: 'Čísla, ktoré menia mierku' })
-    expect(within(findings).getAllByRole('article')).toHaveLength(3)
-    expect(
-      within(findings).getByRole('article', { name: 'Najväčší ceremoniál' }),
-    ).toBeVisible()
-    expect(
-      within(findings).getByRole('article', { name: 'Podiel Bratislavy' }),
-    ).toBeVisible()
-    expect(
-      within(findings).getByRole('article', { name: 'Rozmanitosť odborov' }),
-    ).toBeVisible()
-
-    const context = screen.getByRole('region', { name: 'Vymenovania v národnom kontexte' })
-    expect(
-      within(context).getByRole('group', {
-        name: 'Presné národné hodnoty pre rok 2025',
-      }),
-    ).toBeVisible()
-    expect(within(context).getByText('Najnovší dostupný kontext: 2025/2026')).toBeVisible()
-
-    const banner = screen.getByRole('banner')
     const main = screen.getByRole('main')
-    expect(
-      within(banner).getByRole('navigation', { name: 'Navigácia atlasu' }),
-    ).toBeVisible()
-
-    const mainSections = Array.from(main.children).map((section) => section.id)
-    expect(mainSections).toEqual([
+    expect(Array.from(main.children).map((section) => section.id)).toEqual([
+      'mapa',
       'zistenia',
       'kontext',
       'odbory',
-      'atlas',
       'register',
       'metodika',
     ])
-
+    expect(screen.getByRole('group', { name: 'Obdobie' })).toBeVisible()
+    expect(screen.getByRole('region', { name: 'Tri zistenia' })).toBeVisible()
+    expect(
+      screen.getByRole('region', { name: 'Úplný register profesorských vymenovaní' }),
+    ).toBeVisible()
+    expect(screen.getByRole('link', { name: 'Zdrojový zoznam ministerstva' })).toHaveAttribute(
+      'href',
+      MINISTRY_SOURCE_URL,
+    )
     expect(fetchMock).toHaveBeenCalledTimes(1)
     expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
       'https://example.test/slovak-professors/data/atlas.json',
@@ -381,9 +422,7 @@ describe('archívny atlas', () => {
 
     render(<App />)
 
-    const context = await screen.findByRole('region', {
-      name: 'Vymenovania v národnom kontexte',
-    })
+    fireEvent.click(await screen.findByText('Národný kontext v detaile'))
     const panel = await screen.findByRole('group', {
       name: 'Presné národné hodnoty pre rok 2000',
     })
@@ -427,40 +466,29 @@ describe('archívny atlas', () => {
     expect(within(section).getByRole('heading', { name: 'Psychológia' })).toBeVisible()
   })
 
-  it('opens a finding from defaults in one history entry instead of intersecting stale filters', async () => {
-    window.history.replaceState({}, '', '/slovak-professors/?field=psychologia')
-    const pushState = vi.spyOn(window.history, 'pushState')
-    vi.stubGlobal('fetch', vi.fn(async () => successfulResponse(atlasWithFieldVariants)))
+  it('narrows the register to a five-year period from the map stage period control', async () => {
+    const atlasWithWiderCoverage = {
+      ...validAtlas,
+      meta: { ...validAtlas.meta, appointmentDateMin: '1998-01-01' },
+    }
+    vi.stubGlobal('fetch', vi.fn(async () => successfulResponse(atlasWithWiderCoverage)))
 
     render(<App />)
 
-    const findings = await screen.findByRole('region', { name: 'Čísla, ktoré menia mierku' })
-    fireEvent.click(within(findings).getByRole('button', { name: 'Zobraziť Bratislavu' }))
+    const inRangeCount = atlasWithWiderCoverage.records.filter((record) => {
+      const year = Number(record.appointedOn.slice(0, 4))
+      return year >= 2000 && year <= 2004
+    }).length
 
-    expect(pushState).toHaveBeenCalledTimes(1)
-    expect(window.location.search).toBe('?city=Bratislava')
-    expect(window.location.hash).toBe('#atlas')
+    fireEvent.click(await screen.findByRole('button', { name: '2000–2004' }))
+
+    expect(window.location.search).toBe('?startYear=2000&endYear=2004')
     const explorer = screen.getByRole('region', {
       name: 'Úplný register profesorských vymenovaní',
     })
-    await waitFor(() => expect(within(explorer).getByRole('status')).toHaveTextContent('3'))
-    expect(
-      within(explorer).queryByRole('button', { name: /Odstrániť filter Odbor:/ }),
-    ).not.toBeInTheDocument()
-  })
-  it('opens the ceremony finding without retaining an unrelated active field', async () => {
-    window.history.replaceState({}, '', '/slovak-professors/?field=psychologia')
-    const pushState = vi.spyOn(window.history, 'pushState')
-    vi.stubGlobal('fetch', vi.fn(async () => successfulResponse(atlasWithFieldVariants)))
-
-    render(<App />)
-
-    const findings = await screen.findByRole('region', { name: 'Čísla, ktoré menia mierku' })
-    fireEvent.click(within(findings).getByRole('button', { name: 'Otvoriť ceremoniál' }))
-
-    expect(pushState).toHaveBeenCalledTimes(1)
-    expect(window.location.search).toBe('?appointedOn=2000-02-22&selectedYear=2000')
-    expect(window.location.hash).toBe('#atlas')
+    await waitFor(() =>
+      expect(within(explorer).getByRole('status')).toHaveTextContent(String(inRangeCount)),
+    )
   })
 
 
@@ -470,12 +498,9 @@ describe('archívny atlas', () => {
 
     render(<App />)
 
-    const loadingContext = screen.getByRole('region', {
-      name: 'Vymenovania v národnom kontexte',
-    })
-    expect(loadingContext).toHaveAttribute('id', 'kontext')
-
-    expect(await screen.findByRole('heading', { name: 'Atlas sa nepodarilo načítať' })).toBeVisible()
+    const errorHeading = await screen.findByRole('heading', { name: 'Atlas sa nepodarilo načítať' })
+    expect(errorHeading).toBeVisible()
+    expect(errorHeading.closest('section')).toHaveAttribute('id', 'mapa')
     expect(screen.getByText('Dáta sa teraz nedajú bezpečne zobraziť. Skúste stránku načítať znova.')).toBeVisible()
     expect(screen.getByRole('link', { name: 'Otvoriť zdrojový zoznam ministerstva' })).toHaveAttribute(
       'href',
@@ -483,9 +508,6 @@ describe('archívny atlas', () => {
     )
     expect(screen.getByRole('heading', { name: /Kde vzniká slovenská profesúra\?/ })).toBeVisible()
     expect(consoleError).toHaveBeenCalledTimes(1)
-    expect(
-      screen.getByRole('region', { name: 'Vymenovania v národnom kontexte' }),
-    ).toHaveAttribute('id', 'kontext')
   })
 
   it.each([

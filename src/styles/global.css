@@ -32,8 +32,9 @@ textarea {
 
 a {
   color: currentColor;
-  text-decoration-color: var(--color-terracotta);
-  text-decoration-thickness: 0.11em;
+  text-decoration: underline;
+  text-decoration-color: currentColor;
+  text-decoration-thickness: 1px;
   text-underline-offset: 0.2em;
 }
 
