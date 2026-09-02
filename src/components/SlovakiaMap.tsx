@@ -36,12 +36,15 @@ function niceSizeKeyValue(value: number): number {
   if (value <= 0) {
     return 0
   }
-  const figures = value < 20 ? 2 : 1
-  const magnitude = Math.pow(10, Math.ceil(Math.log10(value)) - figures)
-  return Math.round(value / magnitude) * magnitude
+  // One significant figure at every magnitude (200, 50, 10, …); below 20 the
+  // result is additionally floored to a whole appointment count of at least 1,
+  // so the key never shows a fractional value such as "1,3".
+  const magnitude = Math.pow(10, Math.floor(Math.log10(value)))
+  const rounded = Math.round(value / magnitude) * magnitude
+  return Math.max(1, Math.round(rounded))
 }
 
-function sizeKeyValues(maxCount: number): number[] {
+export function sizeKeyValues(maxCount: number): number[] {
   const raw = [niceSizeKeyValue(maxCount), niceSizeKeyValue(maxCount / 4), niceSizeKeyValue(maxCount / 16)]
   return Array.from(new Set(raw.filter((value) => value > 0)))
 }
