@@ -3691,3 +3691,9 @@ main > section, footer { scroll-margin-top: var(--sp-4); }
 .chart__row { cursor: pointer; }
 .chart__row:focus-visible { outline: none; }
 .chart__row:focus-visible .chart__tick--ink { text-decoration: underline; }
+
+.context-strip { max-width: var(--content-width); margin: var(--sp-4) auto 0; padding: var(--sp-4) var(--page-gutter) 0; display: grid; gap: var(--sp-3); }
+.context-strip__head h2 { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: var(--t-2); }
+.context-strip__charts { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4); }
+@media (max-width: 760px) { .context-strip__charts { grid-template-columns: 1fr; } }
+.chart__probe { fill: transparent; }
