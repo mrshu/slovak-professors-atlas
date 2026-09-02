@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Appointment, AtlasData } from '../data/types'
@@ -15,6 +15,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup()
+  vi.useRealTimers()
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
 })
@@ -90,6 +91,12 @@ describe('Register', () => {
       target: { value: 'Osoba 0' },
     })
     expect(state.setQuery).toHaveBeenCalledWith('Osoba 0')
+  })
+
+  it('disables the CSV export button when there are no filtered records', () => {
+    const state = atlasState()
+    render(<Register data={data as never} atlasState={{ ...state, filteredRecords: [] }} />)
+    expect(screen.getByRole('button', { name: 'Stiahnuť filtrované CSV' })).toBeDisabled()
   })
 })
 
@@ -578,5 +585,29 @@ describe('úplný register', () => {
     expect(within(register).queryByRole('alert')).not.toBeInTheDocument()
     expect(click).toHaveBeenCalledTimes(2)
     expect(revokeObjectURL).toHaveBeenNthCalledWith(2, 'blob:profesori')
+  })
+
+  it('reštartuje 150 ms odklad pri každej zmene dopytu aj pri rovnakom počte', () => {
+    vi.useFakeTimers()
+    render(<RegisterHarness />)
+    const register = screen.getByRole('region', { name: 'Úplný register profesorských vymenovaní' })
+    const query = within(register).getByLabelText('Hľadať v záznamoch')
+    const announcement = within(register).getByRole('status')
+
+    fireEvent.change(query, { target: { value: 'sime' } })
+    expect(within(register).getByText('1 vymenovanie').parentElement).toHaveTextContent(
+      '1 vymenovanie vo výbere',
+    )
+    expect(announcement).toHaveTextContent('30 vymenovaní vo výbere')
+
+    act(() => vi.advanceTimersByTime(100))
+    fireEvent.change(query, { target: { value: 'simek' } })
+    expect(within(register).getByText('Štefan Šimek')).toBeVisible()
+    expect(window.location.search).toBe('?query=simek')
+
+    act(() => vi.advanceTimersByTime(149))
+    expect(announcement).toHaveTextContent('30 vymenovaní vo výbere')
+    act(() => vi.advanceTimersByTime(1))
+    expect(announcement).toHaveTextContent('1 vymenovanie vo výbere')
   })
 })

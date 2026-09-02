@@ -308,14 +308,22 @@ function LoadedRegister({ data, atlasState }: LoadedRegisterProps) {
           <button type="button" disabled={!hasActiveState} onClick={() => resetFilters('push')}>
             Vynulovať všetky filtre
           </button>
-          <button type="button" className="register__export" onClick={downloadFilteredCsv}>
+          <button
+            type="button"
+            className="register__export"
+            disabled={filteredRecords.length === 0}
+            onClick={downloadFilteredCsv}
+          >
             Stiahnuť filtrované CSV
           </button>
         </div>
       </details>
       <div className="register__state">
-        <p role="status" aria-live="polite">
-          <strong>{formatAppointmentCount(announcedCount)}</strong> vo výbere
+        <p aria-hidden="true">
+          <strong>{formatAppointmentCount(filteredRecords.length)}</strong> vo výbere
+        </p>
+        <p className="visually-hidden" role="status" aria-live="polite">
+          {formatAppointmentCount(announcedCount)} vo výbere
         </p>
         {activeChips.length > 0 && (
           <ul aria-label="Aktívne filtre">
