@@ -361,7 +361,7 @@ describe('archívny atlas', () => {
       'kontext',
       'odbory',
       'atlas',
-      'zaznamy',
+      'register',
       'metodika',
     ])
 

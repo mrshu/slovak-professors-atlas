@@ -35,7 +35,7 @@ interface VariantDifference {
   variantValue: string | null
 }
 
-const PAGE_SIZE = 25
+const PAGE_SIZE = 30
 const SORT_COLUMNS: readonly SortColumn[] = [
   { key: 'name', label: 'Meno', sortLabel: 'mena' },
   { key: 'institution', label: 'Inštitúcia', sortLabel: 'inštitúcie' },
@@ -211,7 +211,7 @@ function RecordDetail({
 
 export default function RecordList({ records, institutions, presidents }: RecordListProps) {
   const [sort, setSort] = useState<SortState>({ key: 'appointedOn', direction: 'descending' })
-  const [page, setPage] = useState(1)
+  const [visible, setVisible] = useState(PAGE_SIZE)
   const [openRecordId, setOpenRecordId] = useState<string | null>(null)
   const institutionById = useMemo(
     () => new Map(institutions.map((institution) => [institution.id, institution] as const)),
@@ -221,9 +221,14 @@ export default function RecordList({ records, institutions, presidents }: Record
     () => new Map(presidents.map((president) => [president.id, president] as const)),
     [presidents],
   )
+  const countByDate = useMemo(() => {
+    const m = new Map<string, number>()
+    for (const r of records) m.set(r.appointedOn, (m.get(r.appointedOn) ?? 0) + 1)
+    return m
+  }, [records])
 
   useEffect(() => {
-    setPage(1)
+    setVisible(PAGE_SIZE)
     setOpenRecordId(null)
   }, [records])
 
@@ -251,9 +256,7 @@ export default function RecordList({ records, institutions, presidents }: Record
     )
   }, [institutionById, presidentById, records, sort])
 
-  const pageCount = Math.max(1, Math.ceil(sortedRecords.length / PAGE_SIZE))
-  const safePage = Math.min(page, pageCount)
-  const pageRecords = sortedRecords.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
+  const pageRecords = sortedRecords.slice(0, visible)
 
   const changeSort = (key: SortKey) => {
     setSort((current) => ({
@@ -261,14 +264,14 @@ export default function RecordList({ records, institutions, presidents }: Record
       direction:
         current.key === key && current.direction === 'ascending' ? 'descending' : 'ascending',
     }))
-    setPage(1)
+    setVisible(PAGE_SIZE)
   }
 
   const selectSortKey = (key: SortKey) => {
     setSort((current) =>
       current.key === key ? current : { key, direction: 'ascending' },
     )
-    setPage(1)
+    setVisible(PAGE_SIZE)
   }
 
   const toggleSortDirection = () => {
@@ -276,7 +279,7 @@ export default function RecordList({ records, institutions, presidents }: Record
       ...current,
       direction: current.direction === 'ascending' ? 'descending' : 'ascending',
     }))
-    setPage(1)
+    setVisible(PAGE_SIZE)
   }
 
   return (
@@ -320,6 +323,10 @@ export default function RecordList({ records, institutions, presidents }: Record
                     <th
                       scope="col"
                       aria-sort={sort.key === column.key ? sort.direction : 'none'}
+                      hidden={
+                        sort.key === 'appointedOn' &&
+                        (column.key === 'appointedOn' || column.key === 'president')
+                      }
                       key={column.key}
                     >
                       <SortButton activeSort={sort} column={column} onSort={changeSort} />
@@ -329,26 +336,48 @@ export default function RecordList({ records, institutions, presidents }: Record
                 </tr>
               </thead>
               <tbody>
-                {pageRecords.map((record) => {
+                {pageRecords.map((record, index) => {
                   const institution = institutionById.get(record.institutionId)
                   const president = presidentById.get(record.presidentId)
                   const detailId = `record-detail-${record.id}`
                   const detailOpen = openRecordId === record.id
+                  const grouped = sort.key === 'appointedOn'
+                  const startsGroup =
+                    grouped && (index === 0 || pageRecords[index - 1]?.appointedOn !== record.appointedOn)
                   return (
                     <Fragment key={record.id}>
+                      {startsGroup && (
+                        <tr
+                          className="record-table__group"
+                          aria-label={`${formatDate(record.appointedOn)} · ${formatNumber(countByDate.get(record.appointedOn) ?? 0)} vymenovaní · ${presidentById.get(record.presidentId)?.name ?? 'neuvedené'}`}
+                        >
+                          <td colSpan={SORT_COLUMNS.length + 1}>
+                            {formatDate(record.appointedOn)}
+                            <span>
+                              {formatNumber(countByDate.get(record.appointedOn) ?? 0)} vymenovaní ·{' '}
+                              {presidentById.get(record.presidentId)?.name ?? 'neuvedené'}
+                            </span>
+                          </td>
+                        </tr>
+                      )}
                       <tr className="record-row">
                         <td data-label="Meno">
-                          <strong>{record.name}</strong>
+                          <span>
+                            {record.titlesBefore ?? ''} <strong>{record.name}</strong>
+                            {record.titlesAfter ? `, ${record.titlesAfter}` : ''}
+                          </span>
                         </td>
                         <td data-label="Inštitúcia a fakulta">
                           <span>{institution?.fullName ?? record.institutionId}</span>
                           <small>{shown(record.faculty)}</small>
                         </td>
                         <td data-label="Odbor">{record.field}</td>
-                        <td data-label="Dátum">
+                        <td data-label="Dátum" hidden={grouped}>
                           <time dateTime={record.appointedOn}>{formatDate(record.appointedOn)}</time>
                         </td>
-                        <td data-label="Prezident">{president?.name ?? record.presidentId}</td>
+                        <td data-label="Prezident" hidden={grouped}>
+                          {president?.name ?? record.presidentId}
+                        </td>
                         <td data-label="Podrobnosti">
                           <button
                             type="button"
@@ -386,26 +415,14 @@ export default function RecordList({ records, institutions, presidents }: Record
         </>
       )}
 
-      {records.length > 0 && (
-        <nav className="record-pagination" aria-label="Stránkovanie záznamov">
-          <button
-            type="button"
-            disabled={safePage === 1}
-            onClick={() => setPage((current) => Math.max(1, current - 1))}
-          >
-            Predchádzajúca strana
-          </button>
-          <p aria-live="polite">
-            Strana {formatNumber(safePage)} z {formatNumber(pageCount)}
-          </p>
-          <button
-            type="button"
-            disabled={safePage === pageCount}
-            onClick={() => setPage((current) => Math.min(pageCount, current + 1))}
-          >
-            Nasledujúca strana
-          </button>
-        </nav>
+      {sortedRecords.length > visible && (
+        <button
+          type="button"
+          className="record-list__more"
+          onClick={() => setVisible((count) => count + PAGE_SIZE)}
+        >
+          Zobraziť ďalších {formatNumber(Math.min(PAGE_SIZE, sortedRecords.length - visible))} záznamov
+        </button>
       )}
     </div>
   )

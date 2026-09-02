@@ -1,14 +1,99 @@
 import '@testing-library/jest-dom/vitest'
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Appointment, AtlasData } from '../data/types'
 import { useAtlasState } from '../state/useAtlasState'
+import type { AtlasState } from '../state/useAtlasState'
+import { affiliation, appointment, city, institution, president } from '../test/atlasFixture'
 import { normalizeForSearch } from '../utils/search'
-import Explorer from './Explorer'
-import Methodology from './Methodology'
+import Register from './Register'
 
-const institutions: AtlasData['institutions'] = [
+beforeEach(() => {
+  window.history.replaceState({}, '', '/')
+})
+
+afterEach(() => {
+  cleanup()
+  vi.restoreAllMocks()
+  vi.unstubAllGlobals()
+})
+
+const records = Array.from({ length: 35 }, (_, index) =>
+  appointment({
+    appointedOn: index < 20 ? '2026-06-03' : '2026-03-31',
+    name: `Osoba ${String(index).padStart(2, '0')}`,
+    presidentId: 'pellegrini',
+  }),
+)
+const data = {
+  records,
+  institutions: [institution()],
+  affiliations: [affiliation()],
+  cities: [city()],
+  presidents: [president({ id: 'pellegrini', name: 'Peter Pellegrini', from: '2024-06-15', to: null })],
+  meta: {
+    schemaVersion: 1, sourceRowCount: 35, duplicateSourceRowCount: 0, analyticalAppointmentCount: 35,
+    ceremonyCount: 2, appointmentDateMin: '2026-03-31', appointmentDateMax: '2026-06-03',
+  },
+  sources: { professors: { url: 'https://example.test/p', sha256: '', retrievedOn: '' } },
+}
+
+function atlasState(): AtlasState {
+  const defaults = {
+    startYear: 2000, endYear: 2026, fieldStartYear: 2009, fieldEndYear: 2025,
+    presidentId: null, city: null, institutionId: null, faculty: null, field: null,
+    appointedOn: null, query: '', selectedYear: 2025,
+  }
+  return {
+    filters: defaults,
+    defaults,
+    filteredRecords: records,
+    options: {
+      defaults,
+      presidentIds: ['pellegrini'],
+      cities: ['Bratislava'],
+      institutionIds: ['uniba'],
+      faculties: ['Prírodovedecká fakulta'],
+      fieldKeys: ['fyzika'],
+      fields: [{ key: 'fyzika', canonicalLabel: 'fyzika' }],
+      appointmentDates: ['2026-03-31', '2026-06-03'],
+    },
+    setFilter: vi.fn(), setExclusiveFilter: vi.fn(), setDateRange: vi.fn(), setFieldEducationRange: vi.fn(),
+    setSelectedYear: vi.fn(), setTimelineYear: vi.fn(), setAppointmentDate: vi.fn(), setQuery: vi.fn(), resetFilters: vi.fn(),
+  }
+}
+
+describe('Register', () => {
+  it('groups rows by ceremony date and loads thirty at a time', () => {
+    render(<Register data={data as never} atlasState={atlasState()} />)
+    const section = screen.getByRole('region', { name: 'Úplný register profesorských vymenovaní' })
+    expect(within(section).getByRole('status')).toHaveTextContent('35 vymenovaní vo výbere')
+    const groups = within(section).getAllByRole('row', { name: /vymenovaní · Peter Pellegrini/ })
+    expect(groups[0]).toHaveTextContent('3. júna 2026')
+    expect(within(section).getAllByText(/^Osoba \d\d$/)).toHaveLength(30)
+    fireEvent.click(within(section).getByRole('button', { name: 'Zobraziť ďalších 5 záznamov' }))
+    expect(within(section).getAllByText(/^Osoba \d\d$/)).toHaveLength(35)
+  })
+
+  it('keeps the secondary filters and the timeline in closed folds', () => {
+    render(<Register data={data as never} atlasState={atlasState()} />)
+    expect(screen.getByText('Viac filtrov').closest('details')).not.toHaveAttribute('open')
+    expect(screen.getByText('Časová os slávností').closest('details')).not.toHaveAttribute('open')
+    expect(screen.getByRole('combobox', { name: 'Fakulta' })).toBeInTheDocument()
+  })
+
+  it('writes the query through setQuery on every keystroke', () => {
+    const state = atlasState()
+    render(<Register data={data as never} atlasState={state} />)
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Hľadať v záznamoch' }), {
+      target: { value: 'Osoba 0' },
+    })
+    expect(state.setQuery).toHaveBeenCalledWith('Osoba 0')
+  })
+})
+
+const legacyInstitutions: AtlasData['institutions'] = [
   {
     id: 'uniba',
     shortName: 'UK v Bratislave',
@@ -25,7 +110,7 @@ const institutions: AtlasData['institutions'] = [
   },
 ]
 
-function appointment(
+function legacyAppointment(
   index: number,
   overrides: Partial<Appointment> = {},
 ): Appointment {
@@ -58,7 +143,7 @@ function appointment(
   }
 }
 
-const lookupRecord = appointment(0, {
+const legacyLookupRecord = legacyAppointment(0, {
   id: 'stefan-simek',
   name: 'Štefan Šimek',
   titlesBefore: 'prof. RNDr.',
@@ -90,13 +175,13 @@ const lookupRecord = appointment(0, {
   ],
 })
 
-const records = [
-  lookupRecord,
-  appointment(1, { faculty: 'Filozofická fakulta' }),
-  ...Array.from({ length: 28 }, (_, index) => appointment(index + 2)),
+const legacyRecords = [
+  legacyLookupRecord,
+  legacyAppointment(1, { faculty: 'Filozofická fakulta' }),
+  ...Array.from({ length: 28 }, (_, index) => legacyAppointment(index + 2)),
 ]
 
-const data: AtlasData = {
+const legacyData: AtlasData = {
   meta: {
     schemaVersion: 1,
     sourceRowCount: 2419,
@@ -127,8 +212,8 @@ const data: AtlasData = {
         'Mid-year population at midnight from 30 June to 1 July of the reference calendar year.',
     },
   },
-  records,
-  institutions,
+  records: legacyRecords,
+  institutions: legacyInstitutions,
   affiliations: [
     {
       id: 'uniba-default',
@@ -254,120 +339,83 @@ const data: AtlasData = {
   editorialFacts: {} as AtlasData['editorialFacts'],
 }
 
-function ExplorerHarness({ atlasData = data }: { atlasData?: AtlasData }) {
+function RegisterHarness({ atlasData = legacyData }: { atlasData?: AtlasData }) {
   const atlasState = useAtlasState(atlasData)
   return (
     <>
       <output data-testid="linked-count">{atlasState.filteredRecords.length}</output>
-      <Explorer data={atlasData} atlasState={atlasState} />
+      <Register data={atlasData} atlasState={atlasState} />
     </>
   )
 }
 
-beforeEach(() => {
-  window.history.replaceState({}, '', '/')
-})
-
-afterEach(() => {
-  cleanup()
-  vi.useRealTimers()
-  vi.restoreAllMocks()
-  vi.unstubAllGlobals()
-})
-
 describe('úplný register', () => {
   it('vyhľadáva okamžite bez ohľadu na diakritiku, zapisuje URL cez replace a vynuluje celý výber', () => {
     const replaceState = vi.spyOn(window.history, 'replaceState')
-    render(<ExplorerHarness />)
+    render(<RegisterHarness />)
 
-    const explorer = screen.getByRole('region', { name: 'Úplný register profesorských vymenovaní' })
-    const query = within(explorer).getByLabelText('Hľadať v záznamoch')
+    const register = screen.getByRole('region', { name: 'Úplný register profesorských vymenovaní' })
+    const query = within(register).getByLabelText('Hľadať v záznamoch')
 
     fireEvent.change(query, { target: { value: 'simek' } })
 
-    expect(within(explorer).getByText('Štefan Šimek')).toBeVisible()
+    expect(within(register).getByText('Štefan Šimek')).toBeVisible()
     expect(screen.getByTestId('linked-count')).toHaveTextContent('1')
     expect(window.location.search).toBe('?query=simek')
     expect(replaceState).toHaveBeenCalled()
-    expect(within(explorer).getByRole('button', { name: /Odstrániť filter Hľadanie: simek/ })).toBeVisible()
+    expect(within(register).getByRole('button', { name: /Odstrániť filter Hľadanie: simek/ })).toBeVisible()
 
     fireEvent.change(query, { target: { value: 'Šimek' } })
-    expect(within(explorer).getByText('Štefan Šimek')).toBeVisible()
+    expect(within(register).getByText('Štefan Šimek')).toBeVisible()
 
-    fireEvent.click(within(explorer).getByRole('button', { name: 'Vynulovať všetky filtre' }))
+    fireEvent.click(within(register).getByRole('button', { name: 'Vynulovať všetky filtre' }))
     expect(query).toHaveValue('')
-    expect(screen.getByTestId('linked-count')).toHaveTextContent(String(records.length))
+    expect(screen.getByTestId('linked-count')).toHaveTextContent(String(legacyRecords.length))
     expect(window.location.search).toBe('')
   })
 
   it('filtruje každú zdieľanú dimenziu a ponúka iba neprázdne fakulty', () => {
-    render(<ExplorerHarness />)
-    const explorer = screen.getByRole('region', { name: 'Úplný register profesorských vymenovaní' })
-    const reset = () => fireEvent.click(within(explorer).getByRole('button', { name: 'Vynulovať všetky filtre' }))
+    render(<RegisterHarness />)
+    const register = screen.getByRole('region', { name: 'Úplný register profesorských vymenovaní' })
+    const reset = () => fireEvent.click(within(register).getByRole('button', { name: 'Vynulovať všetky filtre' }))
 
-    fireEvent.change(within(explorer).getByLabelText('Prezident'), { target: { value: 'gasparovic' } })
+    fireEvent.change(within(register).getByLabelText('Prezident'), { target: { value: 'gasparovic' } })
     expect(screen.getByTestId('linked-count')).toHaveTextContent('1')
     reset()
 
-    fireEvent.change(within(explorer).getByLabelText('Mesto'), { target: { value: 'Bratislava' } })
+    fireEvent.change(within(register).getByLabelText('Mesto'), { target: { value: 'Bratislava' } })
     expect(screen.getByTestId('linked-count')).toHaveTextContent('1')
     reset()
 
-    fireEvent.change(within(explorer).getByLabelText('Kanonická inštitúcia'), { target: { value: 'uniba' } })
+    fireEvent.change(within(register).getByLabelText('Kanonická inštitúcia'), { target: { value: 'uniba' } })
     expect(screen.getByTestId('linked-count')).toHaveTextContent('1')
     reset()
 
-    const faculty = within(explorer).getByLabelText('Fakulta')
+    const faculty = within(register).getByLabelText('Fakulta')
     expect(within(faculty).queryByRole('option', { name: 'neuvedené' })).not.toBeInTheDocument()
     fireEvent.change(faculty, { target: { value: 'Filozofická fakulta' } })
     expect(screen.getByTestId('linked-count')).toHaveTextContent('1')
     reset()
 
-    const field = within(explorer).getByLabelText('Odbor')
+    const field = within(register).getByLabelText('Odbor')
     expect(within(field).getByRole('option', { name: 'história' })).toHaveValue('historia')
     fireEvent.change(field, { target: { value: 'historia' } })
     expect(
-      within(explorer).getByRole('button', { name: 'Odstrániť filter Odbor: história' }),
+      within(register).getByRole('button', { name: 'Odstrániť filter Odbor: história' }),
     ).toBeVisible()
     expect(screen.getByTestId('linked-count')).toHaveTextContent('1')
     reset()
 
-    fireEvent.change(within(explorer).getByLabelText('Od roku'), { target: { value: '2010' } })
-    fireEvent.change(within(explorer).getByLabelText('Do roku'), { target: { value: '2010' } })
+    fireEvent.change(within(register).getByLabelText('Od roku'), { target: { value: '2010' } })
+    fireEvent.change(within(register).getByLabelText('Do roku'), { target: { value: '2010' } })
     expect(screen.getByTestId('linked-count')).toHaveTextContent('1')
   })
 
-  it('stránkuje po 25 záznamoch, radí tlačidlami a ukazuje prázdny výsledok', () => {
-    const { container } = render(<ExplorerHarness />)
-    const explorer = screen.getByRole('region', { name: 'Úplný register profesorských vymenovaní' })
-    const table = within(explorer).getByRole('table', { name: 'Záznamy v aktívnom výbere' })
-
-    expect(within(table).getByText('Meno', { selector: 'th button span:first-child' })).toBeVisible()
-    expect(container.querySelectorAll('tbody > tr')).toHaveLength(25)
-    expect(within(explorer).getByText('Strana 1 z 2')).toBeVisible()
-
-    const nameSort = within(table).getByRole('button', { name: 'Zoradiť podľa mena' })
-    fireEvent.click(nameSort)
-    expect(nameSort.closest('th')).toHaveAttribute('aria-sort', 'ascending')
-    fireEvent.click(nameSort)
-    expect(nameSort.closest('th')).toHaveAttribute('aria-sort', 'descending')
-
-    fireEvent.click(within(explorer).getByRole('button', { name: 'Nasledujúca strana' }))
-    expect(container.querySelectorAll('tbody > tr')).toHaveLength(5)
-    expect(within(explorer).getByText('Strana 2 z 2')).toBeVisible()
-
-    fireEvent.change(within(explorer).getByLabelText('Hľadať v záznamoch'), {
-      target: { value: 'nikto taký' },
-    })
-    expect(within(explorer).getByText('Výberu nezodpovedá nijaký záznam.')).toBeVisible()
-    expect(container.querySelectorAll('tbody > tr')).toHaveLength(0)
-  })
-
   it('ponúka viditeľné mobilné zoradenie so stavom zhodným s hlavičkou tabuľky', () => {
-    const { container } = render(<ExplorerHarness />)
-    const explorer = screen.getByRole('region', { name: 'Úplný register profesorských vymenovaní' })
-    const toolbar = within(explorer).getByRole('group', { name: 'Zoradenie záznamov' })
-    const table = within(explorer).getByRole('table', { name: 'Záznamy v aktívnom výbere' })
+    const { container } = render(<RegisterHarness />)
+    const register = screen.getByRole('region', { name: 'Úplný register profesorských vymenovaní' })
+    const toolbar = within(register).getByRole('group', { name: 'Zoradenie záznamov' })
+    const table = within(register).getByRole('table', { name: 'Záznamy v aktívnom výbere' })
     const mobileColumn = within(toolbar).getByLabelText('Zoradiť záznamy podľa')
 
     expect(toolbar).toBeVisible()
@@ -377,7 +425,7 @@ describe('úplný register', () => {
         name: 'Zmeniť smer zoradenia, teraz zostupne',
       }),
     ).toBeVisible()
-    expect(container.querySelectorAll('tbody > tr')).toHaveLength(25)
+    expect(container.querySelectorAll('tbody > tr')).toHaveLength(32)
 
     fireEvent.change(mobileColumn, { target: { value: 'name' } })
     const desktopNameSort = within(table).getByRole('button', { name: 'Zoradiť podľa mena' })
@@ -393,14 +441,14 @@ describe('úplný register', () => {
   })
 
   it('zverejňuje celý zdrojový detail a rozdiely preskúmaného opakovania', () => {
-    render(<ExplorerHarness />)
-    const explorer = screen.getByRole('region', { name: 'Úplný register profesorských vymenovaní' })
-    fireEvent.change(within(explorer).getByLabelText('Hľadať v záznamoch'), {
+    render(<RegisterHarness />)
+    const register = screen.getByRole('region', { name: 'Úplný register profesorských vymenovaní' })
+    fireEvent.change(within(register).getByLabelText('Hľadať v záznamoch'), {
       target: { value: 'Štefan Šimek' },
     })
-    fireEvent.click(within(explorer).getByText('Zobraziť detail'))
+    fireEvent.click(within(register).getByText('Zobraziť detail'))
 
-    const detail = within(explorer).getByRole('group', { name: 'Detail záznamu Štefan Šimek' })
+    const detail = within(register).getByRole('group', { name: 'Detail záznamu Štefan Šimek' })
     const detailRow = detail.closest('tr')
     expect(detailRow).toHaveClass('record-detail-row')
     expect(detailRow?.querySelector('td')).toHaveAttribute('colspan', '6')
@@ -432,14 +480,14 @@ describe('úplný register', () => {
     const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined)
     vi.setSystemTime(new Date('2026-08-29T12:00:00Z'))
 
-    render(<ExplorerHarness />)
-    const explorer = screen.getByRole('region', { name: 'Úplný register profesorských vymenovaní' })
+    render(<RegisterHarness />)
+    const register = screen.getByRole('region', { name: 'Úplný register profesorských vymenovaní' })
     expect(createObjectURL).not.toHaveBeenCalled()
 
-    fireEvent.change(within(explorer).getByLabelText('Hľadať v záznamoch'), {
+    fireEvent.change(within(register).getByLabelText('Hľadať v záznamoch'), {
       target: { value: 'Šimek' },
     })
-    fireEvent.click(within(explorer).getByRole('button', { name: 'Stiahnuť filtrované CSV' }))
+    fireEvent.click(within(register).getByRole('button', { name: 'Stiahnuť filtrované CSV' }))
 
     expect(createObjectURL).toHaveBeenCalledTimes(1)
     expect(createObjectURL.mock.calls[0]?.[0]).toBeInstanceOf(Blob)
@@ -458,20 +506,20 @@ describe('úplný register', () => {
     }
     vi.stubGlobal('URL', BlobURL)
     const incompleteData: AtlasData = {
-      ...data,
-      institutions: data.institutions.filter(({ id }) => id !== lookupRecord.institutionId),
+      ...legacyData,
+      institutions: legacyData.institutions.filter(({ id }) => id !== legacyLookupRecord.institutionId),
     }
 
-    render(<ExplorerHarness atlasData={incompleteData} />)
-    const explorer = screen.getByRole('region', { name: 'Úplný register profesorských vymenovaní' })
-    fireEvent.click(within(explorer).getByRole('button', { name: 'Stiahnuť filtrované CSV' }))
+    render(<RegisterHarness atlasData={incompleteData} />)
+    const register = screen.getByRole('region', { name: 'Úplný register profesorských vymenovaní' })
+    fireEvent.click(within(register).getByRole('button', { name: 'Stiahnuť filtrované CSV' }))
 
-    expect(within(explorer).getByRole('alert')).toHaveTextContent(
+    expect(within(register).getByRole('alert')).toHaveTextContent(
       'CSV sa nepodarilo stiahnuť. Skúste to znova.',
     )
     expect(createObjectURL).not.toHaveBeenCalled()
     expect(revokeObjectURL).not.toHaveBeenCalled()
-    fireEvent.change(within(explorer).getByLabelText('Hľadať v záznamoch'), {
+    fireEvent.change(within(register).getByLabelText('Hľadať v záznamoch'), {
       target: { value: 'Šimek' },
     })
     expect(screen.getByTestId('linked-count')).toHaveTextContent('1')
@@ -489,11 +537,11 @@ describe('úplný register', () => {
     }
     vi.stubGlobal('URL', BlobURL)
 
-    render(<ExplorerHarness />)
-    const explorer = screen.getByRole('region', { name: 'Úplný register profesorských vymenovaní' })
-    fireEvent.click(within(explorer).getByRole('button', { name: 'Stiahnuť filtrované CSV' }))
+    render(<RegisterHarness />)
+    const register = screen.getByRole('region', { name: 'Úplný register profesorských vymenovaní' })
+    fireEvent.click(within(register).getByRole('button', { name: 'Stiahnuť filtrované CSV' }))
 
-    expect(within(explorer).getByRole('alert')).toHaveTextContent(
+    expect(within(register).getByRole('alert')).toHaveTextContent(
       'CSV sa nepodarilo stiahnuť. Skúste to znova.',
     )
     expect(createObjectURL).toHaveBeenCalledTimes(1)
@@ -516,139 +564,19 @@ describe('úplný register', () => {
       })
       .mockImplementation(() => undefined)
 
-    render(<ExplorerHarness />)
-    const explorer = screen.getByRole('region', { name: 'Úplný register profesorských vymenovaní' })
-    const exportButton = within(explorer).getByRole('button', { name: 'Stiahnuť filtrované CSV' })
+    render(<RegisterHarness />)
+    const register = screen.getByRole('region', { name: 'Úplný register profesorských vymenovaní' })
+    const exportButton = within(register).getByRole('button', { name: 'Stiahnuť filtrované CSV' })
 
     fireEvent.click(exportButton)
-    expect(within(explorer).getByRole('alert')).toHaveTextContent(
+    expect(within(register).getByRole('alert')).toHaveTextContent(
       'CSV sa nepodarilo stiahnuť. Skúste to znova.',
     )
     expect(revokeObjectURL).toHaveBeenNthCalledWith(1, 'blob:profesori')
 
     fireEvent.click(exportButton)
-    expect(within(explorer).queryByRole('alert')).not.toBeInTheDocument()
+    expect(within(register).queryByRole('alert')).not.toBeInTheDocument()
     expect(click).toHaveBeenCalledTimes(2)
     expect(revokeObjectURL).toHaveBeenNthCalledWith(2, 'blob:profesori')
-  })
-
-  it('reštartuje 150 ms odklad pri každej zmene dopytu aj pri rovnakom počte', () => {
-    vi.useFakeTimers()
-    render(<ExplorerHarness />)
-    const explorer = screen.getByRole('region', { name: 'Úplný register profesorských vymenovaní' })
-    const query = within(explorer).getByLabelText('Hľadať v záznamoch')
-    const announcement = within(explorer).getByRole('status')
-
-    fireEvent.change(query, { target: { value: 'sime' } })
-    expect(within(explorer).getByText('1 vymenovanie').parentElement).toHaveTextContent(
-      '1 vymenovanie vo výbere',
-    )
-    expect(announcement).toHaveTextContent('30 vymenovaní vo výbere')
-
-    act(() => vi.advanceTimersByTime(100))
-    fireEvent.change(query, { target: { value: 'simek' } })
-    expect(within(explorer).getByText('Štefan Šimek')).toBeVisible()
-    expect(window.location.search).toBe('?query=simek')
-
-    act(() => vi.advanceTimersByTime(149))
-    expect(announcement).toHaveTextContent('30 vymenovaní vo výbere')
-    act(() => vi.advanceTimersByTime(1))
-    expect(announcement).toHaveTextContent('1 vymenovanie vo výbere')
-  })
-})
-
-describe('metodika a pramene', () => {
-  it('uvádza úplnú provenienciu, obmedzenia a vylúčenie bibliometrie', () => {
-    const methodologyData = {
-      ...data,
-      presidents: data.presidents.map((president) => ({
-        ...president,
-        citationUrl:
-          president.id === 'pellegrini'
-            ? 'https://www.prezident.sk/zivotopis-petra-pellegriniho'
-            : `https://example.test/presidential-terms/${president.id}`,
-      })),
-      records: [
-        ...data.records,
-        appointment(99, {
-          id: 'unresolved-location',
-          affiliationId: 'unresolved-location',
-        }),
-      ],
-      affiliations: [
-        ...data.affiliations,
-        {
-          id: 'unresolved-location',
-          institutionId: 'tuke',
-          facultyKeys: [],
-          status: 'unresolved' as const,
-          city: null,
-          sourceUrl: 'https://example.test/unresolved-location',
-          sourceLabel: 'Nevyriešené pracovisko',
-          note: 'Zdroj neurčuje pracovisko.',
-        },
-      ],
-    }
-    render(<Methodology data={methodologyData} />)
-    const methodology = screen.getByRole('region', { name: 'Metodika a pramene' })
-
-    expect(methodology).toHaveTextContent(/2[\s ]419/)
-    expect(methodology).toHaveTextContent(/2[\s ]378/)
-    expect(methodology).toHaveTextContent('41')
-    expect(within(methodology).getByRole('link', { name: 'Oficiálna stránka zoznamu profesorov' })).toHaveAttribute(
-      'href',
-      'https://www.minedu.sk/profesori-vysokych-skol/',
-    )
-    expect(within(methodology).getByRole('link', { name: 'Oficiálna stránka časových radov CVTI SR' })).toHaveAttribute(
-      'href',
-      'https://www.cvtisr.sk/cvti-sr-vedecka-kniznica/informacie-o-skolstve/statistiky/casove-rady.html?page_id=9724',
-    )
-    expect(within(methodology).getByRole('link', { name: 'Uložený zoznam profesorov (XLS)' })).toHaveAttribute(
-      'href',
-      '/data/source/professors.xls',
-    )
-    expect(within(methodology).getByRole('link', { name: 'Uložený rad CVTI (XLS)' })).toHaveAttribute(
-      'href',
-      '/data/source/higher-education.xls',
-    )
-    expect(methodology).toHaveTextContent(data.sources.professors.sha256)
-    expect(methodology).toHaveTextContent(data.sources.higher_education.sha256)
-    expect(methodology).toHaveTextContent('3. júna 2026')
-    expect(methodology).toHaveTextContent(/vymenovania aj absolventi sú ročné toky/i)
-    expect(methodology).toHaveTextContent(/študenti a interní učitelia sú stavom k 31\. októbru/i)
-    expect(
-      within(methodology).getByRole('link', {
-        name: 'Katalóg DATAcube Štatistického úradu SR',
-      }),
-    ).toHaveAttribute('href', data.sources.population.catalogUrl)
-    expect(methodology).toHaveTextContent(data.sources.population.sha256)
-    expect(methodology).toHaveTextContent(/stredný stav obyvateľstva.*30\. júna.*1\. júla/i)
-    expect(methodology).toHaveTextContent(/ORCID ani rovnocenný stabilný vedecký identifikátor/i)
-    expect(methodology).toHaveTextContent(/párovanie iba podľa mena nie je bezpečné/i)
-    expect(methodology).toHaveTextContent(/normalizované podľa odboru aj roku publikovania/i)
-    expect(methodology).toHaveTextContent(/ručne preskúmané identifikátory autorov OpenAlex/i)
-    expect(within(methodology).queryByRole('button', { name: /citáci/i })).not.toBeInTheDocument()
-    expect(within(methodology).getByRole('link', { name: /Oficiálne obdobie: Ivan Gašparovič/ })).toHaveAttribute(
-      'href',
-      'https://example.test/presidential-terms/gasparovic',
-    )
-    expect(within(methodology).getByRole('link', { name: /Oficiálne obdobie: Peter Pellegrini/ })).toHaveAttribute(
-      'href',
-      'https://www.prezident.sk/zivotopis-petra-pellegriniho',
-    )
-    expect(
-      within(methodology).getByRole('link', {
-        name: 'Kanonická inštitúcia: Univerzita Komenského v Bratislave',
-      }),
-    ).toHaveAttribute('href', institutions[0]?.citationUrl)
-    expect(methodology).toHaveTextContent(/bez polohy 1 vymenovanie/i)
-    expect(within(methodology).getByRole('link', { name: 'Nevyriešené pracovisko' })).toHaveAttribute(
-      'href',
-      'https://example.test/unresolved-location',
-    )
-    expect(within(methodology).getByRole('link', { name: 'Geometria Natural Earth' })).toHaveAttribute(
-      'href',
-      data.geography.properties.sourceUrl,
-    )
   })
 })

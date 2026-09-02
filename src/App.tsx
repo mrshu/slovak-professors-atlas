@@ -3,11 +3,11 @@ import { useEffect, useState } from 'react'
 import AtlasSection from './components/AtlasSection'
 import { ContextSectionBody, ContextSectionShell } from './components/ContextSection'
 import ErrorPanel from './components/ErrorPanel'
-import Explorer from './components/Explorer'
 import FieldSection from './components/FieldSection'
 import Findings from './components/Findings'
 import Masthead from './components/Masthead'
 import Methodology from './components/Methodology'
+import Register from './components/Register'
 import { loadAtlas } from './data/load'
 import type { AtlasData } from './data/types'
 import { useAtlasState } from './state/useAtlasState'
@@ -64,7 +64,7 @@ function LoadedInteractiveSections({ data }: { data: AtlasData }) {
         }
       />
       <AtlasSection data={data} atlasState={atlasState} />
-      <Explorer data={data} atlasState={atlasState} />
+      <Register data={data} atlasState={atlasState} />
     </>
   )
 }
@@ -135,7 +135,7 @@ export default function App() {
           <>
             <ContextSectionShell status={state.status} />
             <AtlasSection status={state.status} />
-            <Explorer status={state.status} />
+            <Register status={state.status} />
           </>
         )}
 
