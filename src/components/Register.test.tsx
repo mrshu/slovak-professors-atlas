@@ -69,7 +69,8 @@ describe('Register', () => {
   it('groups rows by ceremony date and loads thirty at a time', () => {
     render(<Register data={data as never} atlasState={atlasState()} />)
     const section = screen.getByRole('region', { name: 'Úplný register profesorských vymenovaní' })
-    expect(within(section).getByRole('status')).toHaveTextContent('35 vymenovaní vo výbere')
+    const state = section.querySelector('.register__state') as HTMLElement
+    expect(within(state).getByRole('status')).toHaveTextContent('35 vymenovaní vo výbere')
     const groups = within(section).getAllByRole('row', { name: /vymenovaní · Peter Pellegrini/ })
     expect(groups[0]).toHaveTextContent('3. júna 2026')
     expect(within(section).getAllByText(/^Osoba \d\d$/)).toHaveLength(30)
@@ -592,7 +593,8 @@ describe('úplný register', () => {
     render(<RegisterHarness />)
     const register = screen.getByRole('region', { name: 'Úplný register profesorských vymenovaní' })
     const query = within(register).getByLabelText('Hľadať v záznamoch')
-    const announcement = within(register).getByRole('status')
+    const state = register.querySelector('.register__state') as HTMLElement
+    const announcement = within(state).getByRole('status')
 
     fireEvent.change(query, { target: { value: 'sime' } })
     expect(within(register).getByText('1 vymenovanie').parentElement).toHaveTextContent(

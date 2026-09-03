@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 
 import type { Appointment, Institution, President, SourceVariant } from '../data/types'
 import { formatDate, formatNumber } from '../utils/format'
@@ -213,6 +213,8 @@ export default function RecordList({ records, institutions, presidents }: Record
   const [sort, setSort] = useState<SortState>({ key: 'appointedOn', direction: 'descending' })
   const [visible, setVisible] = useState(PAGE_SIZE)
   const [openRecordId, setOpenRecordId] = useState<string | null>(null)
+  const progressRef = useRef<HTMLParagraphElement>(null)
+  const loadMorePressedRef = useRef(false)
   const institutionById = useMemo(
     () => new Map(institutions.map((institution) => [institution.id, institution] as const)),
     [institutions],
@@ -257,6 +259,14 @@ export default function RecordList({ records, institutions, presidents }: Record
   }, [institutionById, presidentById, records, sort])
 
   const pageRecords = sortedRecords.slice(0, visible)
+  const hasMore = sortedRecords.length > visible
+
+  useEffect(() => {
+    if (loadMorePressedRef.current && !hasMore) {
+      loadMorePressedRef.current = false
+      progressRef.current?.focus()
+    }
+  }, [hasMore])
 
   const changeSort = (key: SortKey) => {
     setSort((current) => ({
@@ -363,7 +373,8 @@ export default function RecordList({ records, institutions, presidents }: Record
                       <tr className="record-row">
                         <td data-label="Meno">
                           <span>
-                            {record.titlesBefore ?? ''} <strong>{record.name}</strong>
+                            {record.titlesBefore ? `${record.titlesBefore} ` : ''}
+                            <strong>{record.name}</strong>
                             {record.titlesAfter ? `, ${record.titlesAfter}` : ''}
                           </span>
                         </td>
@@ -415,14 +426,23 @@ export default function RecordList({ records, institutions, presidents }: Record
         </>
       )}
 
-      {sortedRecords.length > visible && (
+      {hasMore && (
         <button
           type="button"
           className="record-list__more"
-          onClick={() => setVisible((count) => count + PAGE_SIZE)}
+          onClick={() => {
+            loadMorePressedRef.current = true
+            setVisible((count) => count + PAGE_SIZE)
+          }}
         >
           Zobraziť ďalších {formatNumber(Math.min(PAGE_SIZE, sortedRecords.length - visible))} záznamov
         </button>
+      )}
+      {sortedRecords.length > 0 && (
+        <p className="record-list__progress" role="status" tabIndex={-1} ref={progressRef}>
+          Zobrazených {formatNumber(Math.min(visible, sortedRecords.length))} z{' '}
+          {formatNumber(sortedRecords.length)} záznamov
+        </p>
       )}
     </div>
   )

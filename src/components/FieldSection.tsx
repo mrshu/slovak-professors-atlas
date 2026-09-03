@@ -70,10 +70,7 @@ export default function FieldSection({
         <div className="field-section__search">
           <input
             type="search"
-            role="combobox"
             aria-label="Nájsť odbor"
-            aria-expanded="false"
-            aria-controls="field-section-list"
             list="field-section-list"
             placeholder="Nájsť odbor"
             value={query}

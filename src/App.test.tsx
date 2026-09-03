@@ -452,7 +452,8 @@ describe('archívny atlas', () => {
     const explorer = screen.getByRole('region', {
       name: 'Úplný register profesorských vymenovaní',
     })
-    expect(within(explorer).getByRole('status')).toHaveTextContent('2')
+    const explorerState = explorer.querySelector('.register__state') as HTMLElement
+    expect(within(explorerState).getByRole('status')).toHaveTextContent('2')
     const coverageBefore = within(section).getByText(/Spárované vymenovania:/).textContent
     const pointCountBefore = within(section).queryAllByTestId(/^field-point-/).length
 
@@ -460,7 +461,7 @@ describe('archívny atlas', () => {
     fireEvent.click(within(section).getByRole('button', { name: 'Psychológia' }))
 
     expect(window.location.search).toBe('?field=psychologia')
-    await waitFor(() => expect(within(explorer).getByRole('status')).toHaveTextContent('1'))
+    await waitFor(() => expect(within(explorerState).getByRole('status')).toHaveTextContent('1'))
     expect(within(section).getByText(/Spárované vymenovania:/).textContent).toBe(coverageBefore)
     expect(within(section).queryAllByTestId(/^field-point-/)).toHaveLength(pointCountBefore)
     expect(within(section).getByRole('heading', { name: 'Psychológia' })).toBeVisible()
@@ -470,24 +471,42 @@ describe('archívny atlas', () => {
     const atlasWithWiderCoverage = {
       ...validAtlas,
       meta: { ...validAtlas.meta, appointmentDateMin: '1998-01-01' },
+      records: [
+        ...validAtlas.records,
+        {
+          ...validAtlas.records[0]!,
+          id: 'valid-atlas-appointment-2011',
+          name: 'Neskorší záznam',
+          appointedOn: '2011-01-24',
+          sourceVariants: [
+            { ...validAtlas.records[0]!.sourceVariants[0]!, rowNumber: 3 },
+          ],
+        },
+      ],
     }
     vi.stubGlobal('fetch', vi.fn(async () => successfulResponse(atlasWithWiderCoverage)))
 
     render(<App />)
 
+    const totalCount = atlasWithWiderCoverage.records.length
     const inRangeCount = atlasWithWiderCoverage.records.filter((record) => {
       const year = Number(record.appointedOn.slice(0, 4))
       return year >= 2000 && year <= 2004
     }).length
+    expect(inRangeCount).toBeLessThan(totalCount)
 
-    fireEvent.click(await screen.findByRole('button', { name: '2000–2004' }))
-
-    expect(window.location.search).toBe('?startYear=2000&endYear=2004')
+    const periodButton = await screen.findByRole('button', { name: '2000–2004' })
     const explorer = screen.getByRole('region', {
       name: 'Úplný register profesorských vymenovaní',
     })
+    const explorerState = explorer.querySelector('.register__state') as HTMLElement
+    expect(within(explorerState).getByRole('status')).toHaveTextContent(String(totalCount))
+
+    fireEvent.click(periodButton)
+
+    expect(window.location.search).toBe('?startYear=2000&endYear=2004')
     await waitFor(() =>
-      expect(within(explorer).getByRole('status')).toHaveTextContent(String(inRangeCount)),
+      expect(within(explorerState).getByRole('status')).toHaveTextContent(String(inRangeCount)),
     )
   })
 

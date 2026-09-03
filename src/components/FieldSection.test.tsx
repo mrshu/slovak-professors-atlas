@@ -64,7 +64,7 @@ describe('FieldSection', () => {
     render(
       <FieldSection data={data as never} selectedField={null} onFieldSelect={onFieldSelect} fieldRange={range} onFieldRangeChange={vi.fn()} />,
     )
-    const search = screen.getByRole('combobox', { name: 'Nájsť odbor' })
+    const search = screen.getByLabelText('Nájsť odbor')
     fireEvent.change(search, { target: { value: 'hudobne' } })
     fireEvent.keyDown(search, { key: 'Enter' })
     expect(onFieldSelect).toHaveBeenCalledWith('hudobne umenie')
