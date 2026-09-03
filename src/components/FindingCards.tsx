@@ -67,7 +67,7 @@ export default function FindingCards({ data, onFieldSelect }: FindingCardsProps)
           {spread.median === null ? '—' : ratioText(spread.median)} z{' '}
           {formatNumber(spread.rows.length)} odborov, ktoré majú absolventov aspoň v{' '}
           {formatNumber(MIN_YEARS)} zo {formatNumber(data.fieldEducationComparison.years.length)}{' '}
-          rokov.
+          rokov. Každý pomer platí pre jeden presný kľúč odboru, nie pre širšiu oblasť.
         </p>
         <FieldRatioOutliers
           lowest={lowest}

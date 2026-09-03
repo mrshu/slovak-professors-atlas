@@ -149,7 +149,10 @@ export default function Methodology({ data, status }: MethodologyProps) {
                   doložené historické, pravopisné a jazykové aliasy; samotná zhoda po odstránení
                   diakritiky alebo podobný význam nestačia. Zdrojové názvy vymenovaní ostávajú
                   viditeľné. Nula znamená pozorovanú nulu v zdroji, pomlčka chýbajúce pozorovanie.
-                  Odbory bez bezpečnej zhody zostávajú explicitne mimo bodového grafu.
+                  Odbory bez bezpečnej zhody zostávajú explicitne mimo bodového grafu. Každý pomer
+                  platí pre jeden presný recenzovaný kľúč odboru a nezovšeobecňuje sa na širšiu
+                  oblasť; krajné hodnoty môžu stáť na malom počte udalostí vymenovania v danom
+                  kľúči.
                 </p>
               </section>
 
