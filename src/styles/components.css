@@ -38,6 +38,7 @@
 @media (max-width: 900px) {
   .mast { grid-template-columns: 1fr; gap: var(--sp-3); }
   .mast__ledger { justify-self: start; flex-wrap: wrap; gap: var(--sp-3) var(--sp-4); }
+  .mast nav { flex-wrap: wrap; gap: var(--sp-3) var(--sp-4); }
 }
 main > section, footer { scroll-margin-top: var(--sp-4); }
 
