@@ -1916,6 +1916,63 @@ main > section, footer { scroll-margin-top: var(--sp-4); }
   vector-effect: non-scaling-stroke;
 }
 
+.field-education-detail__bar--active {
+  fill: var(--color-terracotta-dark);
+}
+
+.field-education-detail__line-point--active {
+  fill: var(--color-terracotta);
+}
+
+.field-education-detail__chart:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.field-education-detail__hit {
+  cursor: crosshair;
+}
+
+.field-education-detail__crosshair line {
+  stroke: var(--color-ink);
+  stroke-opacity: 0.45;
+  stroke-dasharray: 3 3;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+.field-education-detail__tip {
+  pointer-events: none;
+}
+
+.field-education-detail__tip rect {
+  fill: var(--color-ink);
+  fill-opacity: 0.92;
+}
+
+.field-education-detail__tip text {
+  fill: var(--color-paper);
+  font-size: 10px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.field-education-detail__tip-value {
+  font-weight: 400;
+}
+
+.field-education-detail__readout {
+  margin: 0 0 var(--sp-2);
+  min-height: 1.5em;
+  color: var(--color-ink-muted);
+  font-size: var(--t-small);
+  font-variant-numeric: tabular-nums;
+}
+
+.field-education-detail__readout--active {
+  color: var(--color-ink);
+}
+
 .field-education-rankings {
   margin-top: clamp(3rem, 6vw, 5rem);
   padding-top: 1.4rem;
@@ -2105,6 +2162,15 @@ main > section, footer { scroll-margin-top: var(--sp-4); }
 .context-strip__charts { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4); }
 @media (max-width: 760px) { .context-strip__charts { grid-template-columns: 1fr; } }
 .chart__probe { fill: transparent; }
+.chart--interactive:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.chart__hit { cursor: crosshair; }
+.chart__crosshair { pointer-events: none; }
+.chart__crosshair line { stroke: var(--color-ink); stroke-opacity: 0.45; stroke-dasharray: 3 3; }
+.chart__tip rect { fill: var(--color-ink); fill-opacity: 0.92; }
+.chart__tip text { fill: var(--color-paper); font-size: 10px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.chart__tip-value { font-weight: 400; }
+.context-strip__readout { margin: 0; min-height: 1.5em; color: var(--color-ink-muted); font-size: var(--t-small); font-variant-numeric: tabular-nums; }
+.context-strip__readout--active { color: var(--color-ink); }
 
 .field-section { max-width: var(--content-width); margin: var(--sp-4) auto 0; border: var(--rule); background: var(--color-paper-light); display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); }
 @media (max-width: 900px) { .field-section { grid-template-columns: 1fr; } }

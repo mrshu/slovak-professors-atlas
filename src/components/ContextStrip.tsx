@@ -1,3 +1,5 @@
+import { useState } from 'react'
+
 import type { ContextYear } from '../data/types'
 import { formatNumber } from '../utils/format'
 import SmallLine from './charts/SmallLine'
@@ -9,8 +11,25 @@ interface ContextStripProps {
   setSelectedYear: (year: number, mode: 'push') => void
 }
 
+const READOUT_ID = 'context-strip-readout'
+
+function formatRate(value: number): string {
+  return formatNumber(value, { maximumFractionDigits: 2 })
+}
+
+function readout(year: ContextYear | undefined): string {
+  if (year === undefined) {
+    return 'Ukážte na rok alebo použite šípky vľavo a vpravo pre hodnoty jedného roka.'
+  }
+  return `${year.year}: ${formatNumber(year.appointments)} vymenovaní · ${formatRate(
+    year.appointmentsPer100Professors,
+  )} na 100 interných profesorov · ${formatNumber(year.internalProfessors)} interných profesorov`
+}
+
 export default function ContextStrip({ years, selectedYear, setSelectedYear }: ContextStripProps) {
   const ordered = [...years].sort((a, b) => a.year - b.year)
+  const [activeIndex, setActiveIndex] = useState<number | null>(null)
+  const active = activeIndex === null ? undefined : ordered[activeIndex]
   const span =
     ordered.length === 0 ? '' : `${ordered[0]!.year}–${ordered[ordered.length - 1]!.year}`
   return (
@@ -23,16 +42,27 @@ export default function ContextStrip({ years, selectedYear, setSelectedYear }: C
           je metodická zmena z roku 2007.
         </p>
       </div>
+      <p
+        id={READOUT_ID}
+        className={`context-strip__readout${active === undefined ? '' : ' context-strip__readout--active'}`}
+        role="status"
+        aria-live="polite"
+      >
+        {readout(active)}
+      </p>
       <div className="context-strip__charts">
         <div>
           <p className="card__kicker">Vymenovania na 100 interných profesorov</p>
           <SmallLine
             points={ordered.map((y) => ({ year: y.year, value: y.appointmentsPer100Professors }))}
-            format={(v) => formatNumber(v, { maximumFractionDigits: 2 })}
+            format={formatRate}
             ariaLabel={`Vymenovania na 100 interných profesorov, ${span}`}
             markerYear={2007}
             markerLabel="2007"
             colorClass="chart__line--1"
+            activeIndex={activeIndex}
+            onActivate={setActiveIndex}
+            describedBy={READOUT_ID}
           />
         </div>
         <div>
@@ -43,6 +73,9 @@ export default function ContextStrip({ years, selectedYear, setSelectedYear }: C
             ariaLabel={`Interní profesori k 31. októbru, ${span}`}
             markerYear={2007}
             colorClass="chart__line--2"
+            activeIndex={activeIndex}
+            onActivate={setActiveIndex}
+            describedBy={READOUT_ID}
           />
         </div>
       </div>
