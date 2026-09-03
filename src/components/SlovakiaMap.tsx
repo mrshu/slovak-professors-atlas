@@ -15,7 +15,8 @@ interface SlovakiaMapProps {
   hoveredCity: string | null
   onHoverCity: (city: string | null) => void
   onToggleCity: (city: string) => void
-  labelMinimumCount?: number
+  labelLimit?: number
+  showSizeKey?: boolean
 }
 
 interface ProjectedCityLocation {
@@ -31,6 +32,9 @@ const CITY_MARK_MAX_RADIUS = 30
 const SELECTED_RING_RADIUS_OFFSET = 6
 const SELECTED_RING_STROKE_WIDTH = 3
 const MAP_PADDING = 24
+// 11px label type: roughly 5.6px per character, enough to spot an overflow.
+const LABEL_CHARACTER_WIDTH = 5.6
+const LABEL_EDGE_PADDING = 4
 
 type LabelDirection = readonly [-1 | 0 | 1, -1 | 0 | 1]
 
@@ -76,7 +80,8 @@ export default function SlovakiaMap({
   hoveredCity,
   onHoverCity,
   onToggleCity,
-  labelMinimumCount = 10,
+  labelLimit = 8,
+  showSizeKey = true,
 }: SlovakiaMapProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState(DEFAULT_WIDTH)
@@ -158,6 +163,19 @@ export default function SlovakiaMap({
     [maxCount],
   )
   const keyValues = useMemo(() => sizeKeyValues(maxCount), [maxCount])
+  // Labels follow the ranking, not an absolute count: a filtered selection can
+  // put every city in single digits, and unlabelled circles say nothing.
+  const labelledCities = useMemo(
+    () =>
+      new Set(
+        projectedCities
+          .filter(({ count }) => count > 0)
+          .sort((left, right) => right.count - left.count || left.city.localeCompare(right.city, 'sk-SK'))
+          .slice(0, Math.max(0, labelLimit))
+          .map(({ city }) => city),
+      ),
+    [labelLimit, projectedCities],
+  )
 
   return (
     <figure className="slovakia-map" aria-labelledby="slovakia-map-title" ref={containerRef}>
@@ -179,9 +197,17 @@ export default function SlovakiaMap({
             : cityRadius
           const targetSize = Math.max(MINIMUM_TARGET_SIZE, visibleRadius * 2)
           const [dx, dy] = LABEL_DIRECTIONS[city.city] ?? DEFAULT_LABEL_DIRECTION
-          const labelX = city.x + dx * (cityRadius + 6)
+          const labelText = `${city.city} · ${city.count}`
+          const labelWidth = labelText.length * LABEL_CHARACTER_WIDTH
+          // Flip a label that would run off the drawing rather than let the
+          // viewBox clip it; the map is only ~390px wide on a phone.
+          const flip =
+            (dx === 1 && city.x + cityRadius + 6 + labelWidth > width - LABEL_EDGE_PADDING) ||
+            (dx === -1 && city.x - cityRadius - 6 - labelWidth < LABEL_EDGE_PADDING)
+          const labelDx = flip ? -dx : dx
+          const labelX = city.x + labelDx * (cityRadius + 6)
           const labelY = dy === -1 ? city.y - cityRadius - 6 : dy === 1 ? city.y + cityRadius + 13 : city.y + 4
-          const labelTextAnchor = dx === 1 ? 'start' : dx === -1 ? 'end' : 'middle'
+          const labelTextAnchor = labelDx === 1 ? 'start' : labelDx === -1 ? 'end' : 'middle'
           const accessibleLabel = `${city.city}: ${formatAppointmentCount(city.count)}, ${
             selected ? 'vybrané' : 'nevybrané'
           }`
@@ -216,7 +242,7 @@ export default function SlovakiaMap({
                   aria-hidden="true"
                 />
               )}
-              {(city.count >= labelMinimumCount || selected) && (
+              {(labelledCities.has(city.city) || selected) && (
                 <text
                   className="slovakia-map__label"
                   x={labelX}
@@ -224,7 +250,7 @@ export default function SlovakiaMap({
                   textAnchor={labelTextAnchor}
                   aria-hidden="true"
                 >
-                  {city.city} · {city.count}
+                  {labelText}
                 </text>
               )}
               <foreignObject
@@ -245,7 +271,7 @@ export default function SlovakiaMap({
             </g>
           )
         })}
-        {keyValues.length > 0 && (
+        {showSizeKey && keyValues.length > 0 && (
           <g
             className="slovakia-map__size-key"
             transform={`translate(${width - 96} ${height - 30})`}

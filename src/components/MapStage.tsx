@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 
 import {
   FIVE_YEAR_PERIODS,
@@ -9,6 +9,7 @@ import {
 import { filterAppointments } from '../analysis/selectors'
 import type { AtlasData } from '../data/types'
 import type { AtlasState } from '../state/useAtlasState'
+import useIsNarrowViewport from '../hooks/useIsNarrowViewport'
 import { formatAppointmentCount } from '../utils/format'
 import CityStrip, { type CityStripCell } from './CityStrip'
 import InstitutionRanking from './InstitutionRanking'
@@ -20,25 +21,6 @@ interface MapStageProps {
 }
 
 const STRIP_SIZE = 7
-const NARROW_MEDIA_QUERY = '(max-width: 600px)'
-
-function useIsNarrowViewport(): boolean {
-  const [isNarrow, setIsNarrow] = useState(false)
-
-  useEffect(() => {
-    if (typeof window.matchMedia !== 'function') {
-      return
-    }
-    const query = window.matchMedia(NARROW_MEDIA_QUERY)
-    const update = () => setIsNarrow(query.matches)
-    update()
-    query.addEventListener('change', update)
-    return () => query.removeEventListener('change', update)
-  }, [])
-
-  return isNarrow
-}
-
 export default function MapStage({ data, atlasState }: MapStageProps) {
   const { filters, defaults, filteredRecords, setDateRange, setFilter } = atlasState
   const [hoveredCity, setHoveredCity] = useState<string | null>(null)
@@ -122,7 +104,8 @@ export default function MapStage({ data, atlasState }: MapStageProps) {
         hoveredCity={hoveredCity}
         onHoverCity={setHoveredCity}
         onToggleCity={toggleCity}
-        labelMinimumCount={isNarrow ? 60 : 10}
+        labelLimit={isNarrow ? 4 : 8}
+        showSizeKey={!isNarrow}
       />
       {filters.city === null ? (
         <p className="map-stage__cap">

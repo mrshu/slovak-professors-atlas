@@ -53,7 +53,7 @@ describe('SlovakiaMap', () => {
     appointment({ appointedOn: '2015-01-01', affiliationId: 'tuke-default', institutionId: 'tuke' }),
   ]
 
-  it('labels only the city that meets the label minimum count', () => {
+  it('labels the largest cities up to the label limit', () => {
     render(
       <SlovakiaMap
         records={records}
@@ -64,13 +64,48 @@ describe('SlovakiaMap', () => {
         hoveredCity={null}
         onHoverCity={() => {}}
         onToggleCity={() => {}}
+        labelLimit={1}
       />,
     )
     expect(screen.getByText('Bratislava · 11')).toBeInTheDocument()
     expect(screen.queryByText(/Košice ·/)).not.toBeInTheDocument()
   })
 
-  it('labels a city below the minimum once it is selected', () => {
+  it('keeps labelling the ranked cities when a filter leaves every count small', () => {
+    render(
+      <SlovakiaMap
+        records={[appointment({ appointedOn: '2015-01-01' })]}
+        geography={geography}
+        cities={cities}
+        affiliations={affiliations}
+        selectedCity={null}
+        hoveredCity={null}
+        onHoverCity={() => {}}
+        onToggleCity={() => {}}
+        labelLimit={4}
+      />,
+    )
+    expect(screen.getByText('Bratislava · 1')).toBeInTheDocument()
+  })
+
+  it('hides the size key when it is switched off', () => {
+    const { container } = render(
+      <SlovakiaMap
+        records={records}
+        geography={geography}
+        cities={cities}
+        affiliations={affiliations}
+        selectedCity={null}
+        hoveredCity={null}
+        onHoverCity={() => {}}
+        onToggleCity={() => {}}
+        showSizeKey={false}
+      />,
+    )
+    expect(container.querySelector('.slovakia-map__size-key')).toBeNull()
+  })
+
+  it('labels a city outside the ranking once it is selected', () => {
     render(
       <SlovakiaMap
         records={records}
@@ -81,6 +116,7 @@ describe('SlovakiaMap', () => {
         hoveredCity={null}
         onHoverCity={() => {}}
         onToggleCity={() => {}}
+        labelLimit={1}
       />,
     )
     expect(screen.getByText('Košice · 1')).toBeInTheDocument()

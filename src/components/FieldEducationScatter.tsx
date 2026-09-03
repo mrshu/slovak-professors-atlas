@@ -8,6 +8,7 @@ import {
 } from 'react'
 
 import type { FieldEducationLandscapeRow, FieldEducationPoint } from '../analysis/fieldEducation'
+import useIsNarrowViewport from '../hooks/useIsNarrowViewport'
 import { formatNumber } from '../utils/format'
 import {
   fieldScaleDomain,
@@ -38,6 +39,9 @@ const HEIGHT = 580
 const PLOT = { x: 76, y: 34, width: 836, height: 430 }
 const RAIL_Y = PLOT.y + PLOT.height + 30
 const AXIS_TICK_COUNT = 5
+// Phone type is sized in viewBox units (see components.css); the axis labels
+// then need room the fixed 960-unit box does not have.
+const NARROW_GUTTER = 72
 
 function axisTicks(
   domain: [number, number],
@@ -105,6 +109,7 @@ export default function FieldEducationScatter({
   mode,
   zeroRail,
 }: FieldEducationScatterProps) {
+  const isNarrow = useIsNarrowViewport()
   const [hoveredKey, setHoveredKey] = useState<string | null>(null)
   const [hasKeyboardFocus, setHasKeyboardFocus] = useState(false)
   const initialKey = selectedField !== null && points.some(({ fieldKey }) => fieldKey === selectedField)
@@ -213,7 +218,10 @@ export default function FieldEducationScatter({
         <h3 className="visually-hidden" id="field-education-scatter-title">Mapa spoločného obdobia</h3>
       </figcaption>
       <div className="field-education-scatter__stage">
-        <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} aria-label="Bodová mapa vymenovaní a absolventov podľa odboru">
+        <svg
+          viewBox={isNarrow ? `${-NARROW_GUTTER} 0 ${WIDTH + NARROW_GUTTER + 16} ${HEIGHT}` : `0 0 ${WIDTH} ${HEIGHT}`}
+          aria-label="Bodová mapa vymenovaní a absolventov podľa odboru"
+        >
           <g className="field-education-scatter__grid" aria-hidden="true">
             {xTicks.map((tick, index) => (
               <g key={`x-${index}`}>
