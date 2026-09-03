@@ -9,6 +9,7 @@ import {
 import { filterAppointments } from '../analysis/selectors'
 import type { AtlasData } from '../data/types'
 import type { AtlasState } from '../state/useAtlasState'
+import { formatAppointmentCount } from '../utils/format'
 import CityStrip, { type CityStripCell } from './CityStrip'
 import InstitutionRanking from './InstitutionRanking'
 import SlovakiaMap from './SlovakiaMap'
@@ -80,7 +81,14 @@ export default function MapStage({ data, atlasState }: MapStageProps) {
     setFilter('city', filters.city === city ? null : city, 'push')
 
   return (
-    <section id="mapa" className="map-stage" aria-labelledby="map-stage-title">
+    <section
+      id="mapa"
+      className="map-stage"
+      aria-labelledby="map-stage-title"
+      onKeyDown={(event) => {
+        if (event.key === 'Escape' && filters.city !== null) setFilter('city', null, 'push')
+      }}
+    >
       <div className="map-stage__head">
         <h2 id="map-stage-title">
           Mapa pracovísk, <em>{periodLabel}</em>
@@ -116,11 +124,23 @@ export default function MapStage({ data, atlasState }: MapStageProps) {
         onToggleCity={toggleCity}
         labelMinimumCount={isNarrow ? 60 : 10}
       />
-      <p className="map-stage__cap">
-        Plocha kruhu = počet vymenovaní navrhnutých pracoviskami v meste. Mesto je sídlo
-        pracoviska, nie bydlisko profesora. Kliknutím na mesto alebo jeho pásik filtrujete
-        register.
-      </p>
+      {filters.city === null ? (
+        <p className="map-stage__cap">
+          Plocha kruhu = počet vymenovaní navrhnutých pracoviskami v meste. Mesto je sídlo
+          pracoviska, nie bydlisko profesora. Kliknutím na mesto alebo jeho pásik filtrujete
+          register.
+        </p>
+      ) : (
+        <div className="map-stage__selection" role="status">
+          <p>
+            <strong>Vybrané mesto: {filters.city}</strong> · {formatAppointmentCount(filteredRecords.length)} v
+            registri. Ostatné mestá ostávajú na mape kvôli porovnaniu.
+          </p>
+          <button type="button" onClick={() => setFilter('city', null, 'push')}>
+            Zrušiť výber <span aria-hidden="true">×</span>
+          </button>
+        </div>
+      )}
       <CityStrip
         cells={cells}
         activeIndex={activeIndex}

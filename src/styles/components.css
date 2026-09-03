@@ -611,6 +611,13 @@ main > section, footer { scroll-margin-top: var(--sp-4); }
 .city-strip__cell { display: grid; gap: 2px; text-align: left; border: 0; background: transparent; color: inherit; padding: var(--sp-1) var(--sp-2); margin: 0 calc(-1 * var(--sp-2)); border-radius: 2px; cursor: pointer; font-size: var(--t-small); font-variant-numeric: tabular-nums; }
 .city-strip__cell.is-hot, .city-strip__cell:hover { background: var(--color-forest-deep); }
 .city-strip__cell.is-selected .city-strip__name { color: var(--color-focus-on-dark); }
+.city-strip__cell.is-selected { background: var(--color-forest-deep); box-shadow: inset 0 0 0 1px var(--color-focus-on-dark); }
+.city-strip__clear { font-style: normal; margin-left: var(--sp-2); font-weight: 700; }
+.map-stage__selection { display: flex; justify-content: space-between; align-items: center; gap: var(--sp-4); flex-wrap: wrap; padding: var(--sp-2) var(--sp-3); border: 1px solid var(--color-focus-on-dark); background: rgb(214 189 122 / 10%); font-size: var(--t-small); }
+.map-stage__selection p { margin: 0; }
+.map-stage__selection strong { color: var(--color-focus-on-dark); }
+.map-stage__selection button { font: inherit; font-size: var(--t-small); font-weight: 600; padding: var(--sp-1) var(--sp-3); border: 1px solid var(--color-paper); background: var(--color-paper); color: var(--color-forest); cursor: pointer; }
+.map-stage__selection button:hover { background: var(--color-paper-deep); }
 .city-strip__bar { display: block; height: 6px; background: #2f4f45; position: relative; }
 .city-strip__bar i { position: absolute; inset: 0 auto 0 0; background: var(--color-terracotta); }
 .city-strip__values { display: flex; justify-content: space-between; color: #b8c6bd; }

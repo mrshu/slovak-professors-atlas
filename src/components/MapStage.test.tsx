@@ -117,4 +117,18 @@ describe('MapStage', () => {
     const fold = screen.getByText('Inštitúcie v aktívnom výbere').closest('details')
     expect(fold).not.toHaveAttribute('open')
   })
+
+  it('shows a selection bar with a clear control while a city is selected', () => {
+    const state = atlasState({ city: 'Bratislava' })
+    render(<MapStage data={data as never} atlasState={state} />)
+    const bar = screen.getByRole('status')
+    expect(bar).toHaveTextContent('Vybrané mesto: Bratislava')
+    fireEvent.click(within(bar).getByRole('button', { name: 'Zrušiť výber' }))
+    expect(state.setFilter).toHaveBeenCalledWith('city', null, 'push')
+    fireEvent.keyDown(screen.getByRole('region', { name: /Mapa pracovísk/ }), { key: 'Escape' })
+    expect(state.setFilter).toHaveBeenCalledTimes(2)
+    expect(
+      screen.getByRole('button', { name: /^Bratislava: .*zrušiť výber$/ }),
+    ).toHaveAttribute('aria-pressed', 'true')
+  })
 })

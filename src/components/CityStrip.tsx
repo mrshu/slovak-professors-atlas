@@ -56,7 +56,7 @@ export default function CityStrip({
           cell.delta === null
             ? 'bez porovnania'
             : `zmena ${deltaText(cell.delta).replace(' b.', ' bodu')}`
-        }; filtrovať register`
+        }; ${selected ? 'zrušiť výber' : 'filtrovať register'}`
         return (
           <button
             key={cell.city}
@@ -74,6 +74,7 @@ export default function CityStrip({
           >
             <span className="city-strip__name" aria-hidden="true">
               {cell.city}
+              {selected ? <i className="city-strip__clear">×</i> : null}
             </span>
             <span className="city-strip__bar" aria-hidden="true">
               <i style={{ width: `${(Math.min(cell.share, SHARE_MAX) / SHARE_MAX) * 100}%` }} />
