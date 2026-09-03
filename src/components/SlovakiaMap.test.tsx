@@ -228,4 +228,29 @@ describe('SlovakiaMap', () => {
     )
     expect(painted).toEqual(['city-mark-Bratislava', 'city-mark-Košice'])
   })
+
+  it('labels the hovered city next to its mark even when it is outside the label limit', () => {
+    const { container } = render(
+      <SlovakiaMap
+        records={records}
+        geography={geography}
+        cities={cities}
+        affiliations={affiliations}
+        selectedCity={null}
+        hoveredCity="Košice"
+        onHoverCity={() => {}}
+        onToggleCity={() => {}}
+        labelLimit={1}
+      />,
+    )
+    const hot = container.querySelector('.slovakia-map__label--hot')!
+    expect(hot).toHaveTextContent('Košice · 1')
+    // Drawn in the overlay after every city, so a neighbouring circle cannot
+    // cover it, and never twice.
+    expect(hot.closest('.slovakia-map__hot-layer')).not.toBeNull()
+    expect(container.querySelectorAll('.slovakia-map__label')).toHaveLength(2)
+    const mark = container.querySelector('[data-testid="city-mark-Košice"]')!
+    const ring = container.querySelector('.slovakia-map__hover-ring')!
+    expect(ring.getAttribute('cx')).toBe(mark.getAttribute('cx'))
+  })
 })

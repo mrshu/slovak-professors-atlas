@@ -25,6 +25,10 @@ interface ProjectedCityLocation {
   y: number
 }
 
+interface ProjectedCity extends ProjectedCityLocation {
+  count: number
+}
+
 const DEFAULT_WIDTH = 720
 const MINIMUM_TARGET_SIZE = 44
 const CITY_MARK_MIN_RADIUS = 5
@@ -69,6 +73,35 @@ function niceSizeKeyValue(value: number): number {
 export function sizeKeyValues(maxCount: number): number[] {
   const raw = [niceSizeKeyValue(maxCount), niceSizeKeyValue(maxCount / 4), niceSizeKeyValue(maxCount / 16)]
   return Array.from(new Set(raw.filter((value) => value > 0)))
+}
+
+interface LabelGeometry {
+  text: string
+  x: number
+  y: number
+  anchor: 'start' | 'middle' | 'end'
+}
+
+function labelGeometry(
+  city: ProjectedCity,
+  cityRadius: number,
+  width: number,
+): LabelGeometry {
+  const [dx, dy] = LABEL_DIRECTIONS[city.city] ?? DEFAULT_LABEL_DIRECTION
+  const text = `${city.city} · ${city.count}`
+  const labelWidth = text.length * LABEL_CHARACTER_WIDTH
+  // Flip a label that would run off the drawing rather than let the viewBox
+  // clip it; the map is only ~390px wide on a phone.
+  const flip =
+    (dx === 1 && city.x + cityRadius + 6 + labelWidth > width - LABEL_EDGE_PADDING) ||
+    (dx === -1 && city.x - cityRadius - 6 - labelWidth < LABEL_EDGE_PADDING)
+  const labelDx = flip ? -dx : dx
+  return {
+    text,
+    x: city.x + labelDx * (cityRadius + 6),
+    y: dy === -1 ? city.y - cityRadius - 6 : dy === 1 ? city.y + cityRadius + 13 : city.y + 4,
+    anchor: labelDx === 1 ? 'start' : labelDx === -1 ? 'end' : 'middle',
+  }
 }
 
 export default function SlovakiaMap({
@@ -163,6 +196,15 @@ export default function SlovakiaMap({
     [maxCount],
   )
   const keyValues = useMemo(() => sizeKeyValues(maxCount), [maxCount])
+  const hotCity = projectedCities.find(({ city }) => city === hoveredCity)
+  const hotLabel =
+    hotCity === undefined
+      ? null
+      : labelGeometry(
+          hotCity,
+          hotCity.count > 0 ? radius(hotCity.count) : CITY_MARK_MIN_RADIUS,
+          width,
+        )
   // Labels follow the ranking, not an absolute count: a filtered selection can
   // put every city in single digits, and unlabelled circles say nothing.
   // Painted largest first: the smaller circle then sits on top of a bigger
@@ -206,18 +248,7 @@ export default function SlovakiaMap({
             ? selectedRingRadius + SELECTED_RING_STROKE_WIDTH / 2
             : cityRadius
           const targetSize = Math.max(MINIMUM_TARGET_SIZE, visibleRadius * 2)
-          const [dx, dy] = LABEL_DIRECTIONS[city.city] ?? DEFAULT_LABEL_DIRECTION
-          const labelText = `${city.city} · ${city.count}`
-          const labelWidth = labelText.length * LABEL_CHARACTER_WIDTH
-          // Flip a label that would run off the drawing rather than let the
-          // viewBox clip it; the map is only ~390px wide on a phone.
-          const flip =
-            (dx === 1 && city.x + cityRadius + 6 + labelWidth > width - LABEL_EDGE_PADDING) ||
-            (dx === -1 && city.x - cityRadius - 6 - labelWidth < LABEL_EDGE_PADDING)
-          const labelDx = flip ? -dx : dx
-          const labelX = city.x + labelDx * (cityRadius + 6)
-          const labelY = dy === -1 ? city.y - cityRadius - 6 : dy === 1 ? city.y + cityRadius + 13 : city.y + 4
-          const labelTextAnchor = labelDx === 1 ? 'start' : labelDx === -1 ? 'end' : 'middle'
+          const label = labelGeometry(city, cityRadius, width)
           const accessibleLabel = `${city.city}: ${formatAppointmentCount(city.count)}, ${
             selected ? 'vybrané' : 'nevybrané'
           }`
@@ -250,24 +281,15 @@ export default function SlovakiaMap({
                 data-testid={`city-mark-${city.city}`}
                 aria-hidden="true"
               />
-              {isHot && (
-                <circle
-                  className="slovakia-map__hover-ring"
-                  cx={city.x}
-                  cy={city.y}
-                  r={cityRadius + 4}
-                  aria-hidden="true"
-                />
-              )}
-              {(labelledCities.has(city.city) || selected) && (
+              {(labelledCities.has(city.city) || selected) && !isHot && (
                 <text
                   className="slovakia-map__label"
-                  x={labelX}
-                  y={labelY}
-                  textAnchor={labelTextAnchor}
+                  x={label.x}
+                  y={label.y}
+                  textAnchor={label.anchor}
                   aria-hidden="true"
                 >
-                  {labelText}
+                  {label.text}
                 </text>
               )}
               {(city.count > 0 || selected) && (
@@ -291,6 +313,27 @@ export default function SlovakiaMap({
             </g>
           )
         })}
+        {hotCity !== undefined && hotLabel !== null && (
+          // Above every city: the hovered mark's ring and its name·count must
+          // not sit under a neighbouring circle, and at phone width six pairs
+          // overlap.
+          <g className="slovakia-map__hot-layer" aria-hidden="true">
+            <circle
+              className="slovakia-map__hover-ring"
+              cx={hotCity.x}
+              cy={hotCity.y}
+              r={(hotCity.count > 0 ? radius(hotCity.count) : CITY_MARK_MIN_RADIUS) + 4}
+            />
+            <text
+              className="slovakia-map__label slovakia-map__label--hot"
+              x={hotLabel.x}
+              y={hotLabel.y}
+              textAnchor={hotLabel.anchor}
+            >
+              {hotLabel.text}
+            </text>
+          </g>
+        )}
         {showSizeKey && keyValues.length > 0 && (
           <g
             className="slovakia-map__size-key"

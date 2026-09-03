@@ -607,7 +607,9 @@ main > section, footer { scroll-margin-top: var(--sp-4); }
 .is-hot .slovakia-map__mark { fill-opacity: 1; stroke: var(--color-focus-on-dark); }
 .slovakia-map__mark--empty { fill: transparent; fill-opacity: 1; stroke: #b8c6bd; stroke-opacity: 0.45; stroke-width: 1; stroke-dasharray: 2 3; }
 .is-hot .slovakia-map__mark--empty { fill: transparent; stroke-opacity: 1; }
-.slovakia-map__hover-ring { fill: none; stroke: var(--color-focus-on-dark); stroke-width: 1.5; pointer-events: none; }
+.slovakia-map__hot-layer { pointer-events: none; }
+.slovakia-map__hover-ring { fill: none; stroke: var(--color-focus-on-dark); stroke-width: 1.5; }
+.slovakia-map__label--hot { fill: var(--color-focus-on-dark); font-size: 12.5px; font-weight: 700; stroke-width: 4px; }
 .is-dim .slovakia-map__mark { fill-opacity: 0.35; }
 .slovakia-map__label { font-size: 11.5px; font-weight: 600; fill: var(--color-paper); paint-order: stroke; stroke: var(--color-forest); stroke-width: 3px; stroke-linejoin: round; }
 .slovakia-map__size-key circle { fill: none; stroke: #b8c6bd; }
