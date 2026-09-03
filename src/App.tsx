@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import ContextStrip from './components/ContextStrip'
 import ErrorPanel from './components/ErrorPanel'
@@ -32,6 +32,13 @@ function LoadedInteractiveSections({ data }: { data: AtlasData }) {
     atlasState.setFilter('field', fieldKey, 'push')
     focusSection('odbory')
   }
+  const fieldRange = useMemo(
+    () => ({
+      startYear: atlasState.filters.fieldStartYear,
+      endYear: atlasState.filters.fieldEndYear,
+    }),
+    [atlasState.filters.fieldStartYear, atlasState.filters.fieldEndYear],
+  )
 
   return (
     <>
@@ -46,10 +53,7 @@ function LoadedInteractiveSections({ data }: { data: AtlasData }) {
         data={data}
         selectedField={atlasState.filters.field}
         onFieldSelect={(fieldKey) => atlasState.setFilter('field', fieldKey, 'push')}
-        fieldRange={{
-          startYear: atlasState.filters.fieldStartYear,
-          endYear: atlasState.filters.fieldEndYear,
-        }}
+        fieldRange={fieldRange}
         onFieldRangeChange={(startYear, endYear) =>
           atlasState.setFieldEducationRange(startYear, endYear, 'push')
         }

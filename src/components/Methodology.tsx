@@ -45,7 +45,6 @@ export default function Methodology({ data, status }: MethodologyProps) {
     <section id="metodika" className="section section--method" aria-labelledby="method-title">
       <div className="method-grid">
         <div>
-          <p className="eyebrow">Metodika a pramene</p>
           <h2 id="method-title">Metodika a pramene</h2>
         </div>
         <div className="method-copy">

@@ -15,7 +15,7 @@ const meta = {
 }
 
 describe('Masthead', () => {
-  it('shows the question, the four ledger figures and the five anchors', () => {
+  it('shows the question, the four ledger figures and the six anchors', () => {
     render(<Masthead status="ready" meta={meta} institutionCount={22} cityCount={14} />)
     expect(
       screen.getByRole('heading', { level: 1, name: /Kde vzniká slovenská profesúra\?/ }),
@@ -29,6 +29,7 @@ describe('Masthead', () => {
     expect(within(nav).getAllByRole('link').map((link) => link.getAttribute('href'))).toEqual([
       '#mapa',
       '#zistenia',
+      '#kontext',
       '#odbory',
       '#register',
       '#metodika',

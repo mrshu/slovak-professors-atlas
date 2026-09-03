@@ -11,6 +11,7 @@ interface MastheadProps {
 const ANCHORS: readonly [string, string][] = [
   ['#mapa', 'Mapa'],
   ['#zistenia', 'Zistenia'],
+  ['#kontext', 'Kontext'],
   ['#odbory', 'Odbory'],
   ['#register', 'Register'],
   ['#metodika', 'Metodika'],

@@ -54,9 +54,15 @@ export default function FieldDumbbell({ rows, onSelect }: FieldDumbbellProps) {
             <text className="chart__tick chart__tick--ink" x={M.l - 10} y={cy + 3.5} textAnchor="end">
               {row.label}
             </text>
-            <line className="chart__connector" x1={x(row.appointmentShare)} x2={x(row.graduateShare)} y1={cy} y2={cy} />
-            <circle className="chart__dot chart__dot--2" cx={x(row.graduateShare)} cy={cy} r={5} />
-            <circle className="chart__dot chart__dot--1" cx={x(row.appointmentShare)} cy={cy} r={5} />
+            <line
+              className="chart__connector"
+              x1={x(Math.min(row.appointmentShare, 0.2))}
+              x2={x(Math.min(row.graduateShare, 0.2))}
+              y1={cy}
+              y2={cy}
+            />
+            <circle className="chart__dot chart__dot--2" cx={x(Math.min(row.graduateShare, 0.2))} cy={cy} r={5} />
+            <circle className="chart__dot chart__dot--1" cx={x(Math.min(row.appointmentShare, 0.2))} cy={cy} r={5} />
           </g>
         )
       })}
