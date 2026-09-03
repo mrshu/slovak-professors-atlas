@@ -314,6 +314,10 @@ describe('metodika a pramene', () => {
     expect(methodology).toHaveTextContent(data.sources.higher_education.sha256)
     expect(methodology).toHaveTextContent('3. júna 2026')
     expect(methodology).toHaveTextContent(/vymenovania aj absolventi sú ročné toky/i)
+    expect(methodology).toHaveTextContent(
+      /Pomer sa počíta pre jeden recenzovaný kľúč odboru a neplatí pre nič širšie/i,
+    )
+    expect(methodology).toHaveTextContent(/menovateľ pomeru je potom malý/i)
     expect(methodology).toHaveTextContent(/študenti a interní učitelia sú stavom k 31\. októbru/i)
     expect(
       within(methodology).getByRole('link', {
