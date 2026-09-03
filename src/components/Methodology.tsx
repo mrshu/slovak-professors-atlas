@@ -1,5 +1,6 @@
 import type { AtlasData } from '../data/types'
 import { formatAppointmentCount, formatDate, formatNumber } from '../utils/format'
+import FieldCleanupReport from './FieldCleanupReport'
 
 interface MethodologyProps {
   data?: AtlasData
@@ -346,6 +347,7 @@ export default function Methodology({ data, status }: MethodologyProps) {
                 </ul>
               </section>
             </div>
+            <FieldCleanupReport records={data.records} catalog={data.fieldCatalog} />
           </details>
         </>
       )}
