@@ -2152,7 +2152,16 @@ main > section, footer { scroll-margin-top: var(--sp-4); }
 .chart__connector { stroke: var(--color-line); stroke-width: 2; }
 .chart__dot--1 { fill: var(--series-1); }
 .chart__dot--2 { fill: var(--series-2); }
+.chart__dot--muted { fill: var(--color-ink-muted); }
+.chart__track { stroke: var(--color-paper-deep); }
+.chart__stem { stroke: var(--series-1); stroke-width: 2; }
+.chart__stem--muted { stroke: var(--color-ink-muted); stroke-opacity: 0.5; stroke-width: 2; }
+.chart__rug { stroke: var(--color-ink-muted); stroke-opacity: 0.35; }
+.chart__separator { stroke: var(--color-line); }
+.chart__note { font-size: 10px; fill: var(--color-ink-muted); }
 .chart__row { cursor: pointer; }
+.chart__row-hit { fill: var(--color-ink); fill-opacity: 0; }
+.chart__row:hover .chart__row-hit, .chart__row:focus-visible .chart__row-hit { fill-opacity: 0.05; }
 .chart__row:focus-visible { outline: none; }
 .chart__row:focus-visible .chart__tick--ink { text-decoration: underline; }
 

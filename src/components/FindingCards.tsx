@@ -1,17 +1,14 @@
 import { useMemo } from 'react'
 
 import { buildFieldEducationLandscape } from '../analysis/fieldEducation'
-import {
-  fieldShareRows,
-  monthTotals,
-  titleCrossoverYear,
-  titleSharesByYear,
-} from '../analysis/findings'
+import { fieldRatioSpread, fieldShareRows, monthTotals } from '../analysis/findings'
 import type { AtlasData } from '../data/types'
 import { formatNumber } from '../utils/format'
 import FieldDumbbell from './charts/FieldDumbbell'
+import FieldRatioOutliers, { ratioText } from './charts/FieldRatioOutliers'
 import MonthsChart from './charts/MonthsChart'
-import TitlesChart from './charts/TitlesChart'
+
+const LOWEST_COUNT = 4
 
 export const DUMBBELL_FIELDS = [
   'socialna praca',
@@ -30,37 +27,50 @@ interface FindingCardsProps {
 }
 
 export default function FindingCards({ data, onFieldSelect }: FindingCardsProps) {
-  const titles = useMemo(() => titleSharesByYear(data.records), [data.records])
-  const crossover = titleCrossoverYear(titles)
   const months = useMemo(() => monthTotals(data.records), [data.records])
   const november = months[10]!
   const total = data.records.length
+  const landscape = useMemo(
+    () =>
+      buildFieldEducationLandscape(
+        data.records,
+        data.fieldCatalog,
+        data.fieldEducationComparison,
+      ),
+    [data],
+  )
   const shareRows = useMemo(() => {
-    const landscape = buildFieldEducationLandscape(
-      data.records,
-      data.fieldCatalog,
-      data.fieldEducationComparison,
-    )
     const rows = fieldShareRows(landscape.points)
     return DUMBBELL_FIELDS.flatMap((key) => rows.filter((row) => row.fieldKey === key))
-  }, [data])
+  }, [landscape])
   const lead = shareRows[0]
+  const spread = useMemo(() => fieldRatioSpread(landscape.allRows), [landscape])
+  const lowest = spread.rows.slice(0, LOWEST_COUNT)
+  const highest = spread.rows.length > LOWEST_COUNT ? spread.rows[spread.rows.length - 1]! : null
 
   return (
     <section id="zistenia" className="cards" aria-label="Tri zistenia">
       <article className="card">
-        <p className="card__kicker">Vedecké hodnosti</p>
+        <p className="card__kicker">Absolventi na vymenovanie</p>
         <h3>
-          {crossover === null
-            ? 'Podiel vedeckých hodností po rokoch'
-            : `PhD. predbehol CSc. v roku ${crossover}`}
+          {highest === null
+            ? 'Absolventi na jedno vymenovanie podľa odboru'
+            : `Od ${ratioText(lowest[0]!.graduatesPerAppointment)} absolventov na vymenovanie po ${ratioText(highest.graduatesPerAppointment)}`}
         </h3>
         <p className="card__sub">
-          Podiel hodnosti medzi ročnými vymenovaniami: <i className="sw sw--1" />PhD.{' '}
-          <i className="sw sw--2" />CSc. <i className="sw sw--3" />DrSc.
+          Odbory s najnižším pomerom absolventov k vymenovaniam,{' '}
+          {data.fieldEducationComparison.startYear}–{data.fieldEducationComparison.endYear}. Medián{' '}
+          {spread.median === null ? '—' : ratioText(spread.median)} z{' '}
+          {formatNumber(spread.rows.length)} odborov s dlhým radom dát.
         </p>
-        <TitlesChart rows={titles} crossoverYear={crossover} />
-        <a href="#register">Záznamy podľa hodnosti</a>
+        <FieldRatioOutliers
+          lowest={lowest}
+          highest={highest}
+          all={spread.rows}
+          median={spread.median}
+          onSelect={onFieldSelect}
+        />
+        <a href="#odbory">Celé poradie odborov</a>
       </article>
       <article className="card">
         <p className="card__kicker">Kalendár slávností</p>

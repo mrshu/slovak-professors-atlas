@@ -10,17 +10,31 @@ const years = Array.from({ length: 17 }, (_, index) => ({
   programRowCount: 1,
   nationalGraduateCount: 100,
 }))
+const fields = [
+  { fieldKey: 'socialna praca', canonicalLabel: 'sociálna práca', graduates: 900 },
+  { fieldKey: 'psychologia', canonicalLabel: 'psychológia', graduates: 100 },
+  { fieldKey: 'spravne pravo', canonicalLabel: 'správne právo', graduates: 10 },
+  { fieldKey: 'materialy', canonicalLabel: 'materiály', graduates: 20 },
+  { fieldKey: 'vyziva', canonicalLabel: 'výživa', graduates: 30 },
+  { fieldKey: 'neurologia', canonicalLabel: 'neurológia', graduates: 40 },
+]
 const data = {
   records: [
-    appointment({ appointedOn: '2007-06-26', titlesAfter: 'CSc.' }),
-    appointment({ appointedOn: '2008-11-15', titlesAfter: 'PhD.' }),
-    appointment({ appointedOn: '2011-11-28', titlesAfter: 'PhD.', fieldKey: 'socialna praca', field: 'sociálna práca' }),
-    appointment({ appointedOn: '2011-11-28', titlesAfter: 'PhD.', fieldKey: 'psychologia', field: 'psychológia' }),
+    appointment({ appointedOn: '2011-11-28' }),
+    ...fields.flatMap((field) =>
+      Array.from({ length: 5 }, () =>
+        appointment({
+          appointedOn: '2011-11-28',
+          fieldKey: field.fieldKey,
+          field: field.canonicalLabel,
+        }),
+      ),
+    ),
   ],
   fieldCatalog: {
     schemaVersion: 1,
     aliases: [],
-    labels: { 'socialna praca': 'sociálna práca', psychologia: 'psychológia' },
+    labels: Object.fromEntries(fields.map((field) => [field.fieldKey, field.canonicalLabel])),
   },
   fieldEducationComparison: {
     schemaVersion: 2,
@@ -30,23 +44,30 @@ const data = {
     graduateSources: [],
     currentStudentsSource: { year: 2025, archiveMember: null, localPath: '', url: '', sha256: '', retrievedOn: '' },
     years,
-    rows: [
-      { fieldKey: 'socialna praca', canonicalLabel: 'sociálna práca', graduateCounts: years.map(() => 900), currentStudentCount: 10 },
-      { fieldKey: 'psychologia', canonicalLabel: 'psychológia', graduateCounts: years.map(() => 100), currentStudentCount: 10 },
-    ],
+    rows: fields.map((field) => ({
+      fieldKey: field.fieldKey,
+      canonicalLabel: field.canonicalLabel,
+      graduateCounts: years.map(() => field.graduates),
+      currentStudentCount: 10,
+    })),
   },
 }
 
 describe('FindingCards', () => {
   afterEach(cleanup)
 
-  it('renders three cards with the crossover year in the first headline', () => {
+  it('leads with the fields that need the fewest graduates per appointment', () => {
     render(<FindingCards data={data as never} onFieldSelect={() => {}} />)
     const section = screen.getByRole('region', { name: 'Tri zistenia' })
     const cards = within(section).getAllByRole('article')
     expect(cards).toHaveLength(3)
     expect(within(cards[0]!).getByRole('heading', { level: 3 })).toHaveTextContent(
-      'PhD. predbehol CSc. v roku 2008',
+      'Od 34 absolventov na vymenovanie po 3 060',
+    )
+    expect(within(cards[0]!).getByText(/Medián 119 z 6 odborov/)).toBeVisible()
+    expect(within(cards[0]!).getByRole('link', { name: 'Celé poradie odborov' })).toHaveAttribute(
+      'href',
+      '#odbory',
     )
     expect(within(cards[1]!).getByRole('heading', { level: 3 })).toHaveTextContent(
       'Každé piate vymenovanie je novembrové',
@@ -57,26 +78,36 @@ describe('FindingCards', () => {
     )
   })
 
+  it('selects a field when an outlier row is activated', () => {
+    const onFieldSelect = vi.fn()
+    render(<FindingCards data={data as never} onFieldSelect={onFieldSelect} />)
+    const row = screen.getByRole('button', {
+      name: /^správne právo: 34 absolventov na jedno vymenovanie, 170 absolventov a 5 vymenovaní v 17 rokoch s dátami/,
+    })
+    fireEvent.click(row)
+    expect(onFieldSelect).toHaveBeenCalledWith('spravne pravo')
+  })
+
   it('selects a field when a dumbbell row is activated', () => {
     const onFieldSelect = vi.fn()
     render(<FindingCards data={data as never} onFieldSelect={onFieldSelect} />)
     const row = screen.getByRole('button', {
-      name: /sociálna práca: 90,0 % absolventov, 50,0 % vymenovaní/,
+      name: /sociálna práca: 81,8 % absolventov, 16,7 % vymenovaní/,
     })
     expect(row.closest('svg')).toHaveAttribute('role', 'group')
     fireEvent.click(row)
     expect(onFieldSelect).toHaveBeenCalledWith('socialna praca')
   })
 
-  it('falls back to a neutral headline when there is no crossover', () => {
+  it('falls back to a neutral headline when too few fields have a long graduate series', () => {
     render(
       <FindingCards
-        data={{ ...data, records: [appointment({ appointedOn: '2000-02-22', titlesAfter: 'CSc.' })] } as never}
+        data={{ ...data, records: [appointment({ appointedOn: '2011-11-28' })] } as never}
         onFieldSelect={() => {}}
       />,
     )
     expect(
-      screen.getByRole('heading', { level: 3, name: 'Podiel vedeckých hodností po rokoch' }),
+      screen.getByRole('heading', { level: 3, name: 'Absolventi na jedno vymenovanie podľa odboru' }),
     ).toBeVisible()
   })
 })

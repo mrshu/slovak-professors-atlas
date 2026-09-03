@@ -1,33 +1,28 @@
 import { describe, expect, it } from 'vitest'
 
 import { appointment } from '../test/atlasFixture'
-import { fieldShareRows, monthTotals, titleCrossoverYear, titleSharesByYear } from './findings'
+import { fieldRatioSpread, fieldShareRows, monthTotals } from './findings'
+
+function landscapeRow(
+  fieldKey: string,
+  canonicalLabel: string,
+  annual: readonly { year: number; appointmentCount: number; graduateCount: number | null }[],
+) {
+  return {
+    fieldKey,
+    canonicalLabel,
+    appointmentCount: annual.reduce((total, value) => total + value.appointmentCount, 0),
+    exactAppointmentCount: 0,
+    aliasAppointmentCount: 0,
+    graduateCount: null,
+    graduatesPerAppointment: null,
+    currentStudentCount: null,
+    annual: [...annual],
+    variants: [],
+  }
+}
 
 describe('findings', () => {
-  it('counts title shares per year from titlesAfter', () => {
-    const rows = titleSharesByYear([
-      appointment({ appointedOn: '2007-06-26', titlesAfter: 'CSc.' }),
-      appointment({ appointedOn: '2007-06-26', titlesAfter: 'PhD.' }),
-      appointment({ appointedOn: '2008-01-15', titlesAfter: 'PhD.' }),
-      appointment({ appointedOn: '2008-05-12', titlesAfter: 'DrSc. PhD.' }),
-      appointment({ appointedOn: '2008-05-12', titlesAfter: null }),
-    ])
-    expect(rows).toEqual([
-      { year: 2007, total: 2, phd: 1, csc: 1, drsc: 0 },
-      { year: 2008, total: 3, phd: 2, csc: 0, drsc: 1 },
-    ])
-    expect(titleCrossoverYear(rows)).toBe(2008)
-  })
-
-  it('returns null when PhD. never overtakes CSc.', () => {
-    expect(titleCrossoverYear([{ year: 2000, total: 2, phd: 1, csc: 1, drsc: 0 }])).toBeNull()
-  })
-
-  it('counts the dotted "Ph.D." variant as a PhD title', () => {
-    const rows = titleSharesByYear([appointment({ appointedOn: '2009-03-10', titlesAfter: 'Ph.D.' })])
-    expect(rows).toEqual([{ year: 2009, total: 1, phd: 1, csc: 0, drsc: 0 }])
-  })
-
   it('totals appointments and ceremonies for all twelve months', () => {
     const totals = monthTotals([
       appointment({ appointedOn: '2011-11-28' }),
@@ -50,5 +45,72 @@ describe('findings', () => {
       { fieldKey: 'a', label: 'A', appointments: 3, graduates: 900, appointmentShare: 0.75, graduateShare: 0.9 },
       { fieldKey: 'b', label: 'B', appointments: 1, graduates: 100, appointmentShare: 0.25, graduateShare: 0.1 },
     ])
+  })
+
+  it('ranks fields by graduates per appointment over the years with graduate data', () => {
+    const spread = fieldRatioSpread(
+      [
+        landscapeRow('pravo', 'právo', [
+          { year: 2009, appointmentCount: 2, graduateCount: 10 },
+          { year: 2010, appointmentCount: 2, graduateCount: 10 },
+        ]),
+        landscapeRow('psychologia', 'psychológia', [
+          { year: 2009, appointmentCount: 1, graduateCount: 500 },
+          { year: 2010, appointmentCount: 1, graduateCount: 500 },
+        ]),
+        landscapeRow('matematika', 'matematika', [
+          { year: 2009, appointmentCount: 2, graduateCount: 100 },
+          { year: 2010, appointmentCount: 2, graduateCount: 100 },
+        ]),
+      ],
+      { minYears: 2, minAppointments: 2 },
+    )
+    expect(spread.rows.map(({ label, graduatesPerAppointment }) => [label, graduatesPerAppointment])).toEqual([
+      ['právo', 5],
+      ['matematika', 50],
+      ['psychológia', 500],
+    ])
+    expect(spread.rows[0]).toMatchObject({ appointments: 4, graduates: 20, coveredYears: 2 })
+    expect(spread.median).toBe(50)
+  })
+
+  it('ignores years without graduate data instead of treating them as zero', () => {
+    const spread = fieldRatioSpread(
+      [
+        landscapeRow('hudobne umenie', 'hudobné umenie', [
+          { year: 2009, appointmentCount: 5, graduateCount: null },
+          { year: 2010, appointmentCount: 2, graduateCount: 20 },
+          { year: 2011, appointmentCount: 2, graduateCount: 20 },
+        ]),
+      ],
+      { minYears: 2, minAppointments: 2 },
+    )
+    expect(spread.rows[0]).toMatchObject({ appointments: 4, graduates: 40, graduatesPerAppointment: 10 })
+  })
+
+  it('drops fields whose graduate series is too sparse or whose appointments are too few', () => {
+    const sparse = landscapeRow('doprava', 'doprava', [
+      { year: 2009, appointmentCount: 3, graduateCount: null },
+      { year: 2010, appointmentCount: 3, graduateCount: 3 },
+    ])
+    const rare = landscapeRow('reštaurovanie', 'reštaurovanie', [
+      { year: 2009, appointmentCount: 1, graduateCount: 2 },
+      { year: 2010, appointmentCount: 0, graduateCount: 2 },
+    ])
+    expect(fieldRatioSpread([sparse, rare], { minYears: 2, minAppointments: 2 }).rows).toEqual([])
+    expect(fieldRatioSpread([sparse, rare], { minYears: 2, minAppointments: 2 }).median).toBeNull()
+  })
+
+  it('averages the two middle fields for an even count', () => {
+    const spread = fieldRatioSpread(
+      [
+        landscapeRow('a', 'a', [{ year: 2009, appointmentCount: 1, graduateCount: 10 }]),
+        landscapeRow('b', 'b', [{ year: 2009, appointmentCount: 1, graduateCount: 20 }]),
+        landscapeRow('c', 'c', [{ year: 2009, appointmentCount: 1, graduateCount: 30 }]),
+        landscapeRow('d', 'd', [{ year: 2009, appointmentCount: 1, graduateCount: 40 }]),
+      ],
+      { minYears: 1, minAppointments: 1 },
+    )
+    expect(spread.median).toBe(25)
   })
 })
