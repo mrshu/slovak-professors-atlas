@@ -48,7 +48,6 @@ a:hover {
   outline-offset: 0.25rem;
 }
 
-.hero,
 .site-footer {
   --focus-ring: 3px solid var(--color-focus-on-dark);
 }

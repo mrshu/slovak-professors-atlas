@@ -1361,31 +1361,6 @@ main > section, footer { scroll-margin-top: var(--sp-4); }
 
 
 @media (max-width: 62rem) {
-  .hero {
-    min-height: auto;
-  }
-
-  .hero__title-block {
-    grid-template-columns: 1fr;
-  }
-
-  .hero__deck {
-    grid-column: 1;
-    max-width: 42rem;
-  }
-
-  .hero__ledger {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .hero__ledger > div:last-child {
-    grid-column: 1 / -1;
-    margin-top: 1.4rem;
-    padding: 1.4rem 0 0;
-    border-top: 1px solid rgb(243 236 223 / 24%);
-    border-left: 0;
-  }
-
   .measurement-key {
     grid-template-columns: 1fr 1fr;
   }
@@ -1427,48 +1402,11 @@ main > section, footer { scroll-margin-top: var(--sp-4); }
 }
 
 @media (max-width: 42rem) {
-  .hero::before {
-    inset: 0.6rem;
-  }
-
-  .hero__register {
-    align-items: flex-end;
-    gap: 1rem;
-  }
-
-  .hero__register span:last-child {
-    text-align: right;
-  }
-
-  .hero__title-block .eyebrow {
-    margin-bottom: -0.5rem;
-  }
-
-  .hero__ledger,
-  .hero__sources,
   .measurement-key,
   .context-trend figcaption,
   .method-grid,
   .source-audit {
     grid-template-columns: 1fr;
-  }
-
-
-  .hero__ledger > div,
-  .hero__ledger > div:first-child {
-    padding: 1.2rem 0;
-    border-top: 1px solid rgb(243 236 223 / 24%);
-    border-left: 0;
-  }
-
-  .hero__ledger > div:first-child {
-    padding-top: 0;
-    border-top: 0;
-  }
-
-  .hero__ledger > div:last-child {
-    grid-column: auto;
-    margin-top: 0;
   }
 
   .context-scale {
@@ -1499,22 +1437,6 @@ main > section, footer { scroll-margin-top: var(--sp-4); }
 
   .context-trend__chart {
     min-width: 52rem;
-  }
-
-  .anchor-nav__inner {
-    overflow-x: auto;
-  }
-
-  .anchor-nav ol {
-    padding-right: 1rem;
-  }
-
-  .anchor-nav__brand {
-    position: sticky;
-    z-index: 1;
-    left: 0;
-    flex: 0 0 3rem;
-    background-color: var(--color-paper);
   }
 
   .measurement-key > div,
@@ -1587,7 +1509,6 @@ main > section, footer { scroll-margin-top: var(--sp-4); }
 
 @media print {
   .skip-link,
-  .anchor-nav,
   .site-footer {
     display: none !important;
   }
