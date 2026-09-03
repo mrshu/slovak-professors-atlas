@@ -165,6 +165,16 @@ export default function SlovakiaMap({
   const keyValues = useMemo(() => sizeKeyValues(maxCount), [maxCount])
   // Labels follow the ranking, not an absolute count: a filtered selection can
   // put every city in single digits, and unlabelled circles say nothing.
+  // Painted largest first: the smaller circle then sits on top of a bigger
+  // neighbour and keeps its own hit target, which at phone width overlaps six
+  // pairs (Bratislava/Trnava, Košice/Prešov, …).
+  const paintedCities = useMemo(
+    () =>
+      [...projectedCities].sort(
+        (left, right) => right.count - left.count || left.city.localeCompare(right.city, 'sk-SK'),
+      ),
+    [projectedCities],
+  )
   const labelledCities = useMemo(
     () =>
       new Set(
@@ -188,7 +198,7 @@ export default function SlovakiaMap({
         aria-labelledby="slovakia-map-title"
       >
         <path className="slovakia-map__outline" d={outline} data-testid="slovakia-outline" />
-        {projectedCities.map((city) => {
+        {paintedCities.map((city) => {
           const selected = city.city === selectedCity
           const cityRadius = city.count > 0 ? radius(city.count) : CITY_MARK_MIN_RADIUS
           const selectedRingRadius = cityRadius + SELECTED_RING_RADIUS_OFFSET
@@ -219,8 +229,8 @@ export default function SlovakiaMap({
             <g
               className={`slovakia-map__city${isHot ? ' is-hot' : ''}${isDim ? ' is-dim' : ''}`}
               key={city.city}
-              onMouseEnter={() => onHoverCity(city.city)}
-              onMouseLeave={() => onHoverCity(null)}
+              onPointerEnter={() => onHoverCity(city.city)}
+              onPointerLeave={() => onHoverCity(null)}
             >
               {selected && (
                 <circle
@@ -232,13 +242,20 @@ export default function SlovakiaMap({
                   aria-hidden="true"
                 />
               )}
-              {city.count > 0 && (
+              <circle
+                className={city.count > 0 ? 'slovakia-map__mark' : 'slovakia-map__mark slovakia-map__mark--empty'}
+                cx={city.x}
+                cy={city.y}
+                r={cityRadius}
+                data-testid={`city-mark-${city.city}`}
+                aria-hidden="true"
+              />
+              {isHot && (
                 <circle
-                  className="slovakia-map__mark"
+                  className="slovakia-map__hover-ring"
                   cx={city.x}
                   cy={city.y}
-                  r={cityRadius}
-                  data-testid={`city-mark-${city.city}`}
+                  r={cityRadius + 4}
                   aria-hidden="true"
                 />
               )}
@@ -253,21 +270,24 @@ export default function SlovakiaMap({
                   {labelText}
                 </text>
               )}
-              <foreignObject
-                x={city.x - targetSize / 2}
-                y={city.y - targetSize / 2}
-                width={targetSize}
-                height={targetSize}
-              >
-                <button
-                  className="slovakia-map__target"
-                  type="button"
-                  aria-label={accessibleLabel}
-                  aria-pressed={selected}
-                  disabled={city.count === 0 && !selected}
-                  onClick={() => onToggleCity(city.city)}
-                />
-              </foreignObject>
+              {(city.count > 0 || selected) && (
+                <foreignObject
+                  x={city.x - targetSize / 2}
+                  y={city.y - targetSize / 2}
+                  width={targetSize}
+                  height={targetSize}
+                >
+                  <button
+                    className="slovakia-map__target"
+                    type="button"
+                    aria-label={accessibleLabel}
+                    aria-pressed={selected}
+                    onClick={() => onToggleCity(city.city)}
+                    onFocus={() => onHoverCity(city.city)}
+                    onBlur={() => onHoverCity(null)}
+                  />
+                </foreignObject>
+              )}
             </g>
           )
         })}

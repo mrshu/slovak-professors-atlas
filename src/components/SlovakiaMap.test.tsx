@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom/vitest'
-import { cleanup, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { affiliation, appointment, city } from '../test/atlasFixture'
 import SlovakiaMap, { sizeKeyValues } from './SlovakiaMap'
@@ -162,5 +162,70 @@ describe('SlovakiaMap', () => {
 
     expect(kosiceGroup).toHaveClass('is-dim')
     expect(bratislavaGroup).not.toHaveClass('is-dim')
+  })
+
+  it('reports a hovered city from focus as well as from the pointer', () => {
+    const onHoverCity = vi.fn()
+    render(
+      <SlovakiaMap
+        records={records}
+        geography={geography}
+        cities={cities}
+        affiliations={affiliations}
+        selectedCity={null}
+        hoveredCity={null}
+        onHoverCity={onHoverCity}
+        onToggleCity={() => {}}
+      />,
+    )
+    const target = screen.getByRole('button', { name: /^Košice:/ })
+    fireEvent.focus(target)
+    expect(onHoverCity).toHaveBeenCalledWith('Košice')
+    fireEvent.blur(target)
+    expect(onHoverCity).toHaveBeenLastCalledWith(null)
+
+    const group = screen.getByTestId('city-mark-Bratislava').closest('.slovakia-map__city')!
+    fireEvent.pointerEnter(group)
+    expect(onHoverCity).toHaveBeenLastCalledWith('Bratislava')
+  })
+
+  it('keeps a city without appointments hoverable instead of disabling it', () => {
+    const onHoverCity = vi.fn()
+    render(
+      <SlovakiaMap
+        records={[appointment({ appointedOn: '2015-01-01' })]}
+        geography={geography}
+        cities={cities}
+        affiliations={affiliations}
+        selectedCity={null}
+        hoveredCity={null}
+        onHoverCity={onHoverCity}
+        onToggleCity={() => {}}
+      />,
+    )
+    const empty = screen.getByTestId('city-mark-Košice')
+    expect(empty).toHaveClass('slovakia-map__mark--empty')
+    expect(screen.queryByRole('button', { name: /^Košice:/ })).not.toBeInTheDocument()
+    fireEvent.pointerEnter(empty.closest('.slovakia-map__city')!)
+    expect(onHoverCity).toHaveBeenCalledWith('Košice')
+  })
+
+  it('paints the largest city first so smaller circles keep their hit target', () => {
+    const { container } = render(
+      <SlovakiaMap
+        records={records}
+        geography={geography}
+        cities={cities}
+        affiliations={affiliations}
+        selectedCity={null}
+        hoveredCity={null}
+        onHoverCity={() => {}}
+        onToggleCity={() => {}}
+      />,
+    )
+    const painted = Array.from(container.querySelectorAll('[data-testid^="city-mark-"]')).map(
+      (mark) => mark.getAttribute('data-testid'),
+    )
+    expect(painted).toEqual(['city-mark-Bratislava', 'city-mark-Košice'])
   })
 })

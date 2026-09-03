@@ -11,7 +11,7 @@ import type { AtlasData } from '../data/types'
 import type { AtlasState } from '../state/useAtlasState'
 import useIsNarrowViewport from '../hooks/useIsNarrowViewport'
 import { activeFilterChips } from '../state/activeFilters'
-import { formatAppointmentCount } from '../utils/format'
+import { formatAppointmentCount, formatNumber } from '../utils/format'
 import CityStrip, { type CityStripCell } from './CityStrip'
 import InstitutionRanking from './InstitutionRanking'
 import SlovakiaMap from './SlovakiaMap'
@@ -44,6 +44,12 @@ export default function MapStage({ data, atlasState }: MapStageProps) {
     [data.affiliations, data.records],
   )
   const baseline = byPeriod.get(FIVE_YEAR_PERIODS[0]!.label) ?? []
+  // Every located city, not just the seven the strip has room for: the readout
+  // has to answer for whatever the pointer lands on.
+  const sharesByCity = useMemo(
+    () => new Map(cityShares(stageRecords, data.affiliations).map((entry) => [entry.city, entry])),
+    [data.affiliations, stageRecords],
+  )
   const cells = useMemo<CityStripCell[]>(() => {
     const current = cityShares(stageRecords, data.affiliations).slice(0, STRIP_SIZE)
     return current.map(({ city, share }) => {
@@ -61,6 +67,8 @@ export default function MapStage({ data, atlasState }: MapStageProps) {
   }, [activeIndex, baseline, byPeriod, data.affiliations, stageRecords])
 
   const chips = activeFilterChips(data, atlasState)
+  const inspectedCity = hoveredCity ?? filters.city
+  const inspected = sharesByCity.get(inspectedCity ?? '') ?? null
   const toggleCity = (city: string) =>
     setFilter('city', filters.city === city ? null : city, 'push')
 
@@ -134,11 +142,36 @@ export default function MapStage({ data, atlasState }: MapStageProps) {
         labelLimit={isNarrow ? 4 : 8}
         showSizeKey={!isNarrow}
       />
-      <p className="map-stage__cap">
-        Plocha kruhu = počet vymenovaní navrhnutých pracoviskami v meste. Mesto je sídlo
-        pracoviska, nie bydlisko profesora. Kliknutím na mesto alebo jeho pásik filtrujete
-        register.
-      </p>
+      <div className="map-stage__foot">
+        <p className="map-stage__readout">
+          {inspectedCity === null ? (
+            'Ukážte na mesto alebo naň prejdite tabulátorom pre presné čísla.'
+          ) : (
+            <>
+              <strong>{inspectedCity}</strong>
+              {inspected === undefined || inspected === null || inspected.count === 0
+                ? ' · v tomto výbere bez vymenovania'
+                : ` · ${formatAppointmentCount(inspected.count)} · ${formatNumber(inspected.share * 100, {
+                    minimumFractionDigits: 1,
+                    maximumFractionDigits: 1,
+                  })} % výberu`}
+              {inspectedCity === filters.city
+                ? ' · kliknutím zrušíte výber'
+                : (inspected?.count ?? 0) === 0
+                  ? ''
+                  : ' · kliknutím filtrujete register'}
+            </>
+          )}
+        </p>
+        <p className="visually-hidden" aria-live="polite">
+          {inspectedCity === null ? '' : `${inspectedCity}, ${formatAppointmentCount(inspected?.count ?? 0)}`}
+        </p>
+        <p className="map-stage__cap">
+          Plocha kruhu = počet vymenovaní navrhnutých pracoviskami v meste. Mesto je sídlo
+          pracoviska, nie bydlisko profesora. Kliknutím na mesto alebo jeho pásik filtrujete
+          register.
+        </p>
+      </div>
       <CityStrip
         cells={cells}
         activeIndex={activeIndex}

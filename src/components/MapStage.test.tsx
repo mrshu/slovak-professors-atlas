@@ -157,4 +157,36 @@ describe('MapStage', () => {
     expect(screen.queryByRole('status')).not.toBeInTheDocument()
     expect(screen.getByText(/Plocha kruhu = počet vymenovaní/)).toBeVisible()
   })
+
+  it('reads out any hovered city, including one the seven-cell strip cannot show', () => {
+    const state = atlasState()
+    const { container } = render(<MapStage data={data as never} atlasState={state} />)
+    expect(screen.getByText(/Ukážte na mesto alebo naň prejdite tabulátorom/)).toBeVisible()
+
+    const readout = container.querySelector('.map-stage__readout')!
+    fireEvent.pointerEnter(
+      screen.getByTestId('city-mark-Košice').closest('.slovakia-map__city')!,
+    )
+    expect(readout).toHaveTextContent('Košice · 1 vymenovanie · 33,3 % výberu · kliknutím filtrujete register')
+  })
+
+  it('says so when the hovered city has no appointment in the selection', () => {
+    const state = atlasState({ startYear: 2001, endYear: 2001 })
+    const { container } = render(<MapStage data={data as never} atlasState={state} />)
+    fireEvent.pointerEnter(
+      screen.getByTestId('city-mark-Košice').closest('.slovakia-map__city')!,
+    )
+    expect(container.querySelector('.map-stage__readout')).toHaveTextContent(
+      'Košice · v tomto výbere bez vymenovania',
+    )
+    expect(container.querySelector('.map-stage__readout')).not.toHaveTextContent('kliknutím')
+  })
+
+  it('offers to clear the selection when the hovered city is the selected one', () => {
+    const state = atlasState({ city: 'Bratislava' })
+    const { container } = render(<MapStage data={data as never} atlasState={state} />)
+    expect(container.querySelector('.map-stage__readout')).toHaveTextContent(
+      'Bratislava · 2 vymenovania · 66,7 % výberu · kliknutím zrušíte výber',
+    )
+  })
 })
