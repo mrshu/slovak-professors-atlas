@@ -2199,6 +2199,23 @@ main > section, footer { scroll-margin-top: var(--sp-4); }
 .field-section__plot { padding: var(--sp-3); }
 .field-section__detail { border-left: var(--rule); padding: var(--sp-4); }
 @media (max-width: 900px) { .field-section__detail { border-left: 0; border-top: var(--rule); } }
+.city-fields { grid-column: 1 / -1; border-top: var(--rule); padding: var(--sp-3) var(--sp-4) var(--sp-2); display: grid; gap: var(--sp-2); }
+.city-fields__head { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-4); align-items: baseline; justify-content: space-between; }
+.city-fields__head h3 { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: var(--t-3); }
+.city-fields__head p { margin: 2px 0 0; font-size: var(--t-small); color: var(--color-ink-muted); max-width: 62ch; }
+.city-fields__clear { font: inherit; font-size: var(--t-small); font-weight: 600; padding: var(--sp-1) var(--sp-2); border: var(--rule); background: var(--color-paper); cursor: pointer; white-space: nowrap; }
+.city-fields__clear:hover { background: var(--color-paper-deep); }
+.city-fields__list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px var(--sp-5); }
+@media (max-width: 900px) { .city-fields__list { grid-template-columns: 1fr; } }
+.city-fields__list button { display: grid; grid-template-columns: minmax(0, 1fr) 2.5rem minmax(4rem, 6rem) 2.6rem; gap: var(--sp-2); align-items: center; width: 100%; font: inherit; font-size: var(--t-small); text-align: left; padding: 3px var(--sp-1); border: 0; background: none; cursor: pointer; }
+.city-fields__list button:hover { background: var(--color-paper-deep); }
+.city-fields__list button[aria-current='true'] { background: var(--color-paper-deep); font-weight: 600; }
+.city-fields__label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.city-fields__count, .city-fields__share { font-variant-numeric: tabular-nums; text-align: right; color: var(--color-ink-muted); }
+.city-fields__count { color: var(--color-ink); font-weight: 600; }
+.city-fields__bar { display: block; block-size: 8px; background: var(--color-paper-deep); }
+.city-fields__bar i { display: block; block-size: 100%; background: var(--series-1); }
+.city-fields__note { margin: 0; font-size: var(--t-small); color: var(--color-ink-muted); max-width: 76ch; }
 .field-section__cap, .field-section__sources { grid-column: 1 / -1; margin: 0; padding: var(--sp-2) var(--sp-4); font-size: var(--t-small); color: var(--color-ink-muted); }
 .field-section__fold { grid-column: 1 / -1; border-left: 0; border-right: 0; border-bottom: 0; }
 .field-education-scatter__guide line { stroke: var(--color-line); stroke-dasharray: 3 4; }

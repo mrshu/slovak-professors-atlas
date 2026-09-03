@@ -558,3 +558,69 @@ export function presidentialEraProfiles(
       ]
     })
 }
+
+export interface CityFieldRow {
+  fieldKey: string
+  label: string
+  cityCount: number
+  nationalCount: number
+  share: number
+}
+
+export interface CityFieldRanking {
+  city: string
+  cityTotal: number
+  nationalTotal: number
+  rows: CityFieldRow[]
+}
+
+/**
+ * Fields a city appoints in, with the city's share of the national
+ * appointments in the same field and period. Graduate statistics have no city,
+ * so this is the city-level counterpart the ratio comparison cannot give.
+ */
+export function cityFieldRanking(
+  records: readonly Appointment[],
+  affiliations: readonly Affiliation[],
+  labels: Readonly<Record<string, string>>,
+  city: string,
+  range: { startYear: number; endYear: number },
+): CityFieldRanking {
+  const affiliationCities = cityByAffiliationId(affiliations)
+  const cityCounts = new Map<string, number>()
+  const nationalCounts = new Map<string, number>()
+  const fallbackLabels = new Map<string, string>()
+  let cityTotal = 0
+  let nationalTotal = 0
+
+  for (const appointment of records) {
+    const year = Number.parseInt(appointment.appointedOn.slice(0, 4), 10)
+    if (year < range.startYear || year > range.endYear) continue
+    incrementCount(nationalCounts, appointment.fieldKey)
+    nationalTotal += 1
+    if (!fallbackLabels.has(appointment.fieldKey)) {
+      fallbackLabels.set(appointment.fieldKey, appointment.field)
+    }
+    if (affiliationCities.get(appointment.affiliationId) !== city) continue
+    incrementCount(cityCounts, appointment.fieldKey)
+    cityTotal += 1
+  }
+
+  const rows = Array.from(cityCounts, ([fieldKey, cityCount]) => {
+    const nationalCount = nationalCounts.get(fieldKey) ?? cityCount
+    return {
+      fieldKey,
+      label: labels[fieldKey] ?? fallbackLabels.get(fieldKey) ?? fieldKey,
+      cityCount,
+      nationalCount,
+      share: nationalCount === 0 ? 0 : cityCount / nationalCount,
+    }
+  }).sort(
+    (left, right) =>
+      right.cityCount - left.cityCount ||
+      right.share - left.share ||
+      slovakCollator.compare(left.label, right.label),
+  )
+
+  return { city, cityTotal, nationalTotal, rows }
+}

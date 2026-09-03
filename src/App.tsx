@@ -53,6 +53,8 @@ function LoadedInteractiveSections({ data }: { data: AtlasData }) {
         data={data}
         selectedField={atlasState.filters.field}
         onFieldSelect={(fieldKey) => atlasState.setFilter('field', fieldKey, 'push')}
+        selectedCity={atlasState.filters.city}
+        onCityClear={() => atlasState.setFilter('city', null, 'push')}
         fieldRange={fieldRange}
         onFieldRangeChange={(startYear, endYear) =>
           atlasState.setFieldEducationRange(startYear, endYear, 'push')

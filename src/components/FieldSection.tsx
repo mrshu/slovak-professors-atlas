@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react'
 
 import { buildFieldEducationLandscape, type FieldEducationRange } from '../analysis/fieldEducation'
+import { cityFieldRanking } from '../analysis/selectors'
 import type { AtlasData } from '../data/types'
 import { formatNumber } from '../utils/format'
 import { normalizeForSearch } from '../utils/search'
+import CityFieldPanel from './CityFieldPanel'
 import FieldEducationDetail from './FieldEducationDetail'
 import FieldEducationRankings from './FieldEducationRankings'
 import FieldEducationScatter from './FieldEducationScatter'
@@ -13,6 +15,8 @@ interface FieldSectionProps {
   data: AtlasData
   selectedField: string | null
   onFieldSelect: (fieldKey: string) => void
+  selectedCity: string | null
+  onCityClear: () => void
   fieldRange: FieldEducationRange
   onFieldRangeChange: (startYear: number, endYear: number) => void
 }
@@ -21,6 +25,8 @@ export default function FieldSection({
   data,
   selectedField,
   onFieldSelect,
+  selectedCity,
+  onCityClear,
   fieldRange,
   onFieldRangeChange,
 }: FieldSectionProps) {
@@ -35,6 +41,19 @@ export default function FieldSection({
         fieldRange,
       ),
     [data, fieldRange],
+  )
+  const cityRanking = useMemo(
+    () =>
+      selectedCity === null
+        ? null
+        : cityFieldRanking(
+            data.records,
+            data.affiliations,
+            data.fieldCatalog.labels,
+            selectedCity,
+            fieldRange,
+          ),
+    [data, fieldRange, selectedCity],
   )
   const points = landscape.points.filter((point) => point.graduateCount > 0)
   const zeroRail = landscape.points.filter((point) => point.graduateCount === 0)
@@ -150,6 +169,16 @@ export default function FieldSection({
           <FieldEducationDetail row={selectedRow} />
         )}
       </aside>
+      {cityRanking === null ? null : (
+        <CityFieldPanel
+          ranking={cityRanking}
+          startYear={fieldRange.startYear}
+          endYear={fieldRange.endYear}
+          selectedField={selectedField}
+          onFieldSelect={onFieldSelect}
+          onCityClear={onCityClear}
+        />
+      )}
       <p className="field-section__cap">
         {formatNumber(points.length)} odborov s absolventmi aj vymenovaním,{' '}
         {formatNumber(zeroRail.length)} odborov s vymenovaním bez absolventa (spodný riadok),{' '}

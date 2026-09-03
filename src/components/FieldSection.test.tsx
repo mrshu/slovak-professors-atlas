@@ -2,7 +2,7 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { appointment } from '../test/atlasFixture'
+import { affiliation, appointment } from '../test/atlasFixture'
 import FieldSection from './FieldSection'
 
 afterEach(cleanup)
@@ -13,9 +13,17 @@ const years = Array.from({ length: 17 }, (_, index) => ({
   nationalGraduateCount: 100,
 }))
 const data = {
+  affiliations: [affiliation(), affiliation({ id: 'tuke-default', institutionId: 'tuke', city: 'Košice' })],
   records: [
     appointment({ appointedOn: '2011-01-24', fieldKey: 'socialna praca', field: 'sociálna práca' }),
     appointment({ appointedOn: '2012-07-10', fieldKey: 'hudobne umenie', field: 'hudobné umenie' }),
+    appointment({
+      appointedOn: '2013-07-10',
+      fieldKey: 'socialna praca',
+      field: 'sociálna práca',
+      institutionId: 'tuke',
+      affiliationId: 'tuke-default',
+    }),
   ],
   fieldCatalog: {
     schemaVersion: 1,
@@ -41,7 +49,7 @@ const range = { startYear: 2009, endYear: 2025 }
 describe('FieldSection', () => {
   it('renders the scatter, the rail and the detail for the selected field', () => {
     render(
-      <FieldSection data={data as never} selectedField="socialna praca" onFieldSelect={vi.fn()} fieldRange={range} onFieldRangeChange={vi.fn()} />,
+      <FieldSection data={data as never} selectedField="socialna praca" onFieldSelect={vi.fn()} selectedCity={null} onCityClear={vi.fn()} fieldRange={range} onFieldRangeChange={vi.fn()} />,
     )
     const section = screen.getByRole('region', {
       name: 'Profesorské vymenovania a absolventi v rovnakom odbore',
@@ -59,10 +67,37 @@ describe('FieldSection', () => {
     )
   })
 
+  it('leaves the national comparison alone and lists the city fields when a city is selected', () => {
+    render(
+      <FieldSection data={data as never} selectedField={null} onFieldSelect={vi.fn()} selectedCity={null} onCityClear={vi.fn()} fieldRange={range} onFieldRangeChange={vi.fn()} />,
+    )
+    expect(screen.queryByRole('region', { name: /Odbory v meste/ })).not.toBeInTheDocument()
+    cleanup()
+
+    const onFieldSelect = vi.fn()
+    const onCityClear = vi.fn()
+    render(
+      <FieldSection data={data as never} selectedField={null} onFieldSelect={onFieldSelect} selectedCity="Košice" onCityClear={onCityClear} fieldRange={range} onFieldRangeChange={vi.fn()} />,
+    )
+    const panel = screen.getByRole('region', { name: 'Odbory v meste Košice' })
+    expect(within(panel).getByRole('status')).toHaveTextContent(
+      '1 z 3 vymenovaní (33 %) v 1 odbore',
+    )
+    const row = within(panel).getByRole('button', {
+      name: 'sociálna práca: 1 z 2 celoštátnych vymenovaní, 50 %; vybrať odbor',
+    })
+    fireEvent.click(row)
+    expect(onFieldSelect).toHaveBeenCalledWith('socialna praca')
+    fireEvent.click(within(panel).getByRole('button', { name: /Zrušiť výber mesta/ }))
+    expect(onCityClear).toHaveBeenCalled()
+    expect(within(panel).getByText(/Absolventi ostávajú celoštátni/)).toBeVisible()
+    expect(screen.getByTestId('field-point-socialna praca')).toBeInTheDocument()
+  })
+
   it('selects a field from the search box on Enter and switches the scale', () => {
     const onFieldSelect = vi.fn()
     render(
-      <FieldSection data={data as never} selectedField={null} onFieldSelect={onFieldSelect} fieldRange={range} onFieldRangeChange={vi.fn()} />,
+      <FieldSection data={data as never} selectedField={null} onFieldSelect={onFieldSelect} selectedCity={null} onCityClear={vi.fn()} fieldRange={range} onFieldRangeChange={vi.fn()} />,
     )
     const search = screen.getByLabelText('Nájsť odbor')
     fireEvent.change(search, { target: { value: 'hudobne' } })

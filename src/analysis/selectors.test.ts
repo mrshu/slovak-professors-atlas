@@ -7,6 +7,7 @@ import {
   ceremonyCadence,
   ceremonyCounts,
   cityCounts,
+  cityFieldRanking,
   facultyCounts,
   fieldAppointmentLandscape,
   fieldAppointmentRanking,
@@ -715,5 +716,68 @@ describe('deterministic aggregate selectors', () => {
 
     expect(records).toEqual(beforeRecords)
     expect(institutions).toEqual(beforeInstitutions)
+  })
+})
+
+describe('cityFieldRanking', () => {
+  const cohort = [
+    record({ id: 'b1', appointedOn: '2012-01-10', fieldKey: 'informatika', field: 'informatika' }),
+    record({ id: 'b2', appointedOn: '2013-01-10', fieldKey: 'informatika', field: 'informatika' }),
+    record({
+      id: 'k1',
+      appointedOn: '2014-01-10',
+      institutionId: 'tuke',
+      affiliationId: 'tuke-default',
+      fieldKey: 'informatika',
+      field: 'informatika',
+    }),
+    record({ id: 'b3', appointedOn: '2015-01-10', fieldKey: 'fyzika', field: 'fyzika' }),
+    record({
+      id: 'k2',
+      appointedOn: '2016-01-10',
+      institutionId: 'tuke',
+      affiliationId: 'tuke-default',
+      fieldKey: 'hutnictvo',
+      field: 'hutníctvo',
+    }),
+    record({ id: 'old', appointedOn: '2005-01-10', fieldKey: 'fyzika', field: 'fyzika' }),
+  ]
+
+  it('ranks the fields a city appoints in with its share of the national count', () => {
+    const ranking = cityFieldRanking(
+      cohort,
+      affiliations,
+      { informatika: 'informatika', fyzika: 'fyzika' },
+      'Bratislava',
+      { startYear: 2009, endYear: 2025 },
+    )
+
+    expect(ranking).toMatchObject({ city: 'Bratislava', cityTotal: 3, nationalTotal: 5 })
+    expect(ranking.rows).toEqual([
+      { fieldKey: 'informatika', label: 'informatika', cityCount: 2, nationalCount: 3, share: 2 / 3 },
+      { fieldKey: 'fyzika', label: 'fyzika', cityCount: 1, nationalCount: 1, share: 1 },
+    ])
+  })
+
+  it('counts the national side over the same period and leaves other cities out of the rows', () => {
+    const ranking = cityFieldRanking(
+      cohort,
+      affiliations,
+      {},
+      'Košice',
+      { startYear: 2014, endYear: 2016 },
+    )
+
+    expect(ranking).toMatchObject({ cityTotal: 2, nationalTotal: 3 })
+    expect(ranking.rows).toEqual([
+      { fieldKey: 'hutnictvo', label: 'hutníctvo', cityCount: 1, nationalCount: 1, share: 1 },
+      { fieldKey: 'informatika', label: 'informatika', cityCount: 1, nationalCount: 1, share: 1 },
+    ])
+  })
+
+  it('returns no rows for a city without appointments in the period', () => {
+    expect(
+      cityFieldRanking(cohort, affiliations, {}, 'Bratislava', { startYear: 2016, endYear: 2016 }).rows,
+    ).toEqual([])
   })
 })
