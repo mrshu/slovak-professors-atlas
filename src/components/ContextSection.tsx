@@ -1,5 +1,3 @@
-import type { ReactNode } from 'react'
-
 import type { ContextYear } from '../data/types'
 import { formatNumber } from '../utils/format'
 import ContextTrend from './ContextTrend'
@@ -338,49 +336,3 @@ export function ContextSectionBody({
   )
 }
 
-interface ContextSectionShellProps {
-  children?: ReactNode
-  status?: 'loading' | 'error'
-}
-
-export function ContextSectionShell({ children, status }: ContextSectionShellProps) {
-  return (
-    <section id="kontext" className="section section--context" aria-labelledby="context-title">
-      <div className="section__heading section__heading--split">
-        <div>
-          <p className="eyebrow">Vysoké školstvo v čase</p>
-          <h2 id="context-title">Vymenovania v národnom kontexte</h2>
-        </div>
-        <p>
-          Národné časové rady CVTI dávajú vymenovaniam mierku bez príčinného tvrdenia.
-          Vymenovania a absolventi sú kalendárne ročné toky; študenti a akademickí pracovníci
-          sú stavy k 31. októbru.
-        </p>
-      </div>
-
-      {status !== undefined && (
-        <div className="context-unavailable context-unavailable--shell" role="status">
-          <p className="context-unavailable__title">
-            {status === 'loading'
-              ? 'Národný kontext CVTI sa načítava'
-              : 'Národný kontext CVTI nie je dostupný'}
-          </p>
-          <p>
-            {status === 'loading'
-              ? 'Presné národné hodnoty a indexovaný trend zobrazíme po overení dátového súboru.'
-              : 'Presné národné hodnoty nemožno bezpečne zobraziť, kým sa nepodarí načítať dátový súbor.'}
-          </p>
-        </div>
-      )}
-      {children}
-    </section>
-  )
-}
-
-export default function ContextSection(props: ContextSectionProps) {
-  return (
-    <ContextSectionShell>
-      <ContextSectionBody {...props} />
-    </ContextSectionShell>
-  )
-}

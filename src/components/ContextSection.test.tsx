@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { ContextYear } from '../data/types'
-import ContextSection from './ContextSection'
+import { ContextSectionBody } from './ContextSection'
 
 const contextYears: ContextYear[] = [
   {
@@ -74,7 +74,7 @@ afterEach(() => {
 describe('ContextSection', () => {
   it('orders the five selected-year values on an explicitly labelled base-10 scale', () => {
     render(
-      <ContextSection
+      <ContextSectionBody
         years={contextYears}
         selectedYear={2000}
         setSelectedYear={vi.fn()}
@@ -107,7 +107,7 @@ describe('ContextSection', () => {
 
   it('shows the four selected-year callouts including both national per-capita rates', () => {
     render(
-      <ContextSection
+      <ContextSectionBody
         years={contextYears}
         selectedYear={2000}
         setSelectedYear={vi.fn()}
@@ -131,7 +131,7 @@ describe('ContextSection', () => {
   it('updates the scale and per-capita callouts when the selected year changes', () => {
     const setSelectedYear = vi.fn()
     const { rerender } = render(
-      <ContextSection
+      <ContextSectionBody
         years={contextYears}
         selectedYear={2000}
         setSelectedYear={setSelectedYear}
@@ -145,7 +145,7 @@ describe('ContextSection', () => {
     ).toBeInTheDocument()
 
     rerender(
-      <ContextSection
+      <ContextSectionBody
         years={contextYears}
         selectedYear={2025}
         setSelectedYear={setSelectedYear}
@@ -168,7 +168,7 @@ describe('ContextSection', () => {
 
   it('states that flows and stocks differ without implying a funnel or causal pipeline', () => {
     render(
-      <ContextSection
+      <ContextSectionBody
         years={contextYears}
         selectedYear={2000}
         setSelectedYear={vi.fn()}
@@ -182,7 +182,7 @@ describe('ContextSection', () => {
 
   it('indexes every series to 100 in 2000 and gives each focus target an exact four-series label', () => {
     render(
-      <ContextSection
+      <ContextSectionBody
         years={contextYears}
         selectedYear={2000}
         setSelectedYear={vi.fn()}
@@ -208,7 +208,7 @@ describe('ContextSection', () => {
   it('inspects exact values on hover and focus without selecting until activation', () => {
     const setSelectedYear = vi.fn()
     render(
-      <ContextSection
+      <ContextSectionBody
         years={contextYears}
         selectedYear={2000}
         setSelectedYear={setSelectedYear}
@@ -268,7 +268,7 @@ describe('ContextSection', () => {
 
   it('marks the 2007 teacher-definition break and names 2025/2026 as the latest official context', () => {
     render(
-      <ContextSection
+      <ContextSectionBody
         years={contextYears}
         selectedYear={2025}
         setSelectedYear={vi.fn()}
@@ -287,7 +287,7 @@ describe('ContextSection', () => {
 
   it('shows an explicit no-denominator message for 2026 instead of fabricating ratios', () => {
     render(
-      <ContextSection
+      <ContextSectionBody
         years={contextYears}
         selectedYear={2026}
         setSelectedYear={vi.fn()}
@@ -309,7 +309,7 @@ describe('ContextSection', () => {
       ]
 
       render(
-        <ContextSection
+        <ContextSectionBody
           years={yearsWithZeroBaseline}
           selectedYear={2000}
           setSelectedYear={vi.fn()}
@@ -331,7 +331,7 @@ describe('ContextSection', () => {
     ]
 
     render(
-      <ContextSection
+      <ContextSectionBody
         years={yearsWithInfiniteBaseline}
         selectedYear={2000}
         setSelectedYear={vi.fn()}
