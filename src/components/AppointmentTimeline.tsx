@@ -64,7 +64,7 @@ export default function AppointmentTimeline({
     <figure className="appointment-timeline" aria-labelledby="appointment-timeline-title">
       <figcaption>
         <div>
-          <p className="eyebrow eyebrow--light">Časová os 2000—2026</p>
+          <p className="card__kicker">Časová os 2000—2026</p>
           <h3 id="appointment-timeline-title">Roky, slávnosti a prezidentské obdobia</h3>
         </div>
         <p>

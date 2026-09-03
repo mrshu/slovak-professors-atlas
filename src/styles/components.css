@@ -499,7 +499,6 @@ main > section, footer { scroll-margin-top: var(--sp-4); }
   margin: 0;
 }
 
-.appointment-timeline figcaption,
 .institution-ranking__heading {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(13rem, 0.72fr);
@@ -510,18 +509,38 @@ main > section, footer { scroll-margin-top: var(--sp-4); }
   border-top: 2px solid var(--color-brass);
 }
 
+.appointment-timeline figcaption {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(13rem, 0.72fr);
+  gap: var(--sp-4);
+  align-items: end;
+  margin-bottom: var(--sp-3);
+}
+
 .appointment-timeline figcaption h3,
 .institution-ranking__heading h3 {
   margin-bottom: 0;
 }
 
-.appointment-timeline figcaption > p,
 .institution-ranking__heading > p,
 .institution-ranking__faculty-heading p {
   margin-bottom: 0;
   color: #c7d2c4;
   font-size: var(--text-xs);
   line-height: 1.5;
+}
+
+.appointment-timeline figcaption > p {
+  margin-bottom: 0;
+  color: var(--color-ink-muted);
+  font-size: var(--t-small);
+  line-height: 1.5;
+}
+
+.appointment-timeline figcaption h3 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--t-3);
 }
 
 .slovakia-map__selected-ring {
@@ -545,16 +564,26 @@ main > section, footer { scroll-margin-top: var(--sp-4); }
   cursor: default;
 }
 
-.slovakia-map__target:focus-visible,
-.appointment-timeline__year-target:focus-visible {
+.slovakia-map__target:focus-visible {
   border: 2px solid var(--color-focus-on-dark);
   border-radius: 50%;
   outline: 0;
   background: rgb(214 189 122 / 12%);
 }
 
-.slovakia-map__source,
+.appointment-timeline__year-target:focus-visible {
+  border: 2px solid var(--color-focus);
+  outline: 0;
+  background: rgb(8 124 146 / 10%);
+}
+
 .appointment-timeline__note {
+  margin: var(--sp-2) 0 0;
+  color: var(--color-ink-muted);
+  font-size: var(--t-small);
+}
+
+.slovakia-map__source {
   margin: 0.75rem 0 0;
   color: var(--color-sage);
   font-size: 0.69rem;
@@ -737,16 +766,16 @@ main > section, footer { scroll-margin-top: var(--sp-4); }
 }
 
 .appointment-timeline {
-  margin-top: clamp(4rem, 8vw, 7rem);
+  margin-top: 0;
 }
 
 .appointment-timeline__legend {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem 1.35rem;
-  margin: 0 0 1rem;
-  color: var(--color-sage);
-  font-size: 0.68rem;
+  margin: 0 0 var(--sp-3);
+  color: var(--color-ink-muted);
+  font-size: var(--t-small);
 }
 
 .appointment-timeline__legend span {
@@ -783,55 +812,55 @@ main > section, footer { scroll-margin-top: var(--sp-4); }
   max-width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
-  border: 1px solid rgb(243 236 223 / 20%);
-  scrollbar-color: var(--color-brass) var(--color-forest-deep);
+  border: var(--rule);
+  scrollbar-color: var(--color-brass) var(--color-paper-deep);
 }
 
 .appointment-timeline__chart {
   width: 100%;
   min-width: 67.5rem;
-  background: rgb(243 236 223 / 3%);
+  background: var(--color-paper-light);
 }
 
 .appointment-timeline__term rect {
-  fill: rgb(156 173 152 / 10%);
-  stroke: rgb(156 173 152 / 34%);
+  fill: rgb(228 215 194 / 35%);
+  stroke: var(--color-line);
   stroke-width: 1;
   vector-effect: non-scaling-stroke;
 }
 
 .appointment-timeline__term--odd rect {
-  fill: rgb(180 154 92 / 11%);
+  fill: rgb(180 154 92 / 14%);
 }
 
 .appointment-timeline__term--selected rect {
-  fill: rgb(168 68 45 / 20%);
+  fill: rgb(168 68 45 / 14%);
   stroke: var(--color-terracotta);
   stroke-width: 2;
 }
 
 .appointment-timeline__term text {
-  fill: var(--color-paper-light);
+  fill: var(--color-ink);
   font-family: var(--font-interface);
   font-size: 10px;
-  font-weight: 730;
+  font-weight: 600;
 }
 
 .appointment-timeline__term line {
-  stroke: rgb(243 236 223 / 24%);
+  stroke: rgb(27 41 36 / 28%);
   stroke-dasharray: 2 4;
   vector-effect: non-scaling-stroke;
 }
 
 .appointment-timeline__grid line {
-  stroke: rgb(243 236 223 / 13%);
+  stroke: var(--color-line-soft, #ddd2bd);
   vector-effect: non-scaling-stroke;
 }
 
 .appointment-timeline__grid text,
 .appointment-timeline__year-label,
 .appointment-timeline__incomplete-label {
-  fill: var(--color-sage);
+  fill: var(--color-ink-muted);
   font-family: var(--font-interface);
   font-size: 10px;
   font-variant-numeric: tabular-nums;
@@ -847,7 +876,7 @@ main > section, footer { scroll-margin-top: var(--sp-4); }
 
 .appointment-timeline__selection-outline {
   fill: none;
-  stroke: var(--color-paper-light);
+  stroke: var(--color-ink);
   stroke-dasharray: 4 3;
   stroke-width: 2;
   vector-effect: non-scaling-stroke;
@@ -871,24 +900,24 @@ main > section, footer { scroll-margin-top: var(--sp-4); }
 
 .appointment-timeline__ceremony:focus-visible {
   outline: 0;
-  stroke: var(--color-focus-on-dark);
+  stroke: var(--color-focus);
   stroke-width: 4;
 }
 
 .appointment-timeline__incomplete {
   fill: url('#incomplete-year-hatch');
-  stroke: var(--color-paper-light);
+  stroke: var(--color-ink-muted);
   stroke-dasharray: 3 3;
   stroke-width: 1;
 }
 
 #incomplete-year-hatch line {
-  stroke: rgb(243 236 223 / 32%);
+  stroke: rgb(27 41 36 / 28%);
   stroke-width: 2;
 }
 
 .appointment-timeline__baseline {
-  stroke: var(--color-sage);
+  stroke: var(--color-line);
   stroke-width: 1.2;
   vector-effect: non-scaling-stroke;
 }
@@ -899,7 +928,7 @@ main > section, footer { scroll-margin-top: var(--sp-4); }
 
 .appointment-timeline__year-target:hover,
 .appointment-timeline__year-target[aria-pressed='true'] {
-  background: rgb(243 236 223 / 6%);
+  background: rgb(27 41 36 / 6%);
 }
 
 .appointment-timeline__year-target:focus-visible {
