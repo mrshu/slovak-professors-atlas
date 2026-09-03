@@ -10,6 +10,7 @@ import { filterAppointments } from '../analysis/selectors'
 import type { AtlasData } from '../data/types'
 import type { AtlasState } from '../state/useAtlasState'
 import useIsNarrowViewport from '../hooks/useIsNarrowViewport'
+import { activeFilterChips } from '../state/activeFilters'
 import { formatAppointmentCount } from '../utils/format'
 import CityStrip, { type CityStripCell } from './CityStrip'
 import InstitutionRanking from './InstitutionRanking'
@@ -22,7 +23,7 @@ interface MapStageProps {
 
 const STRIP_SIZE = 7
 export default function MapStage({ data, atlasState }: MapStageProps) {
-  const { filters, defaults, filteredRecords, setDateRange, setFilter } = atlasState
+  const { filters, defaults, filteredRecords, resetFilters, setDateRange, setFilter } = atlasState
   const [hoveredCity, setHoveredCity] = useState<string | null>(null)
   const isNarrow = useIsNarrowViewport()
   const activePeriod = periodForRange(filters.startYear, filters.endYear)
@@ -59,6 +60,7 @@ export default function MapStage({ data, atlasState }: MapStageProps) {
     })
   }, [activeIndex, baseline, byPeriod, data.affiliations, stageRecords])
 
+  const chips = activeFilterChips(data, atlasState)
   const toggleCity = (city: string) =>
     setFilter('city', filters.city === city ? null : city, 'push')
 
@@ -95,6 +97,31 @@ export default function MapStage({ data, atlasState }: MapStageProps) {
           </button>
         </div>
       </div>
+      {chips.length > 0 && (
+        <div className="map-stage__selection" role="status">
+          <p>
+            <strong>Vo výbere: {formatAppointmentCount(filteredRecords.length)}</strong>
+            {filters.city === null
+              ? '. Mapa a pásiky nižšie ukazujú len tento výber.'
+              : '. Ostatné mestá ostávajú na mape kvôli porovnaniu.'}
+          </p>
+          <ul aria-label="Aktívne filtre">
+            {chips.map((chip) => (
+              <li key={chip.key}>
+                <button type="button" onClick={chip.remove}>
+                  <span>{chip.label}</span>
+                  <span aria-hidden="true">×</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+          {chips.length > 1 && (
+            <button type="button" className="map-stage__reset" onClick={() => resetFilters('push')}>
+              Zrušiť celý výber
+            </button>
+          )}
+        </div>
+      )}
       <SlovakiaMap
         records={stageRecords}
         geography={data.geography}
@@ -107,23 +134,11 @@ export default function MapStage({ data, atlasState }: MapStageProps) {
         labelLimit={isNarrow ? 4 : 8}
         showSizeKey={!isNarrow}
       />
-      {filters.city === null ? (
-        <p className="map-stage__cap">
-          Plocha kruhu = počet vymenovaní navrhnutých pracoviskami v meste. Mesto je sídlo
-          pracoviska, nie bydlisko profesora. Kliknutím na mesto alebo jeho pásik filtrujete
-          register.
-        </p>
-      ) : (
-        <div className="map-stage__selection" role="status">
-          <p>
-            <strong>Vybrané mesto: {filters.city}</strong> · {formatAppointmentCount(filteredRecords.length)} v
-            registri. Ostatné mestá ostávajú na mape kvôli porovnaniu.
-          </p>
-          <button type="button" onClick={() => setFilter('city', null, 'push')}>
-            Zrušiť výber <span aria-hidden="true">×</span>
-          </button>
-        </div>
-      )}
+      <p className="map-stage__cap">
+        Plocha kruhu = počet vymenovaní navrhnutých pracoviskami v meste. Mesto je sídlo
+        pracoviska, nie bydlisko profesora. Kliknutím na mesto alebo jeho pásik filtrujete
+        register.
+      </p>
       <CityStrip
         cells={cells}
         activeIndex={activeIndex}

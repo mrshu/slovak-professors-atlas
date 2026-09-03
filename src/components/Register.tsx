@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import type { AtlasData } from '../data/types'
+import { activeFilterChips } from '../state/activeFilters'
 import type { AtlasState } from '../state/useAtlasState'
 import { recordsToCsv } from '../utils/csv'
-import { formatAppointmentCount, formatDate } from '../utils/format'
+import { formatAppointmentCount } from '../utils/format'
 import AppointmentTimeline from './AppointmentTimeline'
 import RecordList from './RecordList'
 
@@ -20,12 +21,6 @@ interface StatusRegisterProps {
 }
 
 type RegisterProps = LoadedRegisterProps | StatusRegisterProps
-
-interface ActiveChip {
-  key: string
-  label: string
-  remove: () => void
-}
 
 function RegisterShell({ status }: { status: 'loading' | 'error' }) {
   return (
@@ -63,18 +58,6 @@ function LoadedRegister({ data, atlasState }: LoadedRegisterProps) {
   } = atlasState
   const [announcedCount, setAnnouncedCount] = useState(filteredRecords.length)
   const [exportError, setExportError] = useState<string | null>(null)
-  const presidentById = useMemo(
-    () => new Map(data.presidents.map((president) => [president.id, president] as const)),
-    [data.presidents],
-  )
-  const institutionById = useMemo(
-    () => new Map(data.institutions.map((institution) => [institution.id, institution] as const)),
-    [data.institutions],
-  )
-  const fieldLabelByKey = useMemo(
-    () => new Map(options.fields.map(({ key, canonicalLabel }) => [key, canonicalLabel] as const)),
-    [options.fields],
-  )
   const availableYears = useMemo(
     () =>
       Array.from(
@@ -91,68 +74,7 @@ function LoadedRegister({ data, atlasState }: LoadedRegisterProps) {
     return () => window.clearTimeout(timeout)
   }, [filteredRecords.length, filters.query])
 
-  const activeChips: ActiveChip[] = []
-  if (filters.startYear !== defaults.startYear || filters.endYear !== defaults.endYear) {
-    activeChips.push({
-      key: 'date',
-      label:
-        filters.startYear === filters.endYear
-          ? `Rok: ${filters.startYear}`
-          : `Obdobie: ${filters.startYear}—${filters.endYear}`,
-      remove: () => setTimelineYear(null, 'push'),
-    })
-  }
-  if (filters.appointedOn !== null) {
-    activeChips.push({
-      key: 'appointment-date',
-      label: `Ceremoniál: ${formatDate(filters.appointedOn)}`,
-      remove: () => setAppointmentDate(null, 'push'),
-    })
-  }
-  if (filters.presidentId !== null) {
-    activeChips.push({
-      key: 'president',
-      label: `Prezident: ${presidentById.get(filters.presidentId)?.name ?? filters.presidentId}`,
-      remove: () => setFilter('presidentId', null, 'push'),
-    })
-  }
-  if (filters.city !== null) {
-    activeChips.push({
-      key: 'city',
-      label: `Mesto: ${filters.city}`,
-      remove: () => setFilter('city', null, 'push'),
-    })
-  }
-  if (filters.institutionId !== null) {
-    activeChips.push({
-      key: 'institution',
-      label: `Inštitúcia: ${
-        institutionById.get(filters.institutionId)?.shortName ?? filters.institutionId
-      }`,
-      remove: () => setFilter('institutionId', null, 'push'),
-    })
-  }
-  if (filters.faculty !== null) {
-    activeChips.push({
-      key: 'faculty',
-      label: `Fakulta: ${filters.faculty}`,
-      remove: () => setFilter('faculty', null, 'push'),
-    })
-  }
-  if (filters.field !== null) {
-    activeChips.push({
-      key: 'field',
-      label: `Odbor: ${fieldLabelByKey.get(filters.field) ?? filters.field}`,
-      remove: () => setFilter('field', null, 'push'),
-    })
-  }
-  if (filters.query.length > 0) {
-    activeChips.push({
-      key: 'query',
-      label: `Hľadanie: ${filters.query}`,
-      remove: () => setQuery(''),
-    })
-  }
+  const activeChips = activeFilterChips(data, atlasState)
 
   const hasActiveState =
     activeChips.length > 0 || filters.selectedYear !== defaults.selectedYear

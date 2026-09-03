@@ -20,6 +20,7 @@ const data = {
     city(),
     city({ name: 'Košice', latitude: 48.7164, longitude: 21.2611, affiliationIds: ['tuke-default'] }),
   ],
+  fieldCatalog: { schemaVersion: 1, aliases: [], labels: { fyzika: 'fyzika' } },
   institutions: [
     institution(),
     institution({ id: 'tuke', shortName: 'TU v Košiciach', fullName: 'Technická univerzita v Košiciach' }),
@@ -45,7 +46,7 @@ function atlasState(overrides: Partial<AtlasState['filters']> = {}): AtlasState 
   return {
     filters,
     defaults,
-    options: {} as never,
+    options: { fields: [{ key: 'fyzika', canonicalLabel: 'fyzika' }] } as never,
     filteredRecords: data.records.filter((record) => {
       const year = Number(record.appointedOn.slice(0, 4))
       return year >= filters.startYear && year <= filters.endYear
@@ -122,13 +123,38 @@ describe('MapStage', () => {
     const state = atlasState({ city: 'Bratislava' })
     render(<MapStage data={data as never} atlasState={state} />)
     const bar = screen.getByRole('status')
-    expect(bar).toHaveTextContent('Vybrané mesto: Bratislava')
-    fireEvent.click(within(bar).getByRole('button', { name: 'Zrušiť výber' }))
+    expect(bar).toHaveTextContent('Vo výbere: 3 vymenovania')
+    fireEvent.click(within(bar).getByRole('button', { name: 'Mesto: Bratislava' }))
     expect(state.setFilter).toHaveBeenCalledWith('city', null, 'push')
     fireEvent.keyDown(screen.getByRole('region', { name: /Mapa pracovísk/ }), { key: 'Escape' })
     expect(state.setFilter).toHaveBeenCalledTimes(2)
     expect(
       screen.getByRole('button', { name: /^Bratislava: .*zrušiť výber$/ }),
     ).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('names a filter that has no other mark on the map, such as a field', () => {
+    const state = atlasState({ field: 'fyzika' })
+    render(<MapStage data={data as never} atlasState={state} />)
+    const bar = screen.getByRole('status')
+    expect(bar).toHaveTextContent('Vo výbere: 3 vymenovania')
+    fireEvent.click(within(bar).getByRole('button', { name: 'Odbor: fyzika' }))
+    expect(state.setFilter).toHaveBeenCalledWith('field', null, 'push')
+    expect(within(bar).queryByRole('button', { name: 'Zrušiť celý výber' })).not.toBeInTheDocument()
+  })
+
+  it('offers a full reset once more than one filter is active', () => {
+    const state = atlasState({ field: 'fyzika', city: 'Košice' })
+    render(<MapStage data={data as never} atlasState={state} />)
+    const bar = screen.getByRole('status')
+    expect(within(bar).getAllByRole('listitem')).toHaveLength(2)
+    fireEvent.click(within(bar).getByRole('button', { name: 'Zrušiť celý výber' }))
+    expect(state.resetFilters).toHaveBeenCalledWith('push')
+  })
+
+  it('keeps the map caption out of the way when nothing is selected', () => {
+    render(<MapStage data={data as never} atlasState={atlasState()} />)
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    expect(screen.getByText(/Plocha kruhu = počet vymenovaní/)).toBeVisible()
   })
 })
