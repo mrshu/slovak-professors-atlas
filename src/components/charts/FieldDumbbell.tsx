@@ -51,6 +51,14 @@ export default function FieldDumbbell({ rows, onSelect }: FieldDumbbellProps) {
               }
             }}
           >
+            <rect
+              className="chart__row-hit"
+              x={0}
+              y={cy - ROW / 2}
+              width={W}
+              height={ROW - 1}
+              rx={2}
+            />
             <text className="chart__tick chart__tick--ink" x={M.l - 10} y={cy + 3.5} textAnchor="end">
               {row.label}
             </text>
