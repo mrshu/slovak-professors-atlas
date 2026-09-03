@@ -25,7 +25,7 @@ export interface FieldShareRow {
 }
 
 function has(titles: string | null, token: string): boolean {
-  return titles !== null && titles.includes(token)
+  return titles !== null && titles.replace(/\./g, '').includes(token)
 }
 
 export function titleSharesByYear(records: readonly Appointment[]): TitleShareYear[] {

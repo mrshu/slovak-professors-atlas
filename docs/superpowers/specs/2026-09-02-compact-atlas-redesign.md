@@ -50,7 +50,7 @@ Five blocks in one column of 76 rem, in this order, each an anchored section:
    Card 1 „PhD. predbehol CSc. v roku 2008“: share of PhD., CSc., DrSc. among
    yearly appointments, annotated crossover. Card 2 „Každé piate vymenovanie je
    novembrové“: appointments by month, November emphasised, ceremony counts in
-   tooltips. Card 3 „Sociálna práca: 19 % absolventov, 3 % profesorov“: dumbbell
+   tooltips. Card 3 „Sociálna práca: 19 % absolventov, 3 % vymenovaní“: dumbbell
    of each field's share of graduates and of appointments for eight named
    fields; dots select the field in the Odbory section. Below the cards a
    compact **Kontext** row: two single-series small charts (vymenovania na 100

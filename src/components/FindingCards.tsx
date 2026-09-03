@@ -81,16 +81,17 @@ export default function FindingCards({ data, onFieldSelect }: FindingCardsProps)
         <h3>
           {lead === undefined
             ? 'Podiel odborov na absolventoch a vymenovaniach'
-            : `${lead.label[0]!.toUpperCase()}${lead.label.slice(1)}: ${formatNumber(
+            : `${lead.label.charAt(0).toUpperCase()}${lead.label.slice(1)}: ${formatNumber(
                 lead.graduateShare * 100,
                 { maximumFractionDigits: 0 },
               )} % absolventov, ${formatNumber(lead.appointmentShare * 100, {
                 maximumFractionDigits: 0,
-              })} % profesorov`}
+              })} % vymenovaní`}
         </h3>
         <p className="card__sub">
           Podiel odboru na <i className="sw sw--2" />absolventoch a na{' '}
-          <i className="sw sw--1" />vymenovaniach, 2009–2025.
+          <i className="sw sw--1" />vymenovaniach, {data.fieldEducationComparison.startYear}–
+          {data.fieldEducationComparison.endYear}.
         </p>
         <FieldDumbbell rows={shareRows} onSelect={onFieldSelect} />
         <a href="#odbory">Celé porovnanie odborov</a>

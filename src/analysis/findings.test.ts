@@ -23,6 +23,11 @@ describe('findings', () => {
     expect(titleCrossoverYear([{ year: 2000, total: 2, phd: 1, csc: 1, drsc: 0 }])).toBeNull()
   })
 
+  it('counts the dotted "Ph.D." variant as a PhD title', () => {
+    const rows = titleSharesByYear([appointment({ appointedOn: '2009-03-10', titlesAfter: 'Ph.D.' })])
+    expect(rows).toEqual([{ year: 2009, total: 1, phd: 1, csc: 0, drsc: 0 }])
+  })
+
   it('totals appointments and ceremonies for all twelve months', () => {
     const totals = monthTotals([
       appointment({ appointedOn: '2011-11-28' }),
