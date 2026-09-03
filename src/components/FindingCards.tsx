@@ -9,6 +9,7 @@ import FieldRatioOutliers, { ratioText } from './charts/FieldRatioOutliers'
 import MonthsChart from './charts/MonthsChart'
 
 const LOWEST_COUNT = 4
+const MIN_YEARS = 12
 
 export const DUMBBELL_FIELDS = [
   'socialna praca',
@@ -44,7 +45,10 @@ export default function FindingCards({ data, onFieldSelect }: FindingCardsProps)
     return DUMBBELL_FIELDS.flatMap((key) => rows.filter((row) => row.fieldKey === key))
   }, [landscape])
   const lead = shareRows[0]
-  const spread = useMemo(() => fieldRatioSpread(landscape.allRows), [landscape])
+  const spread = useMemo(
+    () => fieldRatioSpread(landscape.allRows, { minYears: MIN_YEARS }),
+    [landscape],
+  )
   const lowest = spread.rows.slice(0, LOWEST_COUNT)
   const highest = spread.rows.length > LOWEST_COUNT ? spread.rows[spread.rows.length - 1]! : null
 
@@ -61,7 +65,9 @@ export default function FindingCards({ data, onFieldSelect }: FindingCardsProps)
           Odbory s najnižším pomerom absolventov k vymenovaniam,{' '}
           {data.fieldEducationComparison.startYear}–{data.fieldEducationComparison.endYear}. Medián{' '}
           {spread.median === null ? '—' : ratioText(spread.median)} z{' '}
-          {formatNumber(spread.rows.length)} odborov s dlhým radom dát.
+          {formatNumber(spread.rows.length)} odborov, ktoré majú absolventov aspoň v{' '}
+          {formatNumber(MIN_YEARS)} zo {formatNumber(data.fieldEducationComparison.years.length)}{' '}
+          rokov.
         </p>
         <FieldRatioOutliers
           lowest={lowest}

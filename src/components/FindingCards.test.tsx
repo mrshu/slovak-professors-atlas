@@ -64,7 +64,7 @@ describe('FindingCards', () => {
     expect(within(cards[0]!).getByRole('heading', { level: 3 })).toHaveTextContent(
       'Od 34 absolventov na vymenovanie po 3 060',
     )
-    expect(within(cards[0]!).getByText(/Medián 119 z 6 odborov/)).toBeVisible()
+    expect(within(cards[0]!).getByText(/Medián 119 z 6 odborov, ktoré majú absolventov aspoň v 12 zo 17 rokov/)).toBeVisible()
     expect(within(cards[0]!).getByRole('link', { name: 'Celé poradie odborov' })).toHaveAttribute(
       'href',
       '#odbory',
