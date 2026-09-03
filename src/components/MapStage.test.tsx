@@ -91,6 +91,27 @@ describe('MapStage', () => {
     expect(state.setFilter).toHaveBeenCalledWith('city', 'Košice', 'push')
   })
 
+  it('keeps the city strip comparable across cities while a city is selected', () => {
+    const state = atlasState({ startYear: 2010, endYear: 2014, city: 'Bratislava' })
+    render(<MapStage data={data as never} atlasState={state} />)
+    const strip = screen.getByRole('group', { name: 'Podiel miest v aktívnom výbere' })
+    const cells = within(strip).getAllByRole('button')
+    expect(cells.map((cell) => cell.textContent)).toEqual(
+      expect.arrayContaining([expect.stringContaining('Bratislava'), expect.stringContaining('Košice')]),
+    )
+    expect(
+      within(strip).getByRole('button', { name: /^Košice: 50,0 %/ }),
+    ).toBeInTheDocument()
+  })
+
+  it('shows no delta comparison for the whole period', () => {
+    render(<MapStage data={data as never} atlasState={atlasState()} />)
+    const strip = screen.getByRole('group', { name: 'Podiel miest v aktívnom výbere' })
+    for (const cell of within(strip).getAllByRole('button')) {
+      expect(cell).toHaveTextContent('—')
+    }
+  })
+
   it('keeps the institution ranking in a closed fold', () => {
     render(<MapStage data={data as never} atlasState={atlasState()} />)
     const fold = screen.getByText('Inštitúcie v aktívnom výbere').closest('details')

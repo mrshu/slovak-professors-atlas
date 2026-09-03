@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import {
   FIVE_YEAR_PERIODS,
@@ -6,6 +6,7 @@ import {
   citySharesByPeriod,
   periodForRange,
 } from '../analysis/periods'
+import { filterAppointments } from '../analysis/selectors'
 import type { AtlasData } from '../data/types'
 import type { AtlasState } from '../state/useAtlasState'
 import CityStrip, { type CityStripCell } from './CityStrip'
@@ -18,10 +19,29 @@ interface MapStageProps {
 }
 
 const STRIP_SIZE = 7
+const NARROW_MEDIA_QUERY = '(max-width: 600px)'
+
+function useIsNarrowViewport(): boolean {
+  const [isNarrow, setIsNarrow] = useState(false)
+
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') {
+      return
+    }
+    const query = window.matchMedia(NARROW_MEDIA_QUERY)
+    const update = () => setIsNarrow(query.matches)
+    update()
+    query.addEventListener('change', update)
+    return () => query.removeEventListener('change', update)
+  }, [])
+
+  return isNarrow
+}
 
 export default function MapStage({ data, atlasState }: MapStageProps) {
   const { filters, defaults, filteredRecords, setDateRange, setFilter } = atlasState
   const [hoveredCity, setHoveredCity] = useState<string | null>(null)
+  const isNarrow = useIsNarrowViewport()
   const activePeriod = periodForRange(filters.startYear, filters.endYear)
   const wholeRange =
     filters.startYear === defaults.startYear && filters.endYear === defaults.endYear
@@ -30,26 +50,31 @@ export default function MapStage({ data, atlasState }: MapStageProps) {
     (wholeRange ? `${defaults.startYear}–${defaults.endYear}` : `${filters.startYear}–${filters.endYear}`)
   const activeIndex = activePeriod === null ? -1 : FIVE_YEAR_PERIODS.indexOf(activePeriod)
 
+  const stageRecords = useMemo(
+    () => filterAppointments(data, { ...filters, city: null }),
+    [data, filters],
+  )
+
   const byPeriod = useMemo(
     () => citySharesByPeriod(data.records, data.affiliations),
     [data.affiliations, data.records],
   )
   const baseline = byPeriod.get(FIVE_YEAR_PERIODS[0]!.label) ?? []
   const cells = useMemo<CityStripCell[]>(() => {
-    const current = cityShares(filteredRecords, data.affiliations).slice(0, STRIP_SIZE)
+    const current = cityShares(stageRecords, data.affiliations).slice(0, STRIP_SIZE)
     return current.map(({ city, share }) => {
       const base = baseline.find((entry) => entry.city === city)?.share ?? 0
       return {
         city,
         share,
-        delta: activeIndex === 0 || baseline.length === 0 ? null : (share - base) * 100,
+        delta: activeIndex <= 0 || baseline.length === 0 ? null : (share - base) * 100,
         series: FIVE_YEAR_PERIODS.map(
           (period) =>
             byPeriod.get(period.label)?.find((entry) => entry.city === city)?.share ?? 0,
         ),
       }
     })
-  }, [activeIndex, baseline, byPeriod, data.affiliations, filteredRecords])
+  }, [activeIndex, baseline, byPeriod, data.affiliations, stageRecords])
 
   const toggleCity = (city: string) =>
     setFilter('city', filters.city === city ? null : city, 'push')
@@ -81,7 +106,7 @@ export default function MapStage({ data, atlasState }: MapStageProps) {
         </div>
       </div>
       <SlovakiaMap
-        records={filteredRecords}
+        records={stageRecords}
         geography={data.geography}
         cities={data.cities}
         affiliations={data.affiliations}
@@ -89,6 +114,7 @@ export default function MapStage({ data, atlasState }: MapStageProps) {
         hoveredCity={hoveredCity}
         onHoverCity={setHoveredCity}
         onToggleCity={toggleCity}
+        labelMinimumCount={isNarrow ? 60 : 10}
       />
       <p className="map-stage__cap">
         Plocha kruhu = počet vymenovaní navrhnutých pracoviskami v meste. Mesto je sídlo

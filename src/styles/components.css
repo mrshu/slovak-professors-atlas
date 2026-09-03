@@ -585,7 +585,6 @@ main > section, footer { scroll-margin-top: var(--sp-4); }
 .slovakia-map__size-key circle { fill: none; stroke: #b8c6bd; }
 .slovakia-map__size-key text { font-size: 10.5px; fill: #b8c6bd; }
 @media (prefers-reduced-motion: no-preference) { .slovakia-map__mark { transition: r 0.35s ease; } }
-@media (max-width: 600px) { .slovakia-map__label, .slovakia-map__size-key { display: none; } }
 .city-strip { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: var(--sp-3); padding-top: var(--sp-3); border-top: 1px solid #2f4f45; }
 .city-strip__cell { display: grid; gap: 2px; text-align: left; border: 0; background: transparent; color: inherit; padding: var(--sp-1) var(--sp-2); margin: 0 calc(-1 * var(--sp-2)); border-radius: 2px; cursor: pointer; font-size: var(--t-small); font-variant-numeric: tabular-nums; }
 .city-strip__cell.is-hot, .city-strip__cell:hover { background: var(--color-forest-deep); }
