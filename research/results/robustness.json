@@ -1,0 +1,35 @@
+{
+  "context_correlations": {
+    "graduates": {
+      "detrended": -0.07868552217457982,
+      "first_difference": 0.07604337607587494,
+      "level": -0.12824619338376586
+    },
+    "internalProfessors": {
+      "detrended": 0.04050395890407663,
+      "first_difference": 0.19116201564163424,
+      "level": -0.2878559705550116
+    },
+    "internalTeachers": {
+      "detrended": 0.15089446437715925,
+      "first_difference": 0.2966918820458372,
+      "level": 0.3293180669256242
+    },
+    "students": {
+      "detrended": -0.05299501402018352,
+      "first_difference": 0.021358158134444066,
+      "level": 0.14968186727580893
+    }
+  },
+  "term_end_test": {
+    "eligible_ceremonies": 62,
+    "null_mean_events": 208.25142,
+    "observed_events": 226,
+    "one_sided_p": 0.2885,
+    "randomizations": 100000,
+    "seed": 20260907,
+    "term_end_ceremonies": 6,
+    "unit": "ceremony batches permuted within completed presidential terms",
+    "window_days": 180
+  }
+}
