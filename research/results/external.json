@@ -1,0 +1,315 @@
+{
+  "appointment_years": [
+    2000,
+    2025
+  ],
+  "interpretation": "Screening diagnostics only; annual levels and changes do not identify causality.",
+  "sources": {
+    "gdp_growth": {
+      "association_with_appointments": {
+        "first_difference": {
+          "n": 25,
+          "pearson": -0.086770478341606
+        },
+        "lags": {
+          "0": {
+            "n": 26,
+            "pearson": 0.07055901602918857
+          },
+          "1": {
+            "n": 25,
+            "pearson": 0.039507540416504415
+          },
+          "2": {
+            "n": 24,
+            "pearson": -0.2249184540509079
+          },
+          "3": {
+            "n": 23,
+            "pearson": 0.3095232490708608
+          }
+        },
+        "level": {
+          "n": 26,
+          "pearson": 0.07055901602918857
+        }
+      },
+      "label": "Gross domestic product (GDP) and main components (output, expenditure and income) - annual data",
+      "series": {
+        "2000": 0.8,
+        "2001": 2.9,
+        "2002": 4.4,
+        "2003": 4.9,
+        "2004": 5.4,
+        "2005": 6.5,
+        "2006": 8.9,
+        "2007": 10.8,
+        "2008": 5.4,
+        "2009": -5.5,
+        "2010": 6.8,
+        "2011": 2.6,
+        "2012": 1.6,
+        "2013": 0.7,
+        "2014": 2.7,
+        "2015": 5.2,
+        "2016": 1.9,
+        "2017": 2.9,
+        "2018": 4.1,
+        "2019": 2.3,
+        "2020": -2.6,
+        "2021": 5.7,
+        "2022": 0.5,
+        "2023": 2.1,
+        "2024": 1.9,
+        "2025": 0.8
+      },
+      "sha256": "8b5fe931f489e6d83ec0b5df1085554d4b82239d6a7f13711d425c5510ced2e0",
+      "updated": "2026-09-03T23:00:00+0200",
+      "url": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/nama_10_gdp?lang=en&geo=SK&na_item=B1GQ&unit=CLV_PCH_PRE&sinceTimePeriod=2000"
+    },
+    "higher_education_rd_percent_gdp": {
+      "association_with_appointments": {
+        "first_difference": {
+          "n": 24,
+          "pearson": 0.10079209487345094
+        },
+        "lags": {
+          "0": {
+            "n": 25,
+            "pearson": -0.3088865226826425
+          },
+          "1": {
+            "n": 25,
+            "pearson": -0.45751739005421005
+          },
+          "2": {
+            "n": 24,
+            "pearson": -0.49649571241992874
+          },
+          "3": {
+            "n": 23,
+            "pearson": -0.3671033279583975
+          }
+        },
+        "level": {
+          "n": 25,
+          "pearson": -0.3088865226826425
+        }
+      },
+      "label": "GERD by sector of performance",
+      "series": {
+        "2000": 0.06,
+        "2001": 0.06,
+        "2002": 0.05,
+        "2003": 0.07,
+        "2004": 0.1,
+        "2005": 0.1,
+        "2006": 0.11,
+        "2007": 0.11,
+        "2008": 0.11,
+        "2009": 0.12,
+        "2010": 0.17,
+        "2011": 0.23,
+        "2012": 0.27,
+        "2013": 0.27,
+        "2014": 0.3,
+        "2015": 0.51,
+        "2016": 0.22,
+        "2017": 0.22,
+        "2018": 0.2,
+        "2019": 0.21,
+        "2020": 0.23,
+        "2021": 0.23,
+        "2022": 0.25,
+        "2023": 0.27,
+        "2024": 0.23
+      },
+      "sha256": "d46760ea0fb38190f4e13794374b6893c81696445da52782caa8b4c1f1bbda69",
+      "updated": "2026-03-18T23:00:00+0100",
+      "url": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/rd_e_gerdtot?lang=en&geo=SK&sectperf=HES&unit=PC_GDP&sinceTimePeriod=2000"
+    },
+    "net_migration_plus_adjustment": {
+      "association_with_appointments": {
+        "first_difference": {
+          "n": 25,
+          "pearson": 0.08418930255194491
+        },
+        "lags": {
+          "0": {
+            "n": 26,
+            "pearson": -0.2469270664106676
+          },
+          "1": {
+            "n": 25,
+            "pearson": -0.40612512268246254
+          },
+          "2": {
+            "n": 24,
+            "pearson": -0.28382799671959885
+          },
+          "3": {
+            "n": 23,
+            "pearson": 0.04689719530610854
+          }
+        },
+        "level": {
+          "n": 26,
+          "pearson": -0.2469270664106676
+        }
+      },
+      "label": "Population change - Demographic balance and crude rates at national level",
+      "series": {
+        "2000": -22301.0,
+        "2001": 1012.0,
+        "2002": -3387.0,
+        "2003": -2481.0,
+        "2004": -1085.0,
+        "2005": -712.0,
+        "2006": -351.0,
+        "2007": 2316.0,
+        "2008": 2141.0,
+        "2009": -295.0,
+        "2010": -4929.0,
+        "2011": 2966.0,
+        "2012": 3416.0,
+        "2013": 2379.0,
+        "2014": 1713.0,
+        "2015": 3127.0,
+        "2016": 3885.0,
+        "2017": 3722.0,
+        "2018": 3955.0,
+        "2019": 3632.0,
+        "2020": 4347.0,
+        "2021": -8173.0,
+        "2022": 995.0,
+        "2023": 1401.0,
+        "2024": 2399.0,
+        "2025": 1457.0,
+        "2026": null
+      },
+      "sha256": "46131c5532589a2369eb66b4ba4cd6a8627232d4797ed2dbee8ab3204ecf9774",
+      "updated": "2026-07-21T23:00:00+0200",
+      "url": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/demo_gind?lang=en&geo=SK&indic_de=CNMIGRAT&sinceTimePeriod=2000"
+    },
+    "nominal_fte_salary_eur": {
+      "association_with_appointments": {
+        "first_difference": {
+          "n": 24,
+          "pearson": -0.014888587119305895
+        },
+        "lags": {
+          "0": {
+            "n": 25,
+            "pearson": -0.3845921597248849
+          },
+          "1": {
+            "n": 25,
+            "pearson": -0.42950344253587036
+          },
+          "2": {
+            "n": 24,
+            "pearson": -0.39207126877997733
+          },
+          "3": {
+            "n": 23,
+            "pearson": -0.36698512710587333
+          }
+        },
+        "level": {
+          "n": 25,
+          "pearson": -0.3845921597248849
+        }
+      },
+      "label": "Average full time adjusted salary per employee",
+      "series": {
+        "2000": 3862.0,
+        "2001": 4013.0,
+        "2002": 4410.0,
+        "2003": 4912.0,
+        "2004": 5499.0,
+        "2005": 6194.0,
+        "2006": 6981.0,
+        "2007": 8411.0,
+        "2008": 9582.0,
+        "2009": 10309.0,
+        "2010": 10872.0,
+        "2011": 11190.0,
+        "2012": 11431.0,
+        "2013": 11702.0,
+        "2014": 11928.0,
+        "2015": 12370.0,
+        "2016": 12725.0,
+        "2017": 13317.0,
+        "2018": 13997.0,
+        "2019": 14857.0,
+        "2020": 15346.0,
+        "2021": 16242.0,
+        "2022": 17266.0,
+        "2023": 19027.0,
+        "2024": 20287.0
+      },
+      "sha256": "918a503a5fca6b84531dc95f3b184564fbae2b07e063228ba88ab32e25d3d97f",
+      "updated": "2025-11-12T11:00:00+0100",
+      "url": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/nama_10_fte?lang=en&geo=SK&unit=EUR&sinceTimePeriod=2000"
+    },
+    "unemployment_percent": {
+      "association_with_appointments": {
+        "first_difference": {
+          "n": 16,
+          "pearson": -0.05656744022437008
+        },
+        "lags": {
+          "0": {
+            "n": 17,
+            "pearson": 0.2712302210387853
+          },
+          "1": {
+            "n": 16,
+            "pearson": 0.22905159600335837
+          },
+          "2": {
+            "n": 15,
+            "pearson": 0.0031286353547091386
+          },
+          "3": {
+            "n": 14,
+            "pearson": -0.11295157285453973
+          }
+        },
+        "level": {
+          "n": 17,
+          "pearson": 0.2712302210387853
+        }
+      },
+      "label": "Unemployment by sex and age - annual data",
+      "series": {
+        "2003": null,
+        "2004": null,
+        "2005": null,
+        "2006": null,
+        "2007": null,
+        "2008": null,
+        "2009": 12.0,
+        "2010": 14.3,
+        "2011": 13.5,
+        "2012": 13.9,
+        "2013": 14.1,
+        "2014": 13.1,
+        "2015": 11.5,
+        "2016": 9.6,
+        "2017": 8.1,
+        "2018": 6.5,
+        "2019": 5.7,
+        "2020": 6.7,
+        "2021": 6.8,
+        "2022": 6.1,
+        "2023": 5.8,
+        "2024": 5.3,
+        "2025": 5.4
+      },
+      "sha256": "f99a00fd3ff93ff90d5288454cf6dad4a8c9a8943565295f7bd698c2cf24cb87",
+      "updated": "2026-06-11T23:00:00+0200",
+      "url": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/une_rt_a?lang=en&geo=SK&age=Y15-74&unit=PC_ACT&sex=T&sinceTimePeriod=2000"
+    }
+  }
+}
