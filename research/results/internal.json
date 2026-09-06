@@ -1,0 +1,168 @@
+{
+  "ceremony_bundling": {
+    "largest_ceremony_date": "2011-01-24",
+    "largest_ceremony_events": 108,
+    "mean_ceremony_size": 35.66153846153846,
+    "november_ceremonies": 13,
+    "november_ceremony_share": 0.2,
+    "november_event_share": 0.2070750647109577,
+    "november_events": 480,
+    "november_mean_ceremony_size": 36.92307692307692,
+    "peak_events": 154,
+    "peak_events_without_largest_ceremony": 46,
+    "peak_year": 2011,
+    "top_ten_ceremony_event_share": 0.2730802415875755
+  },
+  "coverage": {
+    "ceremonies": 65,
+    "end_year": 2025,
+    "events": 2318,
+    "start_year": 2000
+  },
+  "field_coverage": {
+    "current_students": 0.3570372969653618,
+    "graduates": {
+      "2009": 0.38585746872191884,
+      "2010": 0.3862647019061782,
+      "2011": 0.3558827634333566,
+      "2012": 0.3687503595880559,
+      "2013": 0.3965404505736195,
+      "2014": 0.40831094959709274,
+      "2015": 0.3796243695019711,
+      "2016": 0.3758806929675382,
+      "2017": 0.3811491661970655,
+      "2018": 0.3735319392724148,
+      "2019": 0.3637936458005662,
+      "2020": 0.35142506477567165,
+      "2021": 0.36782871995498273,
+      "2022": 0.3717450118363206,
+      "2023": 0.3728789350397075,
+      "2024": 0.3740894755937596,
+      "2025": 0.34879209078587187
+    }
+  },
+  "geography": {
+    "bratislava_shift_share_correlation": 0.9681468234799309,
+    "bratislava_shift_share_mean_absolute_error": 0.015848383758721555,
+    "bratislava_shift_share_r_squared": 0.9373082718142804,
+    "institution_dominant_city_share": 0.9491525423728814,
+    "resolved_events": 2242,
+    "unresolved_events": 76
+  },
+  "stock_flow": {
+    "appointment_events": 2318,
+    "events_per_net_stock_increase": 3.3642960812772134,
+    "negative_stock_transitions": 13,
+    "professor_stock_change": 689,
+    "stock_transitions": 25
+  },
+  "title_notation": {
+    "by_year": {
+      "2000": {
+        "csc": 73,
+        "phd": 18
+      },
+      "2001": {
+        "csc": 73,
+        "phd": 21
+      },
+      "2002": {
+        "csc": 71,
+        "phd": 21
+      },
+      "2003": {
+        "csc": 53,
+        "phd": 13
+      },
+      "2004": {
+        "csc": 75,
+        "phd": 38
+      },
+      "2005": {
+        "csc": 62,
+        "phd": 41
+      },
+      "2006": {
+        "csc": 64,
+        "phd": 29
+      },
+      "2007": {
+        "csc": 21,
+        "phd": 20
+      },
+      "2008": {
+        "csc": 34,
+        "phd": 35
+      },
+      "2009": {
+        "csc": 32,
+        "phd": 40
+      },
+      "2010": {
+        "csc": 36,
+        "phd": 47
+      },
+      "2011": {
+        "csc": 61,
+        "phd": 70
+      },
+      "2012": {
+        "csc": 17,
+        "phd": 17
+      },
+      "2013": {
+        "csc": 30,
+        "phd": 55
+      },
+      "2014": {
+        "csc": 10,
+        "phd": 53
+      },
+      "2015": {
+        "csc": 13,
+        "phd": 52
+      },
+      "2016": {
+        "csc": 14,
+        "phd": 30
+      },
+      "2017": {
+        "csc": 15,
+        "phd": 37
+      },
+      "2018": {
+        "csc": 8,
+        "phd": 65
+      },
+      "2019": {
+        "csc": 9,
+        "phd": 63
+      },
+      "2020": {
+        "csc": 8,
+        "phd": 65
+      },
+      "2021": {
+        "csc": 10,
+        "phd": 68
+      },
+      "2022": {
+        "csc": 5,
+        "phd": 68
+      },
+      "2023": {
+        "csc": 4,
+        "phd": 100
+      },
+      "2024": {
+        "csc": 3,
+        "phd": 54
+      },
+      "2025": {
+        "csc": 1,
+        "phd": 51
+      }
+    },
+    "first_phd_plurality_year": 2008
+  }
+}
