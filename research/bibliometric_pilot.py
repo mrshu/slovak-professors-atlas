@@ -109,13 +109,21 @@ def _rank_biserial(professors: Sequence[float], docents: Sequence[float]) -> flo
 
 
 def aggregate_rank_metrics(
-    rows: Sequence[Mapping[str, Any]], *, observation_year: int
+    rows: Sequence[Mapping[str, Any]],
+    *,
+    observation_year: int,
+    minimum_per_rank: int = 30,
 ) -> dict[str, Any]:
     verified = [row for row in rows if row.get("review_status") == "verified"]
     grouped = {
         rank: [row for row in verified if row["rank"] == rank]
         for rank in ("professor", "docent")
     }
+    if min(len(rank_rows) for rank_rows in grouped.values()) < minimum_per_rank:
+        raise ValueError(
+            f"minimum per rank is {minimum_per_rank}; "
+            "outcome aggregation is suppressed"
+        )
     groups: dict[str, Any] = {}
     for rank, rank_rows in grouped.items():
         metrics = {
@@ -150,4 +158,33 @@ def aggregate_rank_metrics(
         "excluded_unverified": len(rows) - len(verified),
         "groups": groups,
         "contrasts": contrasts,
+    }
+
+
+def summarize_linkage_feasibility(
+    rows: Sequence[Mapping[str, Any]], *, minimum_per_rank: int
+) -> dict[str, Any]:
+    primary = [
+        row
+        for row in rows
+        if row.get("review_status") == "verified"
+        and row.get("rank_status") == "consistent"
+    ]
+    primary_by_rank = {
+        rank: sum(row.get("rank") == rank for row in primary)
+        for rank in ("professor", "docent")
+    }
+    return {
+        "selected": len(rows),
+        "verified_identity": sum(
+            row.get("review_status") == "verified" for row in rows
+        ),
+        "rank_conflicts": sum(
+            row.get("rank_status") == "conflict" for row in rows
+        ),
+        "primary_usable": len(primary),
+        "primary_by_rank": primary_by_rank,
+        "minimum_per_rank": minimum_per_rank,
+        "minimum_cell_gate_passed": min(primary_by_rank.values()) >= minimum_per_rank,
+        "outcome_metrics_published": False,
     }

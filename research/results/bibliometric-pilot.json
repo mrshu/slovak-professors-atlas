@@ -1,0 +1,45 @@
+{
+  "scope": "Deterministic identity-linkage feasibility sample; not a rank-outcome estimate or appointment effect.",
+  "sample_design": {
+    "institutions": [
+      "uniba",
+      "stuba"
+    ],
+    "ranks": [
+      "professor",
+      "docent"
+    ],
+    "per_rank_per_institution": 3,
+    "selected": 12,
+    "selection": "smallest SHA-256 of fixed salt, institution, rank, and normalized name",
+    "source_snapshot": "PortalVS 2026-09-05; OpenAlex live API 2026-09-07"
+  },
+  "linkage_feasibility": {
+    "selected": 12,
+    "verified_identity_after_independent_review": 11,
+    "manual_review": 1,
+    "rank_conflicts": 2,
+    "primary_usable_after_second_review": 9,
+    "primary_by_rank": {
+      "professor": 5,
+      "docent": 4
+    }
+  },
+  "publishability_gates": {
+    "minimum_per_rank": 30,
+    "minimum_cell_gate_passed": false,
+    "independent_second_review_complete": true,
+    "field_and_publication_year_normalization_complete": false,
+    "active_career_rates_complete": false,
+    "recent_and_lifetime_impact_separated": false,
+    "outcome_metrics_published": false
+  },
+  "observed_linkage_risks": {
+    "openalex_merge_contamination_cases": 1,
+    "openalex_split_profile_cases": 2,
+    "current_rank_source_conflicts": 2,
+    "notes": "Names generated candidates only. Official institutional ORCID or multi-work evidence was required. Ambiguous profiles and rank conflicts were excluded."
+  },
+  "finding": "The linkage is technically feasible but manual and fragile: 11 of 12 identities passed independent review, while one merged OpenAlex profile and two current-rank conflicts reduced the usable cohort to nine.",
+  "non_finding": "No citation, h-index, i10, works, or career-rate association is reported because the cohort fails minimum-cell, normalization, and common-support gates."
+}

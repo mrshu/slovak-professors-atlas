@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import pytest
+
 from research.bibliometric_pilot import (
     aggregate_rank_metrics,
     triage_openalex_candidates,
     normalize_name,
     select_rank_sample,
+    summarize_linkage_feasibility,
 )
 
 
@@ -140,8 +143,7 @@ def test_aggregate_rank_metrics_reports_groups_without_person_identifiers() -> N
         },
     ]
 
-    result = aggregate_rank_metrics(rows, observation_year=2026)
-
+    result = aggregate_rank_metrics(rows, observation_year=2026, minimum_per_rank=2)
     assert result["groups"]["professor"]["n"] == 2
     assert result["excluded_unverified"] == 1
     assert result["groups"]["professor"]["metrics"]["citations"]["median"] == 300
@@ -154,3 +156,28 @@ def test_aggregate_rank_metrics_reports_groups_without_person_identifiers() -> N
     rendered = repr(result)
     assert "Professor One" not in rendered
     assert "A1" not in rendered
+
+    with pytest.raises(ValueError, match="minimum per rank"):
+        aggregate_rank_metrics(rows, observation_year=2026)
+
+
+def test_linkage_feasibility_never_publishes_tiny_cohort_outcomes() -> None:
+    rows = [
+        {"rank": "professor", "review_status": "verified", "rank_status": "consistent"},
+        {"rank": "professor", "review_status": "verified", "rank_status": "conflict"},
+        {"rank": "docent", "review_status": "manual_review", "rank_status": "consistent"},
+        {"rank": "docent", "review_status": "verified", "rank_status": "consistent"},
+    ]
+
+    result = summarize_linkage_feasibility(rows, minimum_per_rank=30)
+
+    assert result == {
+        "selected": 4,
+        "verified_identity": 3,
+        "rank_conflicts": 1,
+        "primary_usable": 2,
+        "primary_by_rank": {"professor": 1, "docent": 1},
+        "minimum_per_rank": 30,
+        "minimum_cell_gate_passed": False,
+        "outcome_metrics_published": False,
+    }
