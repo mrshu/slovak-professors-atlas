@@ -6,6 +6,7 @@ import json
 import math
 import urllib.request
 from collections.abc import Mapping, Sequence
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -51,7 +52,11 @@ def extract_jsonstat_series(payload: Mapping[str, Any]) -> dict[int, float | Non
     else:
         values = {int(position): value for position, value in raw_values.items()}
     return {
-        year: (float(values[position]) if position in values else None)
+        year: (
+            float(values[position])
+            if position in values and values[position] is not None
+            else None
+        )
         for year, position in sorted(positions.items())
     }
 
@@ -89,6 +94,7 @@ def correlate_annual_series(
             )
         )
     lag_results = {}
+    difference_lag_results = {}
     for lag in lags:
         pairs = [
             (float(value), float(external[year - lag]))
@@ -96,21 +102,45 @@ def correlate_annual_series(
             if year - lag in external and external[year - lag] is not None
         ]
         lag_results[str(lag)] = _paired_correlation(pairs)
+        difference_pairs_for_lag = []
+        for year, value in sorted(appointments.items()):
+            external_year = year - lag
+            if year - 1 not in appointments:
+                continue
+            if (
+                external_year not in external
+                or external_year - 1 not in external
+                or external[external_year] is None
+                or external[external_year - 1] is None
+            ):
+                continue
+            difference_pairs_for_lag.append(
+                (
+                    float(value) - float(appointments[year - 1]),
+                    float(external[external_year])
+                    - float(external[external_year - 1]),
+                )
+            )
+        difference_lag_results[str(lag)] = _paired_correlation(
+            difference_pairs_for_lag
+        )
     return {
         "level": _paired_correlation(level_pairs),
         "first_difference": _paired_correlation(difference_pairs),
         "lags": lag_results,
+        "first_difference_lags": difference_lag_results,
     }
 
 
-def _fetch(url: str) -> tuple[dict[str, Any], str]:
+def _fetch(url: str) -> tuple[dict[str, Any], str, str]:
     request = urllib.request.Request(
         url,
         headers={"User-Agent": "slovak-professors-atlas-research/1.0"},
     )
     with urllib.request.urlopen(request, timeout=60) as response:
         raw = response.read()
-    return json.loads(raw), hashlib.sha256(raw).hexdigest()
+    retrieved_at = datetime.now(timezone.utc).isoformat()
+    return json.loads(raw), hashlib.sha256(raw).hexdigest(), retrieved_at
 
 
 def analyze_external(atlas: Mapping[str, Any]) -> dict[str, Any]:
@@ -120,11 +150,15 @@ def analyze_external(atlas: Mapping[str, Any]) -> dict[str, Any]:
     }
     sources = {}
     for name, url in _SOURCES.items():
-        payload, digest = _fetch(url)
+        payload, digest, retrieved_at = _fetch(url)
         series = extract_jsonstat_series(payload)
         sources[name] = {
             "url": url,
             "sha256": digest,
+            "retrieved_at": retrieved_at,
+            "provider": "Eurostat",
+            "license": "European Commission reuse policy / CC BY 4.0",
+            "license_url": "https://ec.europa.eu/eurostat/help/copyright-notice",
             "updated": payload.get("updated"),
             "label": payload.get("label"),
             "series": {str(year): value for year, value in series.items()},

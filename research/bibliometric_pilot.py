@@ -42,14 +42,23 @@ def select_rank_sample(
     selected: list[dict[str, str]] = []
     for institution in institutions:
         for rank in ("professor", "docent"):
+            candidate_names = [
+                str(employee["name"])
+                for employee in employee_rows
+                if employee["institution"] == institution
+                and set(employee["ranks"]) == {rank}
+            ]
+            normalized_counts: dict[str, int] = {}
+            for name in candidate_names:
+                normalized = normalize_name(name)
+                normalized_counts[normalized] = normalized_counts.get(normalized, 0) + 1
             eligible = []
-            for employee in employee_rows:
-                ranks = set(employee["ranks"])
-                if employee["institution"] != institution or ranks != {rank}:
+            for name in candidate_names:
+                normalized = normalize_name(name)
+                if normalized_counts[normalized] != 1:
                     continue
-                name = str(employee["name"])
                 digest = hashlib.sha256(
-                    f"{salt}|{institution}|{rank}|{normalize_name(name)}".encode()
+                    f"{salt}|{institution}|{rank}|{normalized}".encode()
                 ).hexdigest()
                 eligible.append((digest, name))
             for _, name in sorted(eligible)[:per_rank]:
@@ -114,9 +123,14 @@ def aggregate_rank_metrics(
     observation_year: int,
     minimum_per_rank: int = 30,
 ) -> dict[str, Any]:
-    verified = [row for row in rows if row.get("review_status") == "verified"]
+    eligible = [
+        row
+        for row in rows
+        if row.get("review_status") == "verified"
+        and row.get("rank_status") == "consistent"
+    ]
     grouped = {
-        rank: [row for row in verified if row["rank"] == rank]
+        rank: [row for row in eligible if row["rank"] == rank]
         for rank in ("professor", "docent")
     }
     if min(len(rank_rows) for rank_rows in grouped.values()) < minimum_per_rank:
@@ -155,7 +169,7 @@ def aggregate_rank_metrics(
         }
 
     return {
-        "excluded_unverified": len(rows) - len(verified),
+        "excluded_ineligible": len(rows) - len(eligible),
         "groups": groups,
         "contrasts": contrasts,
     }

@@ -101,7 +101,7 @@ Official help states that bulk access is unavailable and automated software must
 | Migration | Eurostat `demo_gind` | net migration plus statistical adjustment | definition/revision breaks; not researcher mobility |
 | Population | Eurostat `demo_pjan`; Slovak `om7102rr` | exposure denominator | Eurostat January 1 and Slovak mid-year series are not interchangeable |
 
-Exploratory correlations with appointments largely collapse after differencing: GDP growth (+.071 raw, −.087 differenced), GERD share (−.333, −.019), nominal salary (−.385, −.015), unemployment (+.271, −.057), and migration (−.247, +.084). These are screening diagnostics, not estimates; no broad macro story currently survives.
+Exploratory correlations with appointments largely collapse after differencing: GDP growth (+.071 raw, −.087 differenced), higher-education GERD share (−.309, +.101), nominal salary (−.385, −.015), unemployment (+.271, −.057), and migration (−.247, +.084). These are screening diagnostics, not estimates; no broad macro story currently survives. The versioned output also reports zero-to-three-year lagged changes, but the salary screen remains nominal until HICP deflation is implemented.
 
 For regional denominators, use the Slovak mid-year series to match the atlas national convention. The API example for Bratislava is:
 

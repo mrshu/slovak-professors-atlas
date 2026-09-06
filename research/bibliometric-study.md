@@ -19,7 +19,7 @@ Even this is an association, not an appointment probability, merit score, or cau
 
 ## Feasibility sample
 
-A deterministic sample selected three PortalVS professors and three docents from each of Comenius University (`uniba`) and Slovak University of Technology (`stuba`). Selection used the smallest SHA-256 values of a fixed salt, reviewed institution, rank, and normalized name. Hash selection makes the draw repeatable; it does not make 12 cases representative.
+A deterministic sample selected three PortalVS professors and three docents from each of Comenius University (`uniba`) and Slovak University of Technology (`stuba`). Selection used the smallest SHA-256 values of `atlas-bibliometric-pilot-v1`, reviewed institution, rank, and normalized name after excluding mixed-rank and duplicate-normalized-name records. The 2026-09-05 PortalVS JSON export is pinned by SHA-256 `092905d60df1bd0bf67c2ca7ec9b19257d5a408947d218a733b2eb26114bfdef` (45,361,812 bytes). Hash selection is deterministic for that snapshot; it does not make 12 cases representative. Because live OpenAlex candidate responses and the private adjudication crosswalk are not committed, this remains a feasibility record rather than a fully rerunnable outcome study.
 
 Names generated candidates only. First reviewers required either an official institution-to-ORCID bridge or exact name, recent target-ROR evidence, at least two exact official-CV/OpenAlex work overlaps, coherent field, and no equivalent competitor. An independent reviewer then rechecked all 12 decisions and the Rule B evidence.
 

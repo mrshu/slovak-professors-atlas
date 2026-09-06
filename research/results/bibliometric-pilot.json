@@ -12,7 +12,15 @@
     "per_rank_per_institution": 3,
     "selected": 12,
     "selection": "smallest SHA-256 of fixed salt, institution, rank, and normalized name",
-    "source_snapshot": "PortalVS 2026-09-05; OpenAlex live API 2026-09-07"
+    "source_snapshot": "PortalVS 2026-09-05; OpenAlex live API 2026-09-07",
+    "selection_salt": "atlas-bibliometric-pilot-v1",
+    "portalvs_source": {
+      "url": "https://www.portalvs.sk/regzam/default/json-public",
+      "sha256": "092905d60df1bd0bf67c2ca7ec9b19257d5a408947d218a733b2eb26114bfdef",
+      "bytes": 45361812
+    },
+    "openalex_query_template": "https://api.openalex.org/authors?search={encoded_name}&select=id,display_name,display_name_alternatives,orcid,affiliations,topics,works_count,cited_by_count,summary_stats",
+    "reproducibility": "Selection is deterministic for the hashed PortalVS snapshot. Live OpenAlex responses and the private adjudication crosswalk were not archived publicly, so this is a feasibility record rather than a fully rerunnable outcome study."
   },
   "linkage_feasibility": {
     "selected": 12,

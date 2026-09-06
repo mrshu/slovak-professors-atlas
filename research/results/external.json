@@ -11,6 +11,24 @@
           "n": 25,
           "pearson": -0.086770478341606
         },
+        "first_difference_lags": {
+          "0": {
+            "n": 25,
+            "pearson": -0.086770478341606
+          },
+          "1": {
+            "n": 24,
+            "pearson": 0.14541668951546657
+          },
+          "2": {
+            "n": 23,
+            "pearson": -0.43841453277803477
+          },
+          "3": {
+            "n": 22,
+            "pearson": 0.35481983911137077
+          }
+        },
         "lags": {
           "0": {
             "n": 26,
@@ -35,6 +53,10 @@
         }
       },
       "label": "Gross domestic product (GDP) and main components (output, expenditure and income) - annual data",
+      "license": "European Commission reuse policy / CC BY 4.0",
+      "license_url": "https://ec.europa.eu/eurostat/help/copyright-notice",
+      "provider": "Eurostat",
+      "retrieved_at": "2026-09-06T23:34:40.678710+00:00",
       "series": {
         "2000": 0.8,
         "2001": 2.9,
@@ -73,6 +95,24 @@
           "n": 24,
           "pearson": 0.10079209487345094
         },
+        "first_difference_lags": {
+          "0": {
+            "n": 24,
+            "pearson": 0.10079209487345094
+          },
+          "1": {
+            "n": 24,
+            "pearson": -0.08296234198404348
+          },
+          "2": {
+            "n": 23,
+            "pearson": -0.15511078438959713
+          },
+          "3": {
+            "n": 22,
+            "pearson": 0.051810097508878286
+          }
+        },
         "lags": {
           "0": {
             "n": 25,
@@ -97,6 +137,10 @@
         }
       },
       "label": "GERD by sector of performance",
+      "license": "European Commission reuse policy / CC BY 4.0",
+      "license_url": "https://ec.europa.eu/eurostat/help/copyright-notice",
+      "provider": "Eurostat",
+      "retrieved_at": "2026-09-06T23:34:40.957323+00:00",
       "series": {
         "2000": 0.06,
         "2001": 0.06,
@@ -134,6 +178,24 @@
           "n": 25,
           "pearson": 0.08418930255194491
         },
+        "first_difference_lags": {
+          "0": {
+            "n": 25,
+            "pearson": 0.08418930255194491
+          },
+          "1": {
+            "n": 24,
+            "pearson": -0.13137008063047692
+          },
+          "2": {
+            "n": 23,
+            "pearson": -0.1600828992514337
+          },
+          "3": {
+            "n": 22,
+            "pearson": 0.30574226317711095
+          }
+        },
         "lags": {
           "0": {
             "n": 26,
@@ -158,6 +220,10 @@
         }
       },
       "label": "Population change - Demographic balance and crude rates at national level",
+      "license": "European Commission reuse policy / CC BY 4.0",
+      "license_url": "https://ec.europa.eu/eurostat/help/copyright-notice",
+      "provider": "Eurostat",
+      "retrieved_at": "2026-09-06T23:34:41.453732+00:00",
       "series": {
         "2000": -22301.0,
         "2001": 1012.0,
@@ -197,6 +263,24 @@
           "n": 24,
           "pearson": -0.014888587119305895
         },
+        "first_difference_lags": {
+          "0": {
+            "n": 24,
+            "pearson": -0.014888587119305895
+          },
+          "1": {
+            "n": 24,
+            "pearson": -0.0026558151976849723
+          },
+          "2": {
+            "n": 23,
+            "pearson": 0.0029242878019764334
+          },
+          "3": {
+            "n": 22,
+            "pearson": -0.021019068471562763
+          }
+        },
         "lags": {
           "0": {
             "n": 25,
@@ -221,6 +305,10 @@
         }
       },
       "label": "Average full time adjusted salary per employee",
+      "license": "European Commission reuse policy / CC BY 4.0",
+      "license_url": "https://ec.europa.eu/eurostat/help/copyright-notice",
+      "provider": "Eurostat",
+      "retrieved_at": "2026-09-06T23:34:41.625957+00:00",
       "series": {
         "2000": 3862.0,
         "2001": 4013.0,
@@ -258,6 +346,24 @@
           "n": 16,
           "pearson": -0.05656744022437008
         },
+        "first_difference_lags": {
+          "0": {
+            "n": 16,
+            "pearson": -0.05656744022437008
+          },
+          "1": {
+            "n": 15,
+            "pearson": 0.3176370915112418
+          },
+          "2": {
+            "n": 14,
+            "pearson": -0.5743845872607345
+          },
+          "3": {
+            "n": 13,
+            "pearson": 0.37811978463323404
+          }
+        },
         "lags": {
           "0": {
             "n": 17,
@@ -282,6 +388,10 @@
         }
       },
       "label": "Unemployment by sex and age - annual data",
+      "license": "European Commission reuse policy / CC BY 4.0",
+      "license_url": "https://ec.europa.eu/eurostat/help/copyright-notice",
+      "provider": "Eurostat",
+      "retrieved_at": "2026-09-06T23:34:41.178892+00:00",
       "series": {
         "2003": null,
         "2004": null,

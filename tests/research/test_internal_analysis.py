@@ -77,6 +77,6 @@ def test_analyze_atlas_quantifies_titles_fields_geography_and_stock_flow() -> No
     assert result["field_coverage"]["current_students"] == pytest.approx(50 / 1100)
     assert result["stock_flow"]["appointment_events"] == 4
     assert result["stock_flow"]["professor_stock_change"] == 2
-    assert result["stock_flow"]["events_per_net_stock_increase"] == 2
+    assert "events_per_net_stock_increase" not in result["stock_flow"]
     assert result["geography"]["resolved_events"] == 4
     assert result["geography"]["institution_dominant_city_share"] == pytest.approx(0.75)

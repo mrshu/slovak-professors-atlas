@@ -22,6 +22,8 @@ def test_select_rank_sample_is_balanced_deterministic_and_excludes_mixed_ranks()
         {"name": "Professor One", "institution": "uniba", "ranks": ["professor"]},
         {"name": "Professor Two", "institution": "uniba", "ranks": ["professor"]},
         {"name": "Professor Three", "institution": "uniba", "ranks": ["professor"]},
+        {"name": "Ján Novak", "institution": "uniba", "ranks": ["professor"]},
+        {"name": "Jan Novák", "institution": "uniba", "ranks": ["professor"]},
         {"name": "Docent One", "institution": "uniba", "ranks": ["docent"]},
         {"name": "Docent Two", "institution": "uniba", "ranks": ["docent"]},
         {"name": "Docent Three", "institution": "uniba", "ranks": ["docent"]},
@@ -39,6 +41,7 @@ def test_select_rank_sample_is_balanced_deterministic_and_excludes_mixed_ranks()
     assert len(first) == 4
     assert {row["rank"] for row in first} == {"professor", "docent"}
     assert "Mixed Rank" not in {row["name"] for row in first}
+    assert not {"Ján Novak", "Jan Novák"} & {row["name"] for row in first}
 
 
 def test_triage_never_promotes_name_and_affiliation_to_verified_identity() -> None:
@@ -103,6 +106,7 @@ def test_aggregate_rank_metrics_reports_groups_without_person_identifiers() -> N
             "rank": "professor",
             "first_publication_year": 2000,
             "review_status": "verified",
+            "rank_status": "consistent",
             "metrics": {"works": 100, "citations": 500, "h_index": 12, "i10": 20},
         },
         {
@@ -113,6 +117,7 @@ def test_aggregate_rank_metrics_reports_groups_without_person_identifiers() -> N
             "first_publication_year": 2010,
             "metrics": {"works": 50, "citations": 100, "h_index": 8, "i10": 9},
             "review_status": "verified",
+            "rank_status": "consistent",
         },
         {
             "name": "Docent One",
@@ -122,6 +127,7 @@ def test_aggregate_rank_metrics_reports_groups_without_person_identifiers() -> N
             "first_publication_year": 2015,
             "metrics": {"works": 30, "citations": 60, "h_index": 5, "i10": 4},
             "review_status": "verified",
+            "rank_status": "consistent",
         },
         {
             "name": "Docent Two",
@@ -131,6 +137,17 @@ def test_aggregate_rank_metrics_reports_groups_without_person_identifiers() -> N
             "first_publication_year": 2020,
             "metrics": {"works": 10, "citations": 10, "h_index": 2, "i10": 1},
             "review_status": "verified",
+            "rank_status": "consistent",
+        },
+        {
+            "name": "Rank Conflict",
+            "openalex_id": "A6",
+            "institution": "uniba",
+            "rank": "professor",
+            "review_status": "verified",
+            "rank_status": "conflict",
+            "first_publication_year": 1980,
+            "metrics": {"works": 999, "citations": 9999, "h_index": 99, "i10": 99},
         },
         {
             "name": "Unreviewed Candidate",
@@ -138,6 +155,7 @@ def test_aggregate_rank_metrics_reports_groups_without_person_identifiers() -> N
             "institution": "uniba",
             "rank": "professor",
             "review_status": "manual_review",
+            "rank_status": "consistent",
             "first_publication_year": 1990,
             "metrics": {"works": 500, "citations": 5000, "h_index": 50, "i10": 100},
         },
@@ -145,7 +163,7 @@ def test_aggregate_rank_metrics_reports_groups_without_person_identifiers() -> N
 
     result = aggregate_rank_metrics(rows, observation_year=2026, minimum_per_rank=2)
     assert result["groups"]["professor"]["n"] == 2
-    assert result["excluded_unverified"] == 1
+    assert result["excluded_ineligible"] == 2
     assert result["groups"]["professor"]["metrics"]["citations"]["median"] == 300
     assert result["groups"]["docent"]["metrics"]["h_index"]["median"] == 3.5
     assert result["contrasts"]["citations"]["median_ratio_professor_to_docent"] == (

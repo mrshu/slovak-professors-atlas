@@ -51,7 +51,6 @@
   },
   "stock_flow": {
     "appointment_events": 2318,
-    "events_per_net_stock_increase": 3.3642960812772134,
     "negative_stock_transitions": 13,
     "professor_stock_change": 689,
     "stock_transitions": 25

@@ -124,9 +124,6 @@ def _stock_flow(
     return {
         "appointment_events": len(records),
         "professor_stock_change": stock_change,
-        "events_per_net_stock_increase": (
-            len(records) / stock_change if stock_change else None
-        ),
         "negative_stock_transitions": negative_transitions,
         "stock_transitions": max(0, len(ordered) - 1),
     }
