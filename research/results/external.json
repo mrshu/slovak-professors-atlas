@@ -53,10 +53,10 @@
         }
       },
       "label": "Gross domestic product (GDP) and main components (output, expenditure and income) - annual data",
-      "license": "European Commission reuse policy / CC BY 4.0",
+      "license": "European Commission reuse policy (Decision 2011/833/EU)",
       "license_url": "https://ec.europa.eu/eurostat/help/copyright-notice",
       "provider": "Eurostat",
-      "retrieved_at": "2026-09-06T23:34:40.678710+00:00",
+      "retrieved_at": "2026-09-06T23:40:03.474856+00:00",
       "series": {
         "2000": 0.8,
         "2001": 2.9,
@@ -137,10 +137,10 @@
         }
       },
       "label": "GERD by sector of performance",
-      "license": "European Commission reuse policy / CC BY 4.0",
+      "license": "European Commission reuse policy (Decision 2011/833/EU)",
       "license_url": "https://ec.europa.eu/eurostat/help/copyright-notice",
       "provider": "Eurostat",
-      "retrieved_at": "2026-09-06T23:34:40.957323+00:00",
+      "retrieved_at": "2026-09-06T23:40:03.647775+00:00",
       "series": {
         "2000": 0.06,
         "2001": 0.06,
@@ -220,10 +220,10 @@
         }
       },
       "label": "Population change - Demographic balance and crude rates at national level",
-      "license": "European Commission reuse policy / CC BY 4.0",
+      "license": "European Commission reuse policy (Decision 2011/833/EU)",
       "license_url": "https://ec.europa.eu/eurostat/help/copyright-notice",
       "provider": "Eurostat",
-      "retrieved_at": "2026-09-06T23:34:41.453732+00:00",
+      "retrieved_at": "2026-09-06T23:40:03.937878+00:00",
       "series": {
         "2000": -22301.0,
         "2001": 1012.0,
@@ -305,10 +305,10 @@
         }
       },
       "label": "Average full time adjusted salary per employee",
-      "license": "European Commission reuse policy / CC BY 4.0",
+      "license": "European Commission reuse policy (Decision 2011/833/EU)",
       "license_url": "https://ec.europa.eu/eurostat/help/copyright-notice",
       "provider": "Eurostat",
-      "retrieved_at": "2026-09-06T23:34:41.625957+00:00",
+      "retrieved_at": "2026-09-06T23:40:04.071859+00:00",
       "series": {
         "2000": 3862.0,
         "2001": 4013.0,
@@ -388,10 +388,10 @@
         }
       },
       "label": "Unemployment by sex and age - annual data",
-      "license": "European Commission reuse policy / CC BY 4.0",
+      "license": "European Commission reuse policy (Decision 2011/833/EU)",
       "license_url": "https://ec.europa.eu/eurostat/help/copyright-notice",
       "provider": "Eurostat",
-      "retrieved_at": "2026-09-06T23:34:41.178892+00:00",
+      "retrieved_at": "2026-09-06T23:40:03.806006+00:00",
       "series": {
         "2003": null,
         "2004": null,

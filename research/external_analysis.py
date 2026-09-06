@@ -157,7 +157,7 @@ def analyze_external(atlas: Mapping[str, Any]) -> dict[str, Any]:
             "sha256": digest,
             "retrieved_at": retrieved_at,
             "provider": "Eurostat",
-            "license": "European Commission reuse policy / CC BY 4.0",
+            "license": "European Commission reuse policy (Decision 2011/833/EU)",
             "license_url": "https://ec.europa.eu/eurostat/help/copyright-notice",
             "updated": payload.get("updated"),
             "label": payload.get("label"),
