@@ -37,12 +37,6 @@ class FieldCatalog:
         normalized = normalize_search(normalize_display(label))
         return self.aliases.get(normalized, normalized)
 
-    def label_for(self, field_key: str) -> str:
-        return self.labels[field_key]
-
-    def is_alias(self, label: str) -> bool:
-        return normalize_search(normalize_display(label)) in self.aliases
-
     def payload(self) -> dict[str, object]:
         return {
             "schemaVersion": 1,
@@ -57,72 +51,6 @@ class FieldCatalog:
             ],
             "labels": dict(self.labels),
         }
-
-
-_SLOVAK_TOKENS = (
-    "a",
-    "á",
-    "ä",
-    "b",
-    "c",
-    "č",
-    "d",
-    "ď",
-    "dz",
-    "dž",
-    "e",
-    "é",
-    "f",
-    "g",
-    "h",
-    "ch",
-    "i",
-    "í",
-    "j",
-    "k",
-    "l",
-    "ĺ",
-    "ľ",
-    "m",
-    "n",
-    "ň",
-    "o",
-    "ó",
-    "ô",
-    "p",
-    "q",
-    "r",
-    "ŕ",
-    "s",
-    "š",
-    "t",
-    "ť",
-    "u",
-    "ú",
-    "v",
-    "w",
-    "x",
-    "y",
-    "ý",
-    "z",
-    "ž",
-)
-_SLOVAK_ORDER = {token: index for index, token in enumerate(_SLOVAK_TOKENS)}
-_SLOVAK_MULTIGRAPHS = ("dž", "dz", "ch")
-
-
-def _slovak_sort_key(value: str) -> tuple[tuple[int, str], ...]:
-    text = normalize_display(value).casefold()
-    result: list[tuple[int, str]] = []
-    index = 0
-    while index < len(text):
-        token = next(
-            (item for item in _SLOVAK_MULTIGRAPHS if text.startswith(item, index)),
-            text[index],
-        )
-        result.append((_SLOVAK_ORDER.get(token, len(_SLOVAK_ORDER)), token))
-        index += len(token)
-    return tuple(result)
 
 
 def _load_alias_pairs(path: Path) -> list[tuple[str, str]]:
@@ -198,9 +126,12 @@ def build_field_catalog(
         if field_key in approved_targets:
             labels[field_key] = approved_targets[field_key]
             continue
+        # Among equally frequent spellings the pick is arbitrary, but it must not
+        # be systematically wrong: uppercase sorts before lowercase by code point,
+        # so without the isupper() clause a SHOUTY variant would always win a tie.
         labels[field_key] = min(
             counts,
-            key=lambda label: (-counts[label], _slovak_sort_key(label), label),
+            key=lambda label: (-counts[label], label.isupper(), label),
         )
 
     return FieldCatalog(

@@ -53,6 +53,7 @@ class President:
 class Appointment:
     id: str
     name: str
+    last_name: str
     titles_before: str
     titles_after: str
     faculty: str

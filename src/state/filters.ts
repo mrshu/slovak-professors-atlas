@@ -1,6 +1,5 @@
 import type { AtlasData } from '../data/types'
 import { fieldAppointmentRanking } from '../analysis/selectors'
-import { normalizeForSearch } from '../utils/search'
 
 export interface FilterState {
   startYear: number

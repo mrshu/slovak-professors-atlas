@@ -121,10 +121,6 @@ export default function FieldEducationScatter({
     () => new Map(projected.map((point) => [point.fieldKey, point] as const)),
     [projected],
   )
-  const keyboardOrder = useMemo(
-    () => [...projected].sort((left, right) => left.fieldKey.localeCompare(right.fieldKey)),
-    [projected],
-  )
   const labelKeys = useMemo(
     () => generatedLabelKeys(points, selectedField),
     [points, selectedField],
@@ -203,8 +199,8 @@ export default function FieldEducationScatter({
     const direction = directions[event.key]
     let nextKey: string | null = null
     if (direction !== undefined) nextKey = nextDirectionalPoint(projected, activeKey, direction)
-    else if (event.key === 'Home') nextKey = keyboardOrder[0]?.fieldKey ?? activeKey
-    else if (event.key === 'End') nextKey = keyboardOrder.at(-1)?.fieldKey ?? activeKey
+    else if (event.key === 'Home') nextKey = projected[0]?.fieldKey ?? activeKey
+    else if (event.key === 'End') nextKey = projected.at(-1)?.fieldKey ?? activeKey
     if (nextKey !== null) {
       event.preventDefault()
       setHoveredKey(null)

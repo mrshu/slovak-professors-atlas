@@ -52,7 +52,6 @@ function atlasState(overrides: Partial<AtlasState['filters']> = {}): AtlasState 
       return year >= filters.startYear && year <= filters.endYear
     }),
     setFilter: vi.fn(),
-    setExclusiveFilter: vi.fn(),
     setDateRange: vi.fn(),
     setFieldEducationRange: vi.fn(),
     setSelectedYear: vi.fn(),

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import type { Appointment } from '../data/types'
-import { matchesSearch } from './search'
+import { createSearchMatcher } from './search'
 
 const appointment: Appointment = {
   id: 'record-1',
@@ -28,7 +28,7 @@ const appointment: Appointment = {
   ],
 }
 
-describe('matchesSearch', () => {
+describe('createSearchMatcher', () => {
   it.each([
     'Caputova',
     'čaputová',
@@ -37,18 +37,18 @@ describe('matchesSearch', () => {
     'vnutorne lekarstvo',
     'univerzita komenskeho',
   ])('matches Slovak display values without requiring accents or case for %s', (query) => {
-    expect(matchesSearch(appointment, query)).toBe(true)
+    expect(createSearchMatcher(query)(appointment)).toBe(true)
   })
 
   it('treats an empty or whitespace-only query as no search filter', () => {
-    expect(matchesSearch(appointment, '')).toBe(true)
-    expect(matchesSearch(appointment, '   ')).toBe(true)
+    expect(createSearchMatcher('')(appointment)).toBe(true)
+    expect(createSearchMatcher('   ')(appointment)).toBe(true)
   })
 
   it('does not alter Slovak source text while matching normalized text', () => {
     const before = structuredClone(appointment)
 
-    expect(matchesSearch(appointment, 'Caputova')).toBe(true)
+    expect(createSearchMatcher('Caputova')(appointment)).toBe(true)
     expect(appointment).toEqual(before)
     expect(appointment.name).toBe('Zuzana Čaputová')
   })

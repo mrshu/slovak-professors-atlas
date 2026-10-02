@@ -249,7 +249,6 @@ const data: AtlasData = {
     },
     geometry: { type: 'Polygon', coordinates: [] },
   },
-  editorialFacts: {} as AtlasData['editorialFacts'],
 }
 
 afterEach(() => {

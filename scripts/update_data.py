@@ -57,6 +57,36 @@ def _load_provenance(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _validated_source_fields(
+    value: object, *, name: str, require_checksums: bool
+) -> tuple[dict[str, Any], str, str | None]:
+    """Check the url/retrievedOn/sha256 trio every provenance source carries."""
+    if not isinstance(value, dict):
+        raise SourceIntegrityError(f"Provenance source {name!r} must be an object")
+    url = value.get("url")
+    if not isinstance(url, str) or not url:
+        raise SourceIntegrityError(
+            f"Provenance source {name!r} requires a non-empty URL"
+        )
+    retrieved_on = value.get("retrievedOn")
+    try:
+        if not isinstance(retrieved_on, str):
+            raise ValueError
+        date.fromisoformat(retrieved_on)
+    except ValueError as error:
+        raise SourceIntegrityError(
+            f"Provenance source {name!r} requires an ISO retrieval date"
+        ) from error
+    sha256 = value.get("sha256")
+    if require_checksums and (
+        not isinstance(sha256, str) or _SHA256.fullmatch(sha256) is None
+    ):
+        raise SourceIntegrityError(
+            f"Provenance source {name!r} requires a lowercase SHA-256"
+        )
+    return value, url, sha256 if isinstance(sha256, str) else None
+
+
 def _validated_sources(
     provenance: dict[str, Any], *, require_checksums: bool
 ) -> dict[str, dict[str, Any]]:
@@ -72,34 +102,13 @@ def _validated_sources(
     sources: dict[str, dict[str, Any]] = {}
     for name in SOURCE_DESTINATIONS:
         source = raw_sources[name]
-        if not isinstance(source, dict):
-            raise SourceIntegrityError(f"Provenance source {name!r} must be an object")
-        url = source.get("url")
-        if not isinstance(url, str) or not url:
-            raise SourceIntegrityError(
-                f"Provenance source {name!r} requires a non-empty URL"
-            )
-        retrieved_on = source.get("retrievedOn")
-        try:
-            if not isinstance(retrieved_on, str):
-                raise ValueError
-            date.fromisoformat(retrieved_on)
-        except ValueError as error:
-            raise SourceIntegrityError(
-                f"Provenance source {name!r} requires an ISO retrieval date"
-            ) from error
+        _, url, _ = _validated_source_fields(
+            source, name=name, require_checksums=require_checksums
+        )
         if name == "population" and url != _POPULATION_URL:
             raise SourceIntegrityError(
                 "Population provenance URL must retain the reviewed national "
                 "mid-year selection"
-            )
-        expected_sha256 = source.get("sha256")
-        if require_checksums and (
-            not isinstance(expected_sha256, str)
-            or _SHA256.fullmatch(expected_sha256) is None
-        ):
-            raise SourceIntegrityError(
-                f"Provenance source {name!r} requires a lowercase SHA-256"
             )
         sources[name] = source
     return sources
@@ -124,28 +133,10 @@ def _validated_education_source(
     require_checksums: bool,
     require_archive_member: bool,
 ) -> SourcePlan:
-    if not isinstance(value, dict):
-        raise SourceIntegrityError(f"Provenance source {name!r} must be an object")
-    url = value.get("url")
-    if not isinstance(url, str) or not url:
-        raise SourceIntegrityError(f"Provenance source {name!r} requires a non-empty URL")
-    retrieved_on = value.get("retrievedOn")
-    try:
-        if not isinstance(retrieved_on, str):
-            raise ValueError
-        date.fromisoformat(retrieved_on)
-    except ValueError as error:
-        raise SourceIntegrityError(
-            f"Provenance source {name!r} requires an ISO retrieval date"
-        ) from error
-    sha256 = value.get("sha256")
-    if require_checksums and (
-        not isinstance(sha256, str) or _SHA256.fullmatch(sha256) is None
-    ):
-        raise SourceIntegrityError(
-            f"Provenance source {name!r} requires a lowercase SHA-256"
-        )
-    archive_member = value.get("archiveMember")
+    source, url, sha256 = _validated_source_fields(
+        value, name=name, require_checksums=require_checksums
+    )
+    archive_member = source.get("archiveMember")
     if require_archive_member:
         if not isinstance(archive_member, str) or not archive_member:
             raise SourceIntegrityError(
@@ -158,9 +149,9 @@ def _validated_education_source(
     return SourcePlan(
         name=name,
         url=url,
-        relative_path=_validated_relative_path(value.get("localPath"), name=name),
-        expected_sha256=sha256 if isinstance(sha256, str) else None,
-        metadata=value,
+        relative_path=_validated_relative_path(source.get("localPath"), name=name),
+        expected_sha256=sha256,
+        metadata=source,
         archive_member=archive_member if isinstance(archive_member, str) else None,
     )
 
@@ -482,16 +473,6 @@ def _download_sources(
         raise
 
     return downloaded
-
-
-def download_sources(
-    provenance_path: Path, destination: Path
-) -> list[DownloadedSource]:
-    return _download_sources(
-        provenance_path,
-        destination,
-        accept_new_checksums=False,
-    )
 
 
 def main(argv: Sequence[str] | None = None) -> int:

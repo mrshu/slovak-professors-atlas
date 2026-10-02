@@ -359,13 +359,13 @@ export default function RecordList({ records, institutions, presidents }: Record
                       {startsGroup && (
                         <tr
                           className="record-table__group"
-                          aria-label={`${formatDate(record.appointedOn)} · ${formatNumber(countByDate.get(record.appointedOn) ?? 0)} vymenovaní · ${presidentById.get(record.presidentId)?.name ?? 'neuvedené'}`}
+                          aria-label={`${formatDate(record.appointedOn)} · ${formatNumber(countByDate.get(record.appointedOn) ?? 0)} vymenovaní · ${president?.name ?? 'neuvedené'}`}
                         >
                           <td colSpan={SORT_COLUMNS.length + 1}>
                             {formatDate(record.appointedOn)}
                             <span>
                               {formatNumber(countByDate.get(record.appointedOn) ?? 0)} vymenovaní ·{' '}
-                              {presidentById.get(record.presidentId)?.name ?? 'neuvedené'}
+                              {president?.name ?? 'neuvedené'}
                             </span>
                           </td>
                         </tr>

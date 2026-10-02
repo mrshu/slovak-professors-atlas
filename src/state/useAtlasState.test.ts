@@ -130,16 +130,6 @@ describe('useAtlasState', () => {
     })
     expect(result.current.filteredRecords).toHaveLength(3)
     expect(window.location.search).toBe('?fieldStartYear=2012&fieldEndYear=2020')
-
-    act(() => result.current.setExclusiveFilter('city', 'Bratislava'))
-    expect(result.current.filters).toMatchObject({
-      fieldStartYear: 2012,
-      fieldEndYear: 2020,
-      city: 'Bratislava',
-    })
-    expect(window.location.search).toBe(
-      '?fieldStartYear=2012&fieldEndYear=2020&city=Bratislava',
-    )
   })
 
   it('loads a normalized field deep link and applies it across raw-label variants', () => {

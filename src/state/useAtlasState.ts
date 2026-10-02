@@ -9,7 +9,7 @@ import {
   type FilterValueKey,
   type HistoryMode,
 } from './filters'
-import { parseFilters, serializeFilters } from './url'
+import { OPTION_KEY_BY_FILTER, parseFilters, serializeFilters } from './url'
 
 export interface AtlasState {
   filters: FilterState
@@ -17,7 +17,6 @@ export interface AtlasState {
   defaults: FilterState
   filteredRecords: Appointment[]
   setFilter: (key: FilterValueKey, value: string | null, mode?: HistoryMode) => void
-  setExclusiveFilter: (key: FilterValueKey, value: string, mode?: HistoryMode) => void
   setDateRange: (startYear: number, endYear: number, mode?: HistoryMode) => void
   setFieldEducationRange: (startYear: number, endYear: number, mode?: HistoryMode) => void
   setSelectedYear: (year: number, mode?: HistoryMode) => void
@@ -31,23 +30,6 @@ interface AtlasHistoryState {
   atlas?: {
     lastContextYear: number
   }
-}
-
-const OPTION_KEY_BY_FILTER: Record<
-  FilterValueKey,
-  | 'presidentIds'
-  | 'cities'
-  | 'institutionIds'
-  | 'faculties'
-  | 'fieldKeys'
-  | 'appointmentDates'
-> = {
-  presidentId: 'presidentIds',
-  city: 'cities',
-  institutionId: 'institutionIds',
-  faculty: 'faculties',
-  field: 'fieldKeys',
-  appointedOn: 'appointmentDates',
 }
 
 function historyStateWithContextYear(lastContextYear: number): AtlasHistoryState {
@@ -115,28 +97,6 @@ export function useAtlasState(data: AtlasData): AtlasState {
       commit({ ...filtersRef.current, [key]: value }, mode)
     },
     [commit, options],
-  )
-  const setExclusiveFilter = useCallback(
-    (key: FilterValueKey, value: string, mode: HistoryMode = 'push') => {
-      if (!options[OPTION_KEY_BY_FILTER[key]].includes(value)) {
-        return
-      }
-      const nextFilters: FilterState = {
-        ...defaults,
-        fieldStartYear: filtersRef.current.fieldStartYear,
-        fieldEndYear: filtersRef.current.fieldEndYear,
-        [key]: value,
-      }
-      if (key === 'appointedOn') {
-        const year = Number.parseInt(value.slice(0, 4), 10)
-        nextFilters.selectedYear = year
-        lastContextYearRef.current = year
-      } else {
-        lastContextYearRef.current = defaults.selectedYear
-      }
-      commit(nextFilters, mode)
-    },
-    [commit, defaults, options],
   )
 
 
@@ -277,7 +237,6 @@ export function useAtlasState(data: AtlasData): AtlasState {
     defaults,
     filteredRecords,
     setFilter,
-    setExclusiveFilter,
     setDateRange,
     setSelectedYear,
     setFieldEducationRange,

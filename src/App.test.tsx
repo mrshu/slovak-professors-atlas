@@ -206,46 +206,6 @@ const validAtlas = {
       coordinates: [],
     },
   },
-  editorialFacts: {
-    studentPeak: {
-      year: 2008,
-      academicYear: '2008/2009',
-      students: 230519,
-    },
-    graduateThroughputPeak: {
-      year: 2010,
-      graduates: 73970,
-      statementSk:
-        'V roku 2010 evidovalo CVTI 73 970 absolventov I., II. a III. stupňa, najviac v sledovanom období.',
-    },
-    appointmentRateMaximum: {
-      year: 2023,
-      appointments: 112,
-      students: 137680,
-      appointmentsPer10kStudents: 8.13,
-    },
-    appointmentGraduateRateMaximum: {
-      year: 2000,
-      appointments: 105,
-      graduates: 20558,
-      appointmentsPer1kGraduates: 5.11,
-      graduatesPerAppointment: 195.79,
-      statementSk:
-        'V roku 2000 pripadlo 5,11 profesorských vymenovaní na 1 000 absolventov, najviac v sledovanom období; oba údaje sú ročné toky.',
-    },
-    appointmentProfessorStockRateMaximum: {
-      year: 2001,
-      appointments: 117,
-      internalProfessors: 1017,
-      appointmentsPer100Professors: 11.5,
-      statementSk:
-        'V roku 2001 pripadlo 11,5 profesorských vymenovaní na 100 profesorov medzi internými učiteľmi; ide o porovnanie ročného toku so stavom, nie o zmenu počtu profesorov.',
-    },
-    largestCeremony: {
-      appointedOn: '2011-01-24',
-      appointments: 108,
-    },
-  },
 }
 
 const atlasWithActiveLocalFilters = {

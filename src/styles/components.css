@@ -943,10 +943,6 @@ main > section, footer { scroll-margin-top: var(--sp-4); }
   background: rgb(27 41 36 / 6%);
 }
 
-.appointment-timeline__year-target:focus-visible {
-  border-radius: 0;
-}
-
 .method-status {
   margin-top: 2rem;
   padding: 1.25rem 0 1.25rem clamp(1rem, 2vw, 1.75rem);
@@ -2156,18 +2152,15 @@ main > section, footer { scroll-margin-top: var(--sp-4); }
 .sw { display: inline-block; width: 9px; height: 9px; border-radius: 50%; vertical-align: middle; margin: 0 3px 0 2px; }
 .sw--1 { background: var(--series-1); }
 .sw--2 { background: var(--series-2); }
-.sw--3 { background: var(--series-3); }
 .chart { display: block; width: 100%; height: auto; font-family: var(--font-interface); }
 .chart__grid { stroke: var(--color-line); stroke-opacity: 0.6; }
 .chart__tick { font-size: 11px; fill: var(--color-ink-muted); }
 .chart__tick--ink { fill: var(--color-ink); }
 .chart__value { font-size: 11px; font-weight: 600; fill: var(--color-ink); font-variant-numeric: tabular-nums; }
-.chart__annotation { font-size: 11px; font-weight: 600; fill: var(--color-ink); }
 .chart__marker { stroke: var(--color-line); stroke-dasharray: 2 4; }
 .chart__line { fill: none; stroke-width: 2; stroke-linejoin: round; }
 .chart__line--1 { stroke: var(--series-1); }
 .chart__line--2 { stroke: var(--series-2); }
-.chart__line--3 { stroke: var(--series-3); }
 .chart__bar { fill: var(--color-paper-deep); }
 .chart__bar--accent { fill: var(--series-1); }
 .chart__connector { stroke: var(--color-line); stroke-width: 2; }
@@ -2190,7 +2183,6 @@ main > section, footer { scroll-margin-top: var(--sp-4); }
 .context-strip__head h2 { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: var(--t-2); }
 .context-strip__charts { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4); }
 @media (max-width: 760px) { .context-strip__charts { grid-template-columns: 1fr; } }
-.chart__probe { fill: transparent; }
 .chart--interactive:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
 .chart__hit { cursor: crosshair; }
 .chart__crosshair { pointer-events: none; }

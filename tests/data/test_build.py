@@ -30,7 +30,6 @@ def test_build_is_byte_deterministic_and_serializes_public_contract(tmp_path: Pa
         "affiliations",
         "cities",
         "context",
-        "editorialFacts",
         "fieldCatalog",
         "fieldEducationComparison",
         "geography",
@@ -175,59 +174,6 @@ def test_build_publishes_reconciled_field_education_comparison(
         value for value in public_health["graduateCounts"] if value is not None
     ) == 5_968
     assert public_health["currentStudentCount"] == 785
-
-def test_generated_facts_match_reviewed_pinned_source_findings(tmp_path: Path) -> None:
-    payload = build_atlas(tmp_path / "atlas.json")
-
-    assert payload["editorialFacts"] == {
-        "appointmentRateMaximum": {
-            "appointments": 112,
-            "appointmentsPer10kStudents": 8.13,
-            "students": 137_680,
-            "year": 2023,
-        },
-        "appointmentGraduateRateMaximum": {
-            "appointments": 105,
-            "appointmentsPer1kGraduates": 5.11,
-            "graduates": 20_558,
-            "graduatesPerAppointment": 195.79,
-            "statementSk": (
-                "V roku 2000 pripadlo 5,11 profesorských vymenovaní na "
-                "1\u00a0000 absolventov, najviac v sledovanom období; oba "
-                "údaje sú ročné toky."
-            ),
-            "year": 2000,
-        },
-        "appointmentProfessorStockRateMaximum": {
-            "appointments": 117,
-            "appointmentsPer100Professors": 11.5,
-            "internalProfessors": 1_017,
-            "statementSk": (
-                "V roku 2001 pripadlo 11,5 profesorských vymenovaní na "
-                "100 profesorov medzi internými učiteľmi; ide o porovnanie "
-                "ročného toku so stavom, nie o zmenu počtu profesorov."
-            ),
-            "year": 2001,
-        },
-        "graduateThroughputPeak": {
-            "graduates": 73_970,
-            "statementSk": (
-                "V roku 2010 evidovalo CVTI 73\u00a0970 absolventov I., II. "
-                "a III. stupňa, najviac v sledovanom období."
-            ),
-            "year": 2010,
-        },
-        "largestCeremony": {
-            "appointedOn": "2011-01-24",
-            "appointments": 108,
-        },
-        "studentPeak": {
-            "academicYear": "2008/2009",
-            "students": 230_519,
-            "year": 2008,
-        },
-    }
-
 
 def test_context_keeps_national_numerators_independent_of_record_filters(
     tmp_path: Path,

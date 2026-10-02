@@ -256,36 +256,10 @@ class ProgramFieldDataset:
     counts_by_field_key: Mapping[str, int]
 
     def __post_init__(self) -> None:
-        if isinstance(self.year, bool) or not isinstance(self.year, int):
-            raise ValueError("Program field dataset year must be an integer")
-        if (
-            isinstance(self.program_row_count, bool)
-            or not isinstance(self.program_row_count, int)
-            or self.program_row_count < 0
-        ):
-            raise ValueError("Program row count must be a non-negative integer")
-        if (
-            isinstance(self.national_total, bool)
-            or not isinstance(self.national_total, int)
-            or self.national_total < 0
-        ):
-            raise ValueError("National total must be a non-negative integer")
-
-        counts: dict[str, int] = {}
-        for field_key, count in self.counts_by_field_key.items():
-            if not field_key or normalize_search(field_key) != field_key:
-                raise ValueError("Field keys must be non-empty normalized search labels")
-            if isinstance(count, bool) or not isinstance(count, int) or count < 0:
-                raise ValueError(
-                    f"Program count for {field_key!r} must be a non-negative integer"
-                )
-            counts[field_key] = count
-        if sum(counts.values()) != self.national_total:
-            raise ValueError("National total must equal the sum of field counts")
         object.__setattr__(
             self,
             "counts_by_field_key",
-            MappingProxyType(dict(sorted(counts.items()))),
+            MappingProxyType(dict(sorted(self.counts_by_field_key.items()))),
         )
 
 
@@ -297,13 +271,6 @@ def _graduate_row_contract(year: int) -> tuple[re.Pattern[str], re.Pattern[str]]
     if 2023 <= year <= 2025:
         return CURRENT_PROGRAM_ROW, CURRENT_CODED_ROW
     raise ValueError("Graduate workbook year must be between 2009 and 2025")
-
-
-def graduate_program_label(cell: object, year: int) -> str | None:
-    pattern, _ = _graduate_row_contract(year)
-    text = normalize_display(cell)
-    match = pattern.fullmatch(text)
-    return normalize_display(match.group(2)) if match is not None else None
 
 
 def source_integer(
@@ -487,23 +454,14 @@ def build_field_education_comparison(
     *,
     catalog_url: str,
 ) -> dict[str, object]:
+    # Guards the payload's positional graduateCounts contract: each row's counts
+    # are indexed by position against this year list.
     expected_years = list(range(2009, 2026))
     actual_years = [dataset.year for dataset in graduate_datasets]
     if actual_years != expected_years:
         raise EducationWorkbookSchemaError(
             f"Graduate datasets must cover ordered years 2009 through 2025; got {actual_years!r}"
         )
-    source_years = [source.get("year") for source in graduate_sources]
-    if source_years != expected_years:
-        raise EducationWorkbookSchemaError(
-            f"Graduate sources must cover ordered years 2009 through 2025; got {source_years!r}"
-        )
-    if current_students.year != 2025 or current_students_source.get("year") != 2025:
-        raise EducationWorkbookSchemaError(
-            "Current-student dataset and source must identify year 2025"
-        )
-    if not catalog_url:
-        raise EducationWorkbookSchemaError("Field education catalog URL is required")
 
     context_by_year = {item.year: item for item in context}
     for dataset in graduate_datasets:

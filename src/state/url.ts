@@ -9,7 +9,7 @@ const FILTER_VALUE_KEYS: readonly FilterValueKey[] = [
   'appointedOn',
 ]
 
-const OPTION_KEY_BY_FILTER: Record<
+export const OPTION_KEY_BY_FILTER: Record<
   FilterValueKey,
   | 'presidentIds'
   | 'cities'
@@ -35,11 +35,8 @@ function parseYear(value: string | null, minimum: number, maximum: number): numb
   return Number.isInteger(year) && year >= minimum && year <= maximum ? year : null
 }
 
-export function parseFilters(search: string | URLSearchParams, options: FilterOptions): FilterState {
-  const params =
-    search instanceof URLSearchParams
-      ? search
-      : new URLSearchParams(search.startsWith('?') ? search.slice(1) : search)
+export function parseFilters(search: string, options: FilterOptions): FilterState {
+  const params = new URLSearchParams(search)
   const { defaults } = options
   const parsed: FilterState = { ...defaults }
   const startYear = parseYear(params.get('startYear'), defaults.startYear, defaults.endYear)

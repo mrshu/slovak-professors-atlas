@@ -132,8 +132,9 @@ export function buildFieldCleanupReport(
   for (const record of records) recordsByKey.set(record.fieldKey, (recordsByKey.get(record.fieldKey) ?? 0) + 1)
   const squashed = new Map<string, string[]>()
   for (const fieldKey of recordsByKey.keys()) {
-    const group = squashed.get(squash(fieldKey))
-    if (group === undefined) squashed.set(squash(fieldKey), [fieldKey])
+    const key = squash(fieldKey)
+    const group = squashed.get(key)
+    if (group === undefined) squashed.set(key, [fieldKey])
     else group.push(fieldKey)
   }
   const unmergedCandidates: UnmergedCandidate[] = Array.from(squashed.values())

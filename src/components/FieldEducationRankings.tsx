@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 
+import { annualPeriodLabel } from '../analysis/fieldEducation'
 import type { FieldEducationLandscapeRow } from '../analysis/fieldEducation'
 import { formatNumber } from '../utils/format'
 import { normalizeForSearch } from '../utils/search'
@@ -153,14 +154,7 @@ export default function FieldEducationRankings({
     setSortKey(key)
     setSortDirection(key === 'label' ? 'ascending' : 'descending')
   }
-  const startYear = rows[0]?.annual[0]?.year
-  const endYear = rows[0]?.annual.at(-1)?.year
-  const periodLabel =
-    startYear === undefined || endYear === undefined
-      ? 'bez dostupného obdobia'
-      : startYear === endYear
-        ? String(startYear)
-        : `${startYear} – ${endYear}`
+  const periodLabel = annualPeriodLabel(rows[0]?.annual ?? [])
 
   return (
     <section className="field-education-rankings" aria-labelledby="field-education-rankings-title">

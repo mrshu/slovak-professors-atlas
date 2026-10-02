@@ -42,7 +42,6 @@
   --sp-4: 16px;
   --sp-5: 24px;
   --sp-6: 32px;
-  --sp-7: 48px;
 
   --t-1: 1.6rem;
   --t-2: 1.3rem;
@@ -53,8 +52,4 @@
 
   --series-1: #b0452c;
   --series-2: #0a8aa6;
-  --series-3: #a0721a;
-  --series-1-on-dark: #d9704e;
-  --series-2-on-dark: #3fb0c9;
-  --series-3-on-dark: #d4a83a;
 }

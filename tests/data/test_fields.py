@@ -24,7 +24,7 @@ def test_reviewed_aliases_assign_keys_without_mutating_raw_labels() -> None:
     assert len(catalog.aliases) == 13
     assert len(catalog.labels) == 416
     assert catalog.key_for("verejné zravotníctvo") == "verejne zdravotnictvo"
-    assert catalog.label_for("verejne zdravotnictvo") == "verejné zdravotníctvo"
+    assert catalog.labels["verejne zdravotnictvo"] == "verejné zdravotníctvo"
     assert catalog.key_for("medzináro+dné vzťahy") == "medzinarodne vztahy"
     assert any(item.field == "verejné zravotníctvo" for item in appointments)
 
@@ -78,3 +78,31 @@ def test_alias_validation_rejects_invalid_graphs(
 
     with pytest.raises(FieldAliasError, match=message):
         build_field_catalog(_appointments(), path)
+
+
+def test_canonical_label_tie_does_not_prefer_a_shouty_variant(tmp_path: Path) -> None:
+    """A tie between spellings must not be settled by raw code-point order.
+
+    Uppercase sorts before lowercase, so a naive tie-break would always pick the
+    ALL-CAPS spelling as the canonical label.
+    """
+    aliases = tmp_path / "aliases.json"
+    aliases.write_text(
+        json.dumps({"fyzka": "fyzika"}, ensure_ascii=False), encoding="utf-8"
+    )
+
+    class _Item:
+        def __init__(self, field: str) -> None:
+            self.field = field
+
+    catalog = build_field_catalog(
+        [
+            _Item("TEÓRIA A DEJINY UMENIA"),
+            _Item("teória a dejiny umenia"),
+            _Item("fyzka"),
+            _Item("fyzika"),
+        ],
+        aliases,
+    )
+
+    assert catalog.labels["teoria a dejiny umenia"] == "teória a dejiny umenia"

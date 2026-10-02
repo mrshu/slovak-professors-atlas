@@ -13,6 +13,15 @@ export interface FieldEducationAnnualValue {
   graduateCount: number | null
 }
 
+export function annualPeriodLabel(
+  annual: readonly FieldEducationAnnualValue[],
+): string {
+  const startYear = annual[0]?.year ?? null
+  const endYear = annual.at(-1)?.year ?? null
+  if (startYear === null || endYear === null) return 'bez dostupného obdobia'
+  return startYear === endYear ? String(startYear) : `${startYear} – ${endYear}`
+}
+
 export interface FieldEducationLandscapeRow {
   fieldKey: string
   canonicalLabel: string
@@ -169,21 +178,15 @@ export function buildFieldEducationLandscape(
     const exactAppointmentCount = group?.exactAppointmentCount ?? 0
     const aliasAppointmentCount = group?.aliasAppointmentCount ?? 0
     const education = educationRows.get(fieldKey)
-    const selectedGraduateCounts = selectedYears.map(
-      ({ index }) => education?.graduateCounts[index] ?? null,
-    )
-    const isMatched = selectedGraduateCounts.some((count) => count !== null)
-    const graduateCount = isMatched
-      ? selectedGraduateCounts.reduce<number>(
-          (total, count) => total + (count ?? 0),
-          0,
-        )
-      : null
     const annual = selectedYears.map(({ value, index }) => ({
       year: value.year,
       appointmentCount: group?.appointmentsByYear.get(value.year) ?? 0,
       graduateCount: education?.graduateCounts[index] ?? null,
     }))
+    const isMatched = annual.some((entry) => entry.graduateCount !== null)
+    const graduateCount = isMatched
+      ? annual.reduce<number>((total, entry) => total + (entry.graduateCount ?? 0), 0)
+      : null
     const labelVariants = group === undefined ? [] : variants(group)
     const row: FieldEducationLandscapeRow = {
       fieldKey,

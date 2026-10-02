@@ -19,6 +19,10 @@ export function formatNumber(
   return formatter.format(value)
 }
 
+export function formatPercent(value: number): string {
+  return `${formatNumber(value * 100, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`
+}
+
 export function formatAppointmentCount(count: number): string {
   const noun =
     count === 1

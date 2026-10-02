@@ -9,7 +9,7 @@ from zipfile import ZIP_DEFLATED, ZipFile
 import pytest
 
 import scripts.update_data as update_data
-from scripts.update_data import SourceIntegrityError, download_sources
+from scripts.update_data import SourceIntegrityError, _download_sources
 
 
 PROFESSOR_BYTES = b"professor workbook"
@@ -120,7 +120,7 @@ def test_download_sources_writes_verified_workbooks(tmp_path: Path) -> None:
             io.BytesIO(POPULATION_BYTES),
         ],
     ):
-        result = download_sources(provenance_path, destination)
+        result = _download_sources(provenance_path, destination, accept_new_checksums=False)
 
     assert [item.name for item in result] == [
         "professors",
@@ -147,7 +147,7 @@ def test_download_sources_rejects_unpinned_source_before_network(
 
     with patch("scripts.update_data.urllib.request.urlopen") as urlopen:
         with pytest.raises(SourceIntegrityError, match="professors"):
-            download_sources(provenance_path, destination)
+            _download_sources(provenance_path, destination, accept_new_checksums=False)
 
     urlopen.assert_not_called()
     assert not destination.exists()
@@ -167,7 +167,7 @@ def test_download_sources_rejects_changed_population_selection_before_network(
 
     with patch("scripts.update_data.urllib.request.urlopen") as urlopen:
         with pytest.raises(SourceIntegrityError, match="mid-year selection"):
-            download_sources(provenance_path, destination)
+            _download_sources(provenance_path, destination, accept_new_checksums=False)
 
     urlopen.assert_not_called()
     assert not destination.exists()
@@ -186,7 +186,7 @@ def test_checksum_mismatch_preserves_existing_destination(tmp_path: Path) -> Non
         return_value=io.BytesIO(PROFESSOR_BYTES),
     ):
         with pytest.raises(SourceIntegrityError, match="professors"):
-            download_sources(provenance_path, destination)
+            _download_sources(provenance_path, destination, accept_new_checksums=False)
 
     assert professor_path.read_bytes() == b"previous verified workbook"
     assert {path.name for path in destination.iterdir()} == {"professors.xls"}
@@ -387,7 +387,7 @@ def test_download_sources_extracts_historical_members_and_current_students(
         return io.BytesIO(direct[url])
 
     with patch("scripts.update_data.urllib.request.urlopen", side_effect=response):
-        result = download_sources(provenance_path, destination)
+        result = _download_sources(provenance_path, destination, accept_new_checksums=False)
 
     assert len(result) == 21
     assert (destination / "graduates-by-field/2009.xls").read_bytes() == b"graduates 2009"
@@ -454,7 +454,7 @@ def test_archive_failure_preserves_every_existing_destination(tmp_path: Path) ->
         ],
     ):
         with pytest.raises(SourceIntegrityError, match="archive member"):
-            download_sources(provenance_path, destination)
+            _download_sources(provenance_path, destination, accept_new_checksums=False)
 
     assert existing.read_bytes() == b"existing"
     assert {path.name for path in destination.iterdir()} == {"professors.xls"}

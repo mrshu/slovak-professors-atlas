@@ -60,7 +60,7 @@ function atlasState(): AtlasState {
       fields: [{ key: 'fyzika', canonicalLabel: 'fyzika' }],
       appointmentDates: ['2026-03-31', '2026-06-03'],
     },
-    setFilter: vi.fn(), setExclusiveFilter: vi.fn(), setDateRange: vi.fn(), setFieldEducationRange: vi.fn(),
+    setFilter: vi.fn(), setDateRange: vi.fn(), setFieldEducationRange: vi.fn(),
     setSelectedYear: vi.fn(), setTimelineYear: vi.fn(), setAppointmentDate: vi.fn(), setQuery: vi.fn(), resetFilters: vi.fn(),
   }
 }
@@ -344,7 +344,6 @@ const legacyData: AtlasData = {
     },
     geometry: { type: 'Polygon', coordinates: [] },
   },
-  editorialFacts: {} as AtlasData['editorialFacts'],
 }
 
 function RegisterHarness({ atlasData = legacyData }: { atlasData?: AtlasData }) {

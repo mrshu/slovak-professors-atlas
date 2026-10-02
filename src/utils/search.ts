@@ -53,7 +53,3 @@ export function createSearchMatcher(query: string): (appointment: Appointment) =
 
   return (appointment) => indexedAppointmentText(appointment).includes(normalizedQuery)
 }
-
-export function matchesSearch(appointment: Appointment, query: string): boolean {
-  return createSearchMatcher(query)(appointment)
-}

@@ -96,8 +96,9 @@ export default function FieldSection({
             onChange={(event) => {
               const value = event.currentTarget.value
               setQuery(value)
+              const needle = normalizeForSearch(value)
               const exact = landscape.allRows.find(
-                (row) => normalizeForSearch(row.canonicalLabel) === normalizeForSearch(value),
+                (row) => normalizeForSearch(row.canonicalLabel) === needle,
               )
               if (exact) onFieldSelect(exact.fieldKey)
             }}

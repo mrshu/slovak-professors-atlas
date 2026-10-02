@@ -25,13 +25,7 @@ export interface PointCoordinate {
   y: number
 }
 
-export interface PreviewRectangle extends PointCoordinate {
-  width: number
-  height: number
-}
-
 const COLLISION_RADIUS = 6
-const PREVIEW_MARGIN = 8
 
 export function fieldScaleDomain(
   values: readonly number[],
@@ -68,24 +62,26 @@ export function projectFieldPoints(
     : scaleLinear().domain(yDomain).range([bounds.y + bounds.height, bounds.y])
   const xFloor = xDomain[0]
   const yFloor = yDomain[0]
-  const ordered = [...points].sort((left, right) => left.fieldKey.localeCompare(right.fieldKey))
-  const collisionGroups = new Map<string, FieldEducationPoint[]>()
+  const placed = [...points]
+    .sort((left, right) => left.fieldKey.localeCompare(right.fieldKey))
+    .map((point) => ({
+      point,
+      analyticalX: xScale(mode === 'log' ? Math.max(point.appointmentCount, xFloor) : point.appointmentCount),
+      analyticalY: yScale(mode === 'log' ? Math.max(point.graduateCount, yFloor) : point.graduateCount),
+    }))
+  const collisionGroups = new Map<string, typeof placed>()
 
-  for (const point of ordered) {
-    const analyticalX = xScale(mode === 'log' ? Math.max(point.appointmentCount, xFloor) : point.appointmentCount)
-    const analyticalY = yScale(mode === 'log' ? Math.max(point.graduateCount, yFloor) : point.graduateCount)
-    const key = `${analyticalX}\u0000${analyticalY}`
+  for (const entry of placed) {
+    const key = `${entry.analyticalX}\u0000${entry.analyticalY}`
     const group = collisionGroups.get(key)
-    if (group === undefined) collisionGroups.set(key, [point])
-    else group.push(point)
+    if (group === undefined) collisionGroups.set(key, [entry])
+    else group.push(entry)
   }
 
   const projected: ProjectedFieldPoint[] = []
   for (const group of collisionGroups.values()) {
-    const collisionKeys = group.map(({ fieldKey }) => fieldKey)
-    for (const [index, point] of group.entries()) {
-      const analyticalX = xScale(mode === 'log' ? Math.max(point.appointmentCount, xFloor) : point.appointmentCount)
-      const analyticalY = yScale(mode === 'log' ? Math.max(point.graduateCount, yFloor) : point.graduateCount)
+    const collisionKeys = group.map(({ point }) => point.fieldKey)
+    for (const [index, { point, analyticalX, analyticalY }] of group.entries()) {
       const angle = -Math.PI / 2 + (2 * Math.PI * index) / group.length
       const radius = group.length === 1 ? 0 : COLLISION_RADIUS
       projected.push({
@@ -120,20 +116,6 @@ export function nearestProjectedPoint(
     }
   }
   return nearest
-}
-
-export function clampPreview(
-  rectangle: PreviewRectangle,
-  bounds: FieldProjectionBounds,
-): PointCoordinate {
-  const minimumX = bounds.x + PREVIEW_MARGIN
-  const minimumY = bounds.y + PREVIEW_MARGIN
-  const maximumX = Math.max(minimumX, bounds.x + bounds.width - rectangle.width - PREVIEW_MARGIN)
-  const maximumY = Math.max(minimumY, bounds.y + bounds.height - rectangle.height - PREVIEW_MARGIN)
-  return {
-    x: Math.min(maximumX, Math.max(minimumX, rectangle.x)),
-    y: Math.min(maximumY, Math.max(minimumY, rectangle.y)),
-  }
 }
 
 export function nextDirectionalPoint(

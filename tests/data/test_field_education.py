@@ -12,7 +12,6 @@ from pipeline.field_education import (
     EducationWorkbookSchemaError,
     ProgramFieldDataset,
     build_field_education_comparison,
-    graduate_program_label,
     load_current_student_fields,
     load_graduate_fields,
 )
@@ -120,16 +119,26 @@ def student_workbook(program_row: list[object]) -> FakeWorkbook:
 
 
 @pytest.mark.parametrize(
-    ("year", "cell", "expected"),
+    ("year", "cell", "expected_key"),
     [
         (2009, "1113700 matematika /Bc/", "matematika"),
         (2013, "1113R00 matematika", "matematika"),
         (2023, "1113R00/        matematika", "matematika"),
-        (2009, "1113700 etika, právo a politika /Bc/", "etika, právo a politika"),
+        (2009, "1113700 etika, právo a politika /Bc/", "etika, pravo a politika"),
     ],
 )
-def test_graduate_program_row_eras(year: int, cell: str, expected: str) -> None:
-    assert graduate_program_label(cell, year) == expected
+def test_graduate_program_row_eras(
+    monkeypatch: pytest.MonkeyPatch, year: int, cell: str, expected_key: str
+) -> None:
+    rows: dict[str, list[list[object]]] = {name: [] for name in GRADUATE_SHEETS}
+    rows["Tab2v"] = [graduate_row(cell, (1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0))]
+    monkeypatch.setattr(
+        field_education.xlrd, "open_workbook", lambda _: graduate_workbook(year, rows)
+    )
+
+    dataset = load_graduate_fields(Path("synthetic.xls"), year, catalog())
+
+    assert dataset.counts_by_field_key == {expected_key: 1}
 
 
 def test_graduate_parser_sums_total_columns_once_across_sheets(monkeypatch: pytest.MonkeyPatch) -> None:

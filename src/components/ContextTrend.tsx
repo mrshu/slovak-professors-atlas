@@ -117,7 +117,7 @@ export default function ContextTrend({
   const chart = useMemo(() => {
     const ordered = [...years].sort((a, b) => a.year - b.year)
     const baseline = ordered.find(({ year }) => year === 2000)
-    if (baseline === undefined || ordered.length === 0) {
+    if (baseline === undefined) {
       return null
     }
     const hasValidBaseline = SERIES.every(({ key }) => {

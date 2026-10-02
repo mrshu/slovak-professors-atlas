@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 
 import type { FieldEducationPoint } from '../analysis/fieldEducation'
 import {
-  clampPreview,
   generatedLabelKeys,
   nearestProjectedPoint,
   nextDirectionalPoint,
@@ -67,21 +66,6 @@ describe('interaction geometry', () => {
   it('selects only the nearest point within tolerance', () => {
     expect(nearestProjectedPoint(projected, { x: 12, y: 10 }, 6)?.fieldKey).toBe('a')
     expect(nearestProjectedPoint(projected, { x: 80, y: 80 }, 6)).toBeNull()
-  })
-
-  it('clamps previews to all four plot edges', () => {
-    expect(
-      clampPreview(
-        { x: -20, y: 190, width: 90, height: 60 },
-        { x: 0, y: 0, width: 200, height: 200 },
-      ),
-    ).toEqual({ x: 8, y: 132 })
-    expect(
-      clampPreview(
-        { x: 190, y: -10, width: 90, height: 60 },
-        { x: 0, y: 0, width: 200, height: 200 },
-      ),
-    ).toEqual({ x: 102, y: 8 })
   })
 
   it('navigates by spatial direction', () => {

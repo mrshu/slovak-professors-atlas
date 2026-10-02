@@ -58,7 +58,6 @@ export default function AppointmentTimeline({
     () => scaleSqrt().domain([1, maximumCeremonyCount]).range([3.5, 9]),
     [maximumCeremonyCount],
   )
-  const yearWidth = x(Date.UTC(START_YEAR + 1, 0, 1)) - x(DOMAIN_START)
 
   return (
     <figure className="appointment-timeline" aria-labelledby="appointment-timeline-title">

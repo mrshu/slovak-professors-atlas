@@ -52,7 +52,6 @@ function LoadedRegister({ data, atlasState }: LoadedRegisterProps) {
     setFilter,
     setDateRange,
     setTimelineYear,
-    setAppointmentDate,
     setQuery,
     resetFilters,
   } = atlasState

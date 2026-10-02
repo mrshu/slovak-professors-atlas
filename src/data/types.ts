@@ -181,56 +181,6 @@ export interface AtlasGeography {
     | { type: 'MultiPolygon'; coordinates: number[][][][] }
 }
 
-export interface StudentPeakFact {
-  year: number
-  academicYear: string
-  students: number
-}
-
-export interface GraduateThroughputPeakFact {
-  year: number
-  graduates: number
-  statementSk: string
-}
-
-export interface AppointmentRateMaximumFact {
-  year: number
-  appointments: number
-  students: number
-  appointmentsPer10kStudents: number
-}
-
-export interface AppointmentGraduateRateMaximumFact {
-  year: number
-  appointments: number
-  graduates: number
-  appointmentsPer1kGraduates: number
-  graduatesPerAppointment: number | null
-  statementSk: string
-}
-
-export interface AppointmentProfessorStockRateMaximumFact {
-  year: number
-  appointments: number
-  internalProfessors: number
-  appointmentsPer100Professors: number
-  statementSk: string
-}
-
-export interface LargestCeremonyFact {
-  appointedOn: string
-  appointments: number
-}
-
-export interface EditorialFacts {
-  studentPeak: StudentPeakFact
-  graduateThroughputPeak: GraduateThroughputPeakFact
-  appointmentRateMaximum: AppointmentRateMaximumFact
-  appointmentGraduateRateMaximum: AppointmentGraduateRateMaximumFact
-  appointmentProfessorStockRateMaximum: AppointmentProfessorStockRateMaximumFact
-  largestCeremony: LargestCeremonyFact
-}
-
 export interface AtlasData {
   meta: AtlasMeta
   sources: AtlasSources
@@ -243,5 +193,4 @@ export interface AtlasData {
   fieldCatalog: FieldCatalog
   fieldEducationComparison: FieldEducationComparison
   geography: AtlasGeography
-  editorialFacts: EditorialFacts
 }

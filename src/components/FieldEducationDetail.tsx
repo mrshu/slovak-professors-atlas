@@ -2,11 +2,13 @@ import { scaleLinear } from 'd3-scale'
 import { line } from 'd3-shape'
 import { useState, type KeyboardEvent, type PointerEvent } from 'react'
 
+import { annualPeriodLabel } from '../analysis/fieldEducation'
 import type {
   FieldEducationAnnualValue,
   FieldEducationLandscapeRow,
 } from '../analysis/fieldEducation'
 import { formatAppointmentCount, formatNumber } from '../utils/format'
+import { nextIndexFromKey } from './charts/keyboardIndex'
 
 interface FieldEducationDetailProps {
   row: FieldEducationLandscapeRow
@@ -60,25 +62,6 @@ function AnnualYAxis({
   )
 }
 
-function annualPeriod(annual: readonly FieldEducationAnnualValue[]): {
-  startYear: number | null
-  endYear: number | null
-  label: string
-} {
-  const startYear = annual[0]?.year ?? null
-  const endYear = annual.at(-1)?.year ?? null
-  return {
-    startYear,
-    endYear,
-    label:
-      startYear === null || endYear === null
-        ? 'bez dostupného obdobia'
-        : startYear === endYear
-          ? String(startYear)
-          : `${startYear} – ${endYear}`,
-  }
-}
-
 function yearStep(annual: readonly FieldEducationAnnualValue[]): number {
   return INNER_WIDTH / Math.max(annual.length, 1)
 }
@@ -124,28 +107,6 @@ function indexFromPointer(
   if (rectangle.width <= 0 || count === 0) return null
   const share = (event.clientX - rectangle.left) / rectangle.width
   return Math.min(count - 1, Math.max(0, Math.floor(share * count)))
-}
-
-function nextIndexFromKey(
-  key: string,
-  active: number | null,
-  count: number,
-): number | null | undefined {
-  if (count === 0) return undefined
-  switch (key) {
-    case 'ArrowRight':
-      return Math.min(count - 1, (active ?? -1) + 1)
-    case 'ArrowLeft':
-      return Math.max(0, (active ?? count) - 1)
-    case 'Home':
-      return 0
-    case 'End':
-      return count - 1
-    case 'Escape':
-      return null
-    default:
-      return undefined
-  }
 }
 
 function useYearInteraction(
@@ -367,7 +328,7 @@ function readout(value: FieldEducationAnnualValue | undefined): string {
 
 export default function FieldEducationDetail({ row }: FieldEducationDetailProps) {
   const hasGraduates = row.graduateCount !== null && row.graduatesPerAppointment !== null
-  const period = annualPeriod(row.annual)
+  const period = annualPeriodLabel(row.annual)
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
   const readoutId = `field-detail-readout-${row.fieldKey}`
   const activeValue = activeIndex === null ? undefined : row.annual[activeIndex]
@@ -377,11 +338,11 @@ export default function FieldEducationDetail({ row }: FieldEducationDetailProps)
       <h3 id={`field-detail-${row.fieldKey}`}>{row.canonicalLabel}</h3>
       <dl className="field-education-detail__totals">
         <div>
-          <dt>Vymenovania {period.label}</dt>
+          <dt>Vymenovania {period}</dt>
           <dd>{formatNumber(row.appointmentCount)}</dd>
         </div>
         <div>
-          <dt>Absolventi {period.label}</dt>
+          <dt>Absolventi {period}</dt>
           <dd>{row.graduateCount === null ? 'nedostupné' : formatNumber(row.graduateCount)}</dd>
         </div>
         <div>

@@ -1,20 +1,15 @@
 import { describe, expect, it } from 'vitest'
 
-import type { Affiliation, Appointment, AtlasData, Institution, President } from '../data/types'
+import type { Affiliation, Appointment, AtlasData, Institution } from '../data/types'
 import type { FilterState } from '../state/filters'
 import {
-  academicBreadth,
-  ceremonyCadence,
   ceremonyCounts,
   cityCounts,
   cityFieldRanking,
-  facultyCounts,
-  fieldAppointmentLandscape,
   fieldAppointmentRanking,
+  facultyDistribution,
   filterAppointments,
-  institutionConcentration,
   institutionRanking,
-  presidentialEraProfiles,
   yearCounts,
 } from './selectors'
 import { normalizeForSearch } from '../utils/search'
@@ -109,23 +104,6 @@ const affiliations: Affiliation[] = [
     sourceUrl: null,
     sourceLabel: 'VŠZaSP',
     note: 'Viac pracovísk',
-  },
-]
-
-const presidents: President[] = [
-  {
-    id: 'later',
-    name: 'Neskoršie obdobie',
-    from: '2024-06-15',
-    to: null,
-    citationUrl: 'https://example.test/later',
-  },
-  {
-    id: 'earlier',
-    name: 'Skoršie obdobie',
-    from: '2019-06-15',
-    to: '2024-06-15',
-    citationUrl: 'https://example.test/earlier',
   },
 ]
 
@@ -310,7 +288,10 @@ describe('deterministic aggregate selectors', () => {
       { city: 'Bratislava', count: 2 },
       { city: 'Košice', count: 1 },
     ])
-    expect(facultyCounts(cohort)).toEqual([{ faculty: 'Lekárska fakulta', count: 2 }])
+    expect(facultyDistribution(cohort)).toEqual([
+      { faculty: 'Lekárska fakulta', count: 2 },
+      { faculty: 'neuvedené', count: 1 },
+    ])
     expect(yearCounts(cohort)).toEqual([
       { year: 2022, count: 1 },
       { year: 2023, count: 2 },
@@ -346,43 +327,10 @@ describe('deterministic aggregate selectors', () => {
       { city: 'Martin', count: 1 },
       { city: 'Prešov', count: 1 },
     ])
-    expect(academicBreadth(cohort, affiliations)).toMatchObject({
-      cityCount: 2,
-      institutionCount: 3,
-    })
     expect(cohort).toHaveLength(3)
   })
 
-  it('derives Task 7 cadence, breadth, and top-three concentration from one cohort', () => {
-    const cohort = [
-      record({ id: 'u1', appointedOn: '2023-01-01' }),
-      record({ id: 'u2', appointedOn: '2023-01-01' }),
-      record({ id: 't1', institutionId: 'tuke', faculty: null, appointedOn: '2023-01-11' }),
-      record({ id: 'a1', institutionId: 'aku', faculty: 'Fakulta umení', appointedOn: '2023-01-31' }),
-    ]
-
-    expect(ceremonyCadence(cohort)).toEqual({
-      ceremonyCount: 3,
-      medianBatchSize: 1,
-      largestBatchSize: 2,
-      medianElapsedDays: 15,
-    })
-    expect(academicBreadth(cohort, affiliations)).toEqual({
-      cityCount: 3,
-      institutionCount: 3,
-      facultyCount: 2,
-    })
-    expect(institutionConcentration(cohort, institutions)).toEqual({
-      totalCount: 4,
-      topThreeCount: 4,
-      topThreeShare: 1,
-      leadingInstitutionId: 'uniba',
-      leadingInstitutionName: 'UK v Bratislave',
-      leadingInstitutionCount: 2,
-    })
-  })
-
-  it('excludes empty, whitespace-only, and null faculties from aggregation and breadth', () => {
+  it('buckets empty, whitespace-only, and null faculties as unstated', () => {
     const cohort = [
       record({ id: 'named', faculty: 'Lekárska fakulta' }),
       record({ id: 'empty', faculty: '' }),
@@ -390,126 +338,10 @@ describe('deterministic aggregate selectors', () => {
       record({ id: 'null', faculty: null }),
     ]
 
-    expect(facultyCounts(cohort)).toEqual([{ faculty: 'Lekárska fakulta', count: 1 }])
-    expect(academicBreadth(cohort, affiliations).facultyCount).toBe(1)
-  })
-
-  it('orders represented presidential eras by official start and resolves leader ties by Slovak label', () => {
-    const cohort = [
-      record({ id: 'later-tuke', presidentId: 'later', institutionId: 'tuke' }),
-      record({ id: 'later-aku', presidentId: 'later', institutionId: 'aku' }),
-      record({ id: 'earlier-u', presidentId: 'earlier', institutionId: 'uniba' }),
-    ]
-
-    expect(presidentialEraProfiles(cohort, institutions, affiliations, presidents)).toEqual([
-      {
-        presidentId: 'earlier',
-        presidentName: 'Skoršie obdobie',
-        from: '2019-06-15',
-        to: '2024-06-15',
-        leadingInstitutionId: 'uniba',
-        leadingInstitutionName: 'UK v Bratislave',
-        cityCount: 1,
-        institutionCount: 1,
-        facultyCount: 1,
-        topThreeShare: 1,
-      },
-      {
-        presidentId: 'later',
-        presidentName: 'Neskoršie obdobie',
-        from: '2024-06-15',
-        to: null,
-        leadingInstitutionId: 'aku',
-        leadingInstitutionName: 'Akadémia umení',
-        cityCount: 2,
-        institutionCount: 2,
-        facultyCount: 1,
-        topThreeShare: 1,
-      },
+    expect(facultyDistribution(cohort)).toEqual([
+      { faculty: 'neuvedené', count: 3 },
+      { faculty: 'Lekárska fakulta', count: 1 },
     ])
-  })
-
-  it('counts only distinct nonblank named faculties and computes each era top-three share', () => {
-    const cohort = [
-      record({
-        id: 'u1',
-        presidentId: 'earlier',
-        institutionId: 'uniba',
-        faculty: 'Fakulta A',
-      }),
-      record({
-        id: 'u2',
-        presidentId: 'earlier',
-        institutionId: 'uniba',
-        faculty: 'Fakulta A',
-      }),
-      record({ id: 't1', presidentId: 'earlier', institutionId: 'tuke', faculty: '' }),
-      record({ id: 'a1', presidentId: 'earlier', institutionId: 'aku', faculty: '   ' }),
-      record({ id: 'x1', presidentId: 'earlier', institutionId: 'stvrta', faculty: null }),
-    ]
-    const expandedInstitutions = [
-      ...institutions,
-      {
-        ...institutions[0]!,
-        id: 'stvrta',
-        shortName: 'Žilinská univerzita',
-        fullName: 'Žilinská univerzita v Žiline',
-        citationUrl: 'https://example.test/stvrta',
-      },
-    ]
-
-    const expandedAffiliations: Affiliation[] = [
-      ...affiliations,
-      {
-        id: 'stvrta-default',
-        institutionId: 'stvrta',
-        facultyKeys: [],
-        status: 'resolved',
-        city: 'Žilina',
-        sourceUrl: 'https://www.uniza.sk/',
-        sourceLabel: 'Žilinská univerzita',
-        note: null,
-      },
-    ]
-    expect(
-      presidentialEraProfiles(cohort, expandedInstitutions, expandedAffiliations, presidents)[0],
-    ).toMatchObject({
-      facultyCount: 1,
-      cityCount: 4,
-      institutionCount: 4,
-      topThreeShare: 0.8,
-    })
-  })
-
-  it('uses the already-filtered cohort, omits unrepresented terms, and defines empty output', () => {
-    const eraData = {
-      records: [
-        record({ id: 'earlier', presidentId: 'earlier', appointedOn: '2023-05-12' }),
-        record({ id: 'later', presidentId: 'later', appointedOn: '2025-05-12' }),
-      ],
-      institutions,
-      affiliations,
-    } as AtlasData
-    const laterOnly = filterAppointments(eraData, {
-      ...allFilters,
-      startYear: 2025,
-      endYear: 2025,
-      presidentId: 'later',
-      city: null,
-      institutionId: null,
-      faculty: null,
-      field: null,
-      appointedOn: null,
-      query: '',
-      selectedYear: 2025,
-    })
-
-    expect(
-      presidentialEraProfiles(laterOnly, institutions, affiliations, presidents).map(
-        ({ presidentId }) => presidentId,
-      ),
-    ).toEqual(['later'])
-    expect(presidentialEraProfiles([], institutions, affiliations, presidents)).toEqual([])
   })
 
   it('groups all-time fields only across accent, case, and whitespace variants', () => {
@@ -571,124 +403,6 @@ describe('deterministic aggregate selectors', () => {
     ])
   })
 
-  it('summarizes whole-register and selected-cohort shares without applying the field facet', () => {
-    const wholeRegister = [
-      record({ id: 'art-2000', field: 'Teória a dejiny umenia', appointedOn: '2000-02-22' }),
-      record({ id: 'art-2010', field: ' teoria  A dejiny umenia ', appointedOn: '2010-05-12' }),
-      record({ id: 'art-2025', field: 'Teória a dejiny umenia', appointedOn: '2025-05-12' }),
-      record({ id: 'music-1', field: 'teória a dejiny hudby' }),
-      record({ id: 'music-2', field: 'TEORIA A DEJINY HUDBY' }),
-      record({ id: 'hyphenated', field: 'Teória-a dejiny umenia' }),
-    ]
-    const selection = [wholeRegister[0], wholeRegister[1], wholeRegister[3]].filter(
-      (appointment): appointment is Appointment => appointment !== undefined,
-    )
-
-    expect(
-      fieldAppointmentLandscape(wholeRegister, selection, fieldLabels(wholeRegister)),
-    ).toEqual({
-      wholeRegister: {
-        appointmentCount: 6,
-        distinctFieldCount: 3,
-        singletonFieldCount: 1,
-        leadingFieldKey: 'teoria a dejiny umenia',
-        leadingField: 'Teória a dejiny umenia',
-        leadingAppointmentCount: 3,
-        leadingShare: 0.5,
-        topTenCount: 6,
-        topTenShare: 1,
-        firstYear: 2000,
-        lastYear: 2025,
-      },
-      selection: {
-        appointmentCount: 3,
-        distinctFieldCount: 2,
-        singletonFieldCount: 1,
-        leadingFieldKey: 'teoria a dejiny umenia',
-        leadingField: 'Teória a dejiny umenia',
-        leadingAppointmentCount: 2,
-        leadingShare: 2 / 3,
-        topTenCount: 3,
-        topTenShare: 1,
-        firstYear: 2000,
-        lastYear: 2023,
-      },
-      rows: [
-        {
-          fieldKey: 'teoria a dejiny umenia',
-          field: 'Teória a dejiny umenia',
-          wholeRegisterAppointmentCount: 3,
-          wholeRegisterShare: 0.5,
-          selectionAppointmentCount: 2,
-          selectionShare: 2 / 3,
-          firstYear: 2000,
-          lastYear: 2025,
-          variants: [
-            { label: 'Teória a dejiny umenia', count: 2 },
-            { label: ' teoria  A dejiny umenia ', count: 1 },
-          ],
-        },
-        {
-          fieldKey: 'teoria a dejiny hudby',
-          field: 'TEORIA A DEJINY HUDBY',
-          wholeRegisterAppointmentCount: 2,
-          wholeRegisterShare: 1 / 3,
-          selectionAppointmentCount: 1,
-          selectionShare: 1 / 3,
-          firstYear: 2023,
-          lastYear: 2023,
-          variants: [
-            { label: 'TEORIA A DEJINY HUDBY', count: 1 },
-            { label: 'teória a dejiny hudby', count: 1 },
-          ],
-        },
-        {
-          fieldKey: 'teoria-a dejiny umenia',
-          field: 'Teória-a dejiny umenia',
-          wholeRegisterAppointmentCount: 1,
-          wholeRegisterShare: 1 / 6,
-          selectionAppointmentCount: 0,
-          selectionShare: 0,
-          firstYear: 2023,
-          lastYear: 2023,
-          variants: [{ label: 'Teória-a dejiny umenia', count: 1 }],
-        },
-      ],
-    })
-  })
-
-  it('defines empty field landscape summaries without invented leaders or years', () => {
-    expect(fieldAppointmentLandscape([], [], {})).toEqual({
-      wholeRegister: {
-        appointmentCount: 0,
-        distinctFieldCount: 0,
-        singletonFieldCount: 0,
-        leadingFieldKey: null,
-        leadingField: null,
-        leadingAppointmentCount: 0,
-        leadingShare: 0,
-        topTenCount: 0,
-        topTenShare: 0,
-        firstYear: null,
-        lastYear: null,
-      },
-      selection: {
-        appointmentCount: 0,
-        distinctFieldCount: 0,
-        singletonFieldCount: 0,
-        leadingFieldKey: null,
-        leadingField: null,
-        leadingAppointmentCount: 0,
-        leadingShare: 0,
-        topTenCount: 0,
-        topTenShare: 0,
-        firstYear: null,
-        lastYear: null,
-      },
-      rows: [],
-    })
-  })
-
   it('does not infer broad categories and defines an empty ranking', () => {
     const distinctProgrammeNames = [
       record({ id: 'program-1', field: 'učiteľstvo psychológie' }),
@@ -709,9 +423,6 @@ describe('deterministic aggregate selectors', () => {
     institutionRanking(records, institutions)
     cityCounts(records, affiliations)
     yearCounts(records)
-    ceremonyCadence(records)
-    academicBreadth(records, affiliations)
-    institutionConcentration(records, institutions)
     fieldAppointmentRanking(records, fieldLabels(records))
 
     expect(records).toEqual(beforeRecords)

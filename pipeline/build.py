@@ -4,14 +4,11 @@ import argparse
 import hashlib
 import json
 import re
-from collections import Counter, defaultdict
+from collections import defaultdict
 from datetime import date
 from collections.abc import Mapping, Sequence
-from fractions import Fraction
 from pathlib import Path
 from typing import Any
-
-import xlrd
 
 from pipeline.affiliations import (
     DEFAULT_AFFILIATION_LOCATIONS_PATH,
@@ -38,8 +35,7 @@ from pipeline.models import (
     ProfessorDataset,
     SourceVariant,
 )
-from pipeline.professors import APPOINTMENT_SHEET, load_appointments
-from pipeline.text import normalize_display
+from pipeline.professors import load_appointments
 
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -55,11 +51,6 @@ DEFAULT_POPULATION_PATH = _PROJECT_ROOT / "public/data/source/population.json"
 DEFAULT_GEOMETRY_PATH = _PROJECT_ROOT / "data/config/slovakia.geojson"
 DEFAULT_PROVENANCE_PATH = _PROJECT_ROOT / "public/data/provenance.json"
 DEFAULT_OUTPUT_PATH = _PROJECT_ROOT / "public/data/atlas.json"
-_SOURCE_PATH_KEYS = (
-    "professors",
-    "higher_education",
-    "population",
-)
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _POPULATION_SELECTION = {
     "geography": {"code": "SK0", "label": "Slovak Republic"},
@@ -140,21 +131,19 @@ def _validated_provenance(
     population_path: Path,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     provenance = _load_object(provenance_path, "source provenance")
-    sources = provenance.get("sources")
-    if not isinstance(sources, dict) or set(sources) != set(_SOURCE_PATH_KEYS):
-        raise AtlasBuildError(
-            f"Source provenance must contain exactly {', '.join(_SOURCE_PATH_KEYS)}"
-        )
     paths = {
         "professors": professors_path,
         "higher_education": context_path,
         "population": population_path,
     }
-    for key in _SOURCE_PATH_KEYS:
-        _validated_source_file(sources[key], key=key, path=paths[key])
-
+    sources = provenance.get("sources")
+    if not isinstance(sources, dict) or set(sources) != set(paths):
+        raise AtlasBuildError(
+            f"Source provenance must contain exactly {', '.join(paths)}"
+        )
+    for key, path in paths.items():
+        _validated_source_file(sources[key], key=key, path=path)
     population_source = sources["population"]
-    assert isinstance(population_source, dict)
     if (
         population_source.get("selection") != _POPULATION_SELECTION
         or population_source.get("denominatorDateConvention")
@@ -244,15 +233,6 @@ def _validated_geography(path: Path) -> dict[str, Any]:
                 f"Slovakia geometry must retain non-empty {key!r} provenance"
             )
     return feature
-
-
-def _source_surnames(path: Path) -> dict[int, str]:
-    workbook = xlrd.open_workbook(str(path))
-    sheet = workbook.sheet_by_name(APPOINTMENT_SHEET)
-    return {
-        row_index + 1: normalize_display(sheet.cell_value(row_index, 2))
-        for row_index in range(1, sheet.nrows)
-    }
 
 
 def _source_variant_payload(variant: SourceVariant) -> dict[str, object]:
@@ -361,110 +341,6 @@ def _city_payload(
     ]
 
 
-def _format_slovak_integer(value: int) -> str:
-    return f"{value:,}".replace(",", "\u00a0")
-
-
-def _format_slovak_decimal(value: float) -> str:
-    return f"{value:.2f}".rstrip("0").rstrip(".").replace(".", ",")
-
-
-def _editorial_facts(
-    appointments: Sequence[Appointment], context: Sequence[ContextYear]
-) -> dict[str, object]:
-    if not appointments or not context:
-        raise AtlasBuildError("Editorial facts require appointments and context")
-    student_peak = max(context, key=lambda item: (item.students, -item.year))
-    graduate_peak = max(context, key=lambda item: (item.graduates, -item.year))
-    rate_maximum = max(
-        context,
-        key=lambda item: (Fraction(item.appointments, item.students), -item.year),
-    )
-    graduate_rate_maximum = max(
-        context,
-        key=lambda item: (Fraction(item.appointments, item.graduates), -item.year),
-    )
-    professor_stock_rate_maximum = max(
-        context,
-        key=lambda item: (
-            Fraction(item.appointments, item.internal_professors),
-            -item.year,
-        ),
-    )
-    graduate_rate_text = _format_slovak_decimal(
-        graduate_rate_maximum.appointments_per_1k_graduates
-    )
-    professor_stock_rate_text = _format_slovak_decimal(
-        professor_stock_rate_maximum.appointments_per_100_professors
-    )
-    ceremony_counts = Counter(item.appointed_on for item in appointments)
-    largest_date, largest_count = max(
-        ceremony_counts.items(), key=lambda item: (item[1], -item[0].toordinal())
-    )
-    return {
-        "studentPeak": {
-            "year": student_peak.year,
-            "academicYear": student_peak.academic_year,
-            "students": student_peak.students,
-        },
-        "graduateThroughputPeak": {
-            "year": graduate_peak.year,
-            "graduates": graduate_peak.graduates,
-            "statementSk": (
-                f"V roku {graduate_peak.year} evidovalo CVTI "
-                f"{_format_slovak_integer(graduate_peak.graduates)} absolventov "
-                "I., II. a III. stupňa, najviac v sledovanom období."
-            ),
-        },
-        "appointmentRateMaximum": {
-            "year": rate_maximum.year,
-            "appointments": rate_maximum.appointments,
-            "students": rate_maximum.students,
-            "appointmentsPer10kStudents": (
-                rate_maximum.appointments_per_10k_students
-            ),
-        },
-        "appointmentGraduateRateMaximum": {
-            "year": graduate_rate_maximum.year,
-            "appointments": graduate_rate_maximum.appointments,
-            "graduates": graduate_rate_maximum.graduates,
-            "appointmentsPer1kGraduates": (
-                graduate_rate_maximum.appointments_per_1k_graduates
-            ),
-            "graduatesPerAppointment": (
-                graduate_rate_maximum.graduates_per_appointment
-            ),
-            "statementSk": (
-                f"V roku {graduate_rate_maximum.year} pripadlo "
-                f"{graduate_rate_text} "
-                "profesorských vymenovaní na 1\u00a0000 absolventov, najviac "
-                "v sledovanom období; oba údaje sú ročné toky."
-            ),
-        },
-        "appointmentProfessorStockRateMaximum": {
-            "year": professor_stock_rate_maximum.year,
-            "appointments": professor_stock_rate_maximum.appointments,
-            "internalProfessors": (
-                professor_stock_rate_maximum.internal_professors
-            ),
-            "appointmentsPer100Professors": (
-                professor_stock_rate_maximum.appointments_per_100_professors
-            ),
-            "statementSk": (
-                f"V roku {professor_stock_rate_maximum.year} pripadlo "
-                f"{professor_stock_rate_text} "
-                "profesorských vymenovaní na 100 profesorov medzi internými "
-                "učiteľmi; ide o porovnanie ročného toku so stavom, nie "
-                "o zmenu počtu profesorov."
-            ),
-        },
-        "largestCeremony": {
-            "appointedOn": largest_date.isoformat(),
-            "appointments": largest_count,
-        },
-    }
-
-
 def build_payload(
     dataset: ProfessorDataset,
     context: Sequence[ContextYear],
@@ -475,8 +351,6 @@ def build_payload(
     affiliation_by_appointment: Mapping[str, str],
     affiliations: Sequence[Affiliation],
     cities: Sequence[City],
-    *,
-    surnames_by_source_row: Mapping[int, str],
 ) -> dict[str, object]:
     """Assemble the complete static atlas payload from validated inputs."""
     context_years = [item.year for item in context]
@@ -485,21 +359,11 @@ def build_payload(
             f"Context years must be 2000 through 2025, got {context_years!r}"
         )
 
-    missing_surnames = [
-        appointment.source_variants[0].row_number
-        for appointment in dataset.appointments
-        if appointment.source_variants[0].row_number not in surnames_by_source_row
-    ]
-    if missing_surnames:
-        raise AtlasBuildError(
-            f"Missing source surnames for rows {sorted(missing_surnames)!r}"
-        )
-
     sorted_appointments = sorted(
         dataset.appointments,
         key=lambda item: (
             -item.appointed_on.toordinal(),
-            surnames_by_source_row[item.source_variants[0].row_number],
+            item.last_name,
             item.source_variants[0].row_number,
         ),
     )
@@ -534,7 +398,6 @@ def build_payload(
         "fieldEducationComparison": dict(field_education_comparison),
         "context": [_context_payload(item) for item in context],
         "geography": dict(geography),
-        "editorialFacts": _editorial_facts(dataset.appointments, context),
     }
 
 
@@ -610,7 +473,6 @@ def build_atlas(
         affiliation_by_appointment,
         affiliations,
         cities,
-        surnames_by_source_row=_source_surnames(professors_path),
     )
     serialized = json.dumps(
         payload,

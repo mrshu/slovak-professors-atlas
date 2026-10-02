@@ -220,13 +220,12 @@ export default function SlovakiaMap({
   const labelledCities = useMemo(
     () =>
       new Set(
-        projectedCities
+        paintedCities
           .filter(({ count }) => count > 0)
-          .sort((left, right) => right.count - left.count || left.city.localeCompare(right.city, 'sk-SK'))
           .slice(0, Math.max(0, labelLimit))
           .map(({ city }) => city),
       ),
-    [labelLimit, projectedCities],
+    [labelLimit, paintedCities],
   )
 
   return (

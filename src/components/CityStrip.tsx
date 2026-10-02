@@ -1,4 +1,4 @@
-import { formatNumber } from '../utils/format'
+import { formatNumber, formatPercent } from '../utils/format'
 
 export interface CityStripCell {
   city: string
@@ -19,10 +19,6 @@ interface CityStripProps {
 const SPARK_W = 120
 const SPARK_H = 26
 const SHARE_MAX = 0.45
-
-function pct(value: number): string {
-  return `${formatNumber(value * 100, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`
-}
 
 function deltaText(delta: number | null): string {
   if (delta === null) return '—'
@@ -52,7 +48,7 @@ export default function CityStrip({
         const path = points
           .map(([x, y], index) => `${index === 0 ? 'M' : 'L'}${x.toFixed(1)} ${y.toFixed(1)}`)
           .join(' ')
-        const label = `${cell.city}: ${pct(cell.share)}, ${
+        const label = `${cell.city}: ${formatPercent(cell.share)}, ${
           cell.delta === null
             ? 'bez porovnania'
             : `zmena ${deltaText(cell.delta).replace(' b.', ' bodu')}`
@@ -80,7 +76,7 @@ export default function CityStrip({
               <i style={{ width: `${(Math.min(cell.share, SHARE_MAX) / SHARE_MAX) * 100}%` }} />
             </span>
             <span className="city-strip__values" aria-hidden="true">
-              <b>{pct(cell.share)}</b>
+              <b>{formatPercent(cell.share)}</b>
               <span>{deltaText(cell.delta)}</span>
             </span>
             <svg viewBox={`0 0 ${SPARK_W} ${SPARK_H}`} aria-hidden="true">

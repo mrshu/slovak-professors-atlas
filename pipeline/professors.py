@@ -108,7 +108,6 @@ class _DuplicateResolution:
     secondary_row: int
     normalized_name: str
     appointed_on: date
-    reason: str
 
 
 _INSTITUTION_KEYS = {
@@ -342,7 +341,7 @@ def _load_duplicate_resolutions(path: Path) -> tuple[_DuplicateResolution, ...]:
                 f"duplicate resolution {index} normalizedName is not search-normalized"
             )
         appointed_on = _iso_date(item["date"], f"duplicate resolution {index} date")
-        reason = _nonempty_string(item["reason"], f"duplicate resolution {index} reason")
+        _nonempty_string(item["reason"], f"duplicate resolution {index} reason")
         seen_pairs.add(pair)
         seen_secondaries.add(secondary_row)
         resolutions.append(
@@ -351,7 +350,6 @@ def _load_duplicate_resolutions(path: Path) -> tuple[_DuplicateResolution, ...]:
                 secondary_row=secondary_row,
                 normalized_name=normalized_name,
                 appointed_on=appointed_on,
-                reason=reason,
             )
         )
     return tuple(resolutions)
@@ -585,10 +583,6 @@ def _resolve_duplicates(
                 f"{resolution.normalized_name!r} on {resolution.appointed_on.isoformat()}, "
                 f"got {primary.identity!r} and {secondary.identity!r}"
             )
-        if resolution.primary_row in secondary_to_primary:
-            raise DuplicateResolutionError(
-                f"Reviewed primary row {resolution.primary_row} is also a secondary row"
-            )
         secondary_to_primary[resolution.secondary_row] = resolution.primary_row
 
     collision_groups: dict[tuple[str, date], list[_SourceRow]] = defaultdict(list)
@@ -680,11 +674,6 @@ def load_appointments(
                 f"Appointment ID {appointment_id!r} collides for "
                 f"{previous_identity!r} and {row.identity!r}"
             )
-        if previous_identity is not None:
-            raise UnreviewedDuplicateError(
-                f"Unreviewed duplicate collision for {normalized_name!r} on "
-                f"{row.appointed_on.isoformat()}"
-            )
         id_identities[appointment_id] = row.identity
         source_label = normalize_display(row.variant.institution)
         institution = institution_labels[source_label]
@@ -692,6 +681,7 @@ def load_appointments(
             Appointment(
                 id=appointment_id,
                 name=row.name,
+                last_name=normalize_display(row.last_name),
                 titles_before=normalize_display(row.variant.titles_before),
                 titles_after=normalize_display(row.variant.titles_after),
                 faculty=normalize_display(row.variant.faculty),

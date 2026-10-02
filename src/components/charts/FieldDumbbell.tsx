@@ -1,15 +1,11 @@
 import { scaleLinear } from 'd3-scale'
 
 import type { FieldShareRow } from '../../analysis/findings'
-import { formatNumber } from '../../utils/format'
+import { formatNumber, formatPercent } from '../../utils/format'
 
 const W = 380
 const M = { l: 150, r: 14, t: 18, b: 4 }
 const ROW = 21
-
-function pct(value: number): string {
-  return `${formatNumber(value * 100, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`
-}
 
 interface FieldDumbbellProps {
   rows: readonly FieldShareRow[]
@@ -42,7 +38,7 @@ export default function FieldDumbbell({ rows, onSelect }: FieldDumbbellProps) {
             role="button"
             tabIndex={0}
             className="chart__row"
-            aria-label={`${row.label}: ${pct(row.graduateShare)} absolventov, ${pct(row.appointmentShare)} vymenovaní; vybrať odbor`}
+            aria-label={`${row.label}: ${formatPercent(row.graduateShare)} absolventov, ${formatPercent(row.appointmentShare)} vymenovaní; vybrať odbor`}
             onClick={() => onSelect(row.fieldKey)}
             onKeyDown={(event) => {
               if (event.key === 'Enter' || event.key === ' ') {

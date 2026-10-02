@@ -43,32 +43,37 @@ export default function MapStage({ data, atlasState }: MapStageProps) {
     () => citySharesByPeriod(data.records, data.affiliations),
     [data.affiliations, data.records],
   )
-  const baseline = byPeriod.get(FIVE_YEAR_PERIODS[0]!.label) ?? []
+  const shares = useMemo(
+    () => cityShares(stageRecords, data.affiliations),
+    [data.affiliations, stageRecords],
+  )
   // Every located city, not just the seven the strip has room for: the readout
   // has to answer for whatever the pointer lands on.
   const sharesByCity = useMemo(
-    () => new Map(cityShares(stageRecords, data.affiliations).map((entry) => [entry.city, entry])),
-    [data.affiliations, stageRecords],
+    () => new Map(shares.map((entry) => [entry.city, entry])),
+    [shares],
   )
   const cells = useMemo<CityStripCell[]>(() => {
-    const current = cityShares(stageRecords, data.affiliations).slice(0, STRIP_SIZE)
-    return current.map(({ city, share }) => {
-      const base = baseline.find((entry) => entry.city === city)?.share ?? 0
+    const baseline = byPeriod.get(FIVE_YEAR_PERIODS[0]!.label) ?? []
+    return shares.slice(0, STRIP_SIZE).map(({ city, share }) => {
+      // series[0] is the same period lookup `base` was doing separately.
+      const series = FIVE_YEAR_PERIODS.map(
+        (period) =>
+          byPeriod.get(period.label)?.find((entry) => entry.city === city)?.share ?? 0,
+      )
       return {
         city,
         share,
-        delta: activeIndex <= 0 || baseline.length === 0 ? null : (share - base) * 100,
-        series: FIVE_YEAR_PERIODS.map(
-          (period) =>
-            byPeriod.get(period.label)?.find((entry) => entry.city === city)?.share ?? 0,
-        ),
+        delta: activeIndex <= 0 || baseline.length === 0 ? null : (share - series[0]!) * 100,
+        series,
       }
     })
-  }, [activeIndex, baseline, byPeriod, data.affiliations, stageRecords])
+  }, [activeIndex, byPeriod, shares])
 
   const chips = activeFilterChips(data, atlasState)
   const inspectedCity = hoveredCity ?? filters.city
   const inspected = sharesByCity.get(inspectedCity ?? '') ?? null
+  const inspectedEmpty = inspected === null || inspected.count === 0
   const toggleCity = (city: string) =>
     setFilter('city', filters.city === city ? null : city, 'push')
 
@@ -149,7 +154,7 @@ export default function MapStage({ data, atlasState }: MapStageProps) {
           ) : (
             <>
               <strong>{inspectedCity}</strong>
-              {inspected === undefined || inspected === null || inspected.count === 0
+              {inspectedEmpty
                 ? ' · v tomto výbere bez vymenovania'
                 : ` · ${formatAppointmentCount(inspected.count)} · ${formatNumber(inspected.share * 100, {
                     minimumFractionDigits: 1,
@@ -157,7 +162,7 @@ export default function MapStage({ data, atlasState }: MapStageProps) {
                   })} % výberu`}
               {inspectedCity === filters.city
                 ? ' · kliknutím zrušíte výber'
-                : (inspected?.count ?? 0) === 0
+                : inspectedEmpty
                   ? ''
                   : ' · kliknutím filtrujete register'}
             </>

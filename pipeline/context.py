@@ -10,7 +10,6 @@ from typing import Any
 import xlrd
 
 from pipeline.models import Appointment
-from pipeline.professors import load_appointments
 from pipeline.population import load_population
 from pipeline.text import normalize_display
 
@@ -21,7 +20,6 @@ EXPECTED_SHEETS = [TEACHERS_SHEET, STUDENTS_SHEET]
 CONTEXT_YEARS = tuple(range(2000, 2026))
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_PROFESSORS_PATH = _PROJECT_ROOT / "public/data/source/professors.xls"
 DEFAULT_POPULATION_PATH = _PROJECT_ROOT / "public/data/source/population.json"
 
 _TEACHERS_HEADERS = (
@@ -180,7 +178,7 @@ def load_context(
     path: Path,
     *,
     population_path: Path = DEFAULT_POPULATION_PATH,
-    appointments: Iterable[Appointment] | None = None,
+    appointments: Iterable[Appointment],
 ) -> tuple[ContextYear, ...]:
     """Load national CVTI stocks and annual graduate/appointment flows."""
     workbook = xlrd.open_workbook(str(path))
@@ -191,8 +189,6 @@ def load_context(
     )
     population_by_year = load_population(population_path)
 
-    if appointments is None:
-        appointments = load_appointments(DEFAULT_PROFESSORS_PATH).appointments
     appointments_by_year = Counter(item.appointed_on.year for item in appointments)
 
     context: list[ContextYear] = []
